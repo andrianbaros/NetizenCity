@@ -33,10 +33,12 @@ export class PreloadScene extends Phaser.Scene {
 
     // Generate procedural pixel assets dynamically
     this.generatePixelAssets()
+    this.generateCityLifeAssets()
   }
 
   create() {
     this.createPlayerAnimations()
+    this.createNPCAnimations()
     this.scene.start('CityScene')
   }
 
@@ -483,6 +485,307 @@ export class PreloadScene extends Phaser.Scene {
       key: 'idle_up',
       frames: [{ key: 'character_spritesheet', frame: 9 }],
       frameRate: 1,
+    })
+  }
+
+  private generateCityLifeAssets() {
+    // 1. Grand Plaza Fountain (64x64)
+    const fountain = this.textures.createCanvas('prop_fountain', 64, 64)
+    if (fountain) {
+      const ctx = fountain.getContext()
+      // Outer shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.3)'
+      ctx.beginPath()
+      ctx.ellipse(32, 54, 28, 8, 0, 0, Math.PI * 2)
+      ctx.fill()
+      // Outer stone rim
+      ctx.fillStyle = '#64748b'
+      ctx.beginPath()
+      ctx.ellipse(32, 40, 26, 16, 0, 0, Math.PI * 2)
+      ctx.fill()
+      // Water pool
+      ctx.fillStyle = '#38bdf8'
+      ctx.beginPath()
+      ctx.ellipse(32, 40, 22, 12, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#0284c7'
+      ctx.beginPath()
+      ctx.ellipse(32, 42, 16, 8, 0, 0, Math.PI * 2)
+      ctx.fill()
+      // Center pedestal & bowl
+      ctx.fillStyle = '#94a3b8'
+      ctx.fillRect(28, 20, 8, 20)
+      ctx.beginPath()
+      ctx.ellipse(32, 20, 14, 6, 0, 0, Math.PI * 2)
+      ctx.fill()
+      // Water spray
+      ctx.fillStyle = '#bae6fd'
+      ctx.fillRect(30, 8, 4, 12)
+      ctx.fillRect(26, 12, 3, 6)
+      ctx.fillRect(35, 12, 3, 6)
+      fountain.refresh()
+    }
+
+    // 2. Park Bench (32x20)
+    const bench = this.textures.createCanvas('prop_bench', 32, 20)
+    if (bench) {
+      const ctx = bench.getContext()
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'
+      ctx.fillRect(2, 16, 28, 4)
+      ctx.fillStyle = '#1e293b' // iron frame
+      ctx.fillRect(4, 8, 3, 10)
+      ctx.fillRect(25, 8, 3, 10)
+      ctx.fillStyle = '#b45309' // wood slats
+      ctx.fillRect(2, 4, 28, 4)
+      ctx.fillRect(2, 9, 28, 4)
+      ctx.fillStyle = '#d97706'
+      ctx.fillRect(3, 5, 26, 2)
+      bench.refresh()
+    }
+
+    // 3. Yellow City Taxi (52x26)
+    const taxi = this.textures.createCanvas('vehicle_taxi', 52, 26)
+    if (taxi) {
+      const ctx = taxi.getContext()
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'
+      ctx.fillRect(2, 20, 48, 6)
+      // Car Body
+      ctx.fillStyle = '#eab308' // taxi yellow
+      ctx.fillRect(4, 8, 44, 14)
+      // Roof / Cabin
+      ctx.fillStyle = '#ca8a04'
+      ctx.fillRect(14, 2, 24, 8)
+      // Windows
+      ctx.fillStyle = '#38bdf8'
+      ctx.fillRect(16, 4, 8, 5)
+      ctx.fillRect(26, 4, 10, 5)
+      // Black & White checkered stripe
+      for (let x = 6; x < 46; x += 4) {
+        ctx.fillStyle = (x / 4) % 2 === 0 ? '#000000' : '#ffffff'
+        ctx.fillRect(x, 12, 4, 2)
+      }
+      // Rooftop TAXI sign
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(22, 0, 8, 3)
+      ctx.fillStyle = '#dc2626'
+      ctx.fillRect(23, 1, 6, 1)
+      // Wheels
+      ctx.fillStyle = '#0f172a'
+      ctx.fillRect(8, 18, 8, 6)
+      ctx.fillRect(36, 18, 8, 6)
+      ctx.fillStyle = '#94a3b8'
+      ctx.fillRect(10, 20, 4, 2)
+      ctx.fillRect(38, 20, 4, 2)
+      // Headlights / Taillights
+      ctx.fillStyle = '#fef08a'
+      ctx.fillRect(46, 10, 2, 4)
+      ctx.fillStyle = '#ef4444'
+      ctx.fillRect(4, 10, 2, 4)
+      taxi.refresh()
+    }
+
+    // 4. Blue Sedan (52x26)
+    const carBlue = this.textures.createCanvas('vehicle_car_blue', 52, 26)
+    if (carBlue) {
+      const ctx = carBlue.getContext()
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'
+      ctx.fillRect(2, 20, 48, 6)
+      ctx.fillStyle = '#2563eb' // blue
+      ctx.fillRect(4, 8, 44, 14)
+      ctx.fillStyle = '#1d4ed8'
+      ctx.fillRect(14, 2, 24, 8)
+      ctx.fillStyle = '#93c5fd'
+      ctx.fillRect(16, 4, 8, 5)
+      ctx.fillRect(26, 4, 10, 5)
+      // Wheels
+      ctx.fillStyle = '#0f172a'
+      ctx.fillRect(8, 18, 8, 6)
+      ctx.fillRect(36, 18, 8, 6)
+      ctx.fillStyle = '#fef08a'
+      ctx.fillRect(46, 10, 2, 4)
+      ctx.fillStyle = '#ef4444'
+      ctx.fillRect(4, 10, 2, 4)
+      carBlue.refresh()
+    }
+
+    // 5. Indonesian Green Angkot (54x28)
+    const angkot = this.textures.createCanvas('vehicle_angkot', 54, 28)
+    if (angkot) {
+      const ctx = angkot.getContext()
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'
+      ctx.fillRect(2, 22, 50, 6)
+      ctx.fillStyle = '#15803d' // green
+      ctx.fillRect(4, 6, 46, 18)
+      ctx.fillStyle = '#facc15' // yellow roof stripe
+      ctx.fillRect(4, 4, 46, 3)
+      // Passenger windows
+      ctx.fillStyle = '#e2e8f0'
+      ctx.fillRect(12, 8, 10, 7)
+      ctx.fillRect(24, 8, 10, 7)
+      ctx.fillRect(36, 8, 10, 7)
+      // Wheels
+      ctx.fillStyle = '#0f172a'
+      ctx.fillRect(10, 20, 8, 6)
+      ctx.fillRect(38, 20, 8, 6)
+      angkot.refresh()
+    }
+
+    // 6. Courier Package Item (20x20)
+    const pkg = this.textures.createCanvas('item_package', 20, 20)
+    if (pkg) {
+      const ctx = pkg.getContext()
+      ctx.fillStyle = '#b45309' // cardboard
+      ctx.fillRect(2, 4, 16, 14)
+      ctx.fillStyle = '#d97706'
+      ctx.fillRect(3, 5, 14, 12)
+      // Tape
+      ctx.fillStyle = '#fde68a'
+      ctx.fillRect(9, 4, 3, 14)
+      ctx.fillRect(2, 10, 16, 3)
+      // Label
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(4, 6, 4, 3)
+      pkg.refresh()
+    }
+
+    // 7. Trash Item for Cleaning Job (16x16)
+    const trash = this.textures.createCanvas('item_trash', 16, 16)
+    if (trash) {
+      const ctx = trash.getContext()
+      ctx.fillStyle = 'rgba(0,0,0,0.2)'
+      ctx.fillRect(2, 12, 12, 4)
+      ctx.fillStyle = '#64748b'
+      ctx.fillRect(4, 6, 8, 8)
+      ctx.fillStyle = '#ef4444' // red crumpled soda can
+      ctx.fillRect(5, 7, 6, 5)
+      ctx.fillStyle = '#f1f5f9'
+      ctx.fillRect(7, 8, 2, 2)
+      trash.refresh()
+    }
+
+    // 8. Citizen NPC Spritesheet (Red shirt: 96x144)
+    this.createCustomCharSheet('npc_spritesheet_red', '#dc2626')
+    // 9. Citizen NPC Spritesheet (Green shirt: 96x144)
+    this.createCustomCharSheet('npc_spritesheet_green', '#16a34a')
+  }
+
+  private createCustomCharSheet(key: string, shirtColor: string) {
+    const charSheet = this.textures.createCanvas(key, 96, 144)
+    if (charSheet) {
+      const ctx = charSheet.getContext()
+      const colors = {
+        skin: '#f5d0b0',
+        hair: '#78350f',
+        shirt: shirtColor,
+        pants: '#334155',
+        shoes: '#0f172a',
+      }
+
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 3; col++) {
+          const ox = col * 32
+          const oy = row * 36
+          const legOffset = col === 1 ? -2 : col === 2 ? 2 : 0
+
+          ctx.fillStyle = 'rgba(0,0,0,0.3)'
+          ctx.beginPath()
+          ctx.ellipse(ox + 16, oy + 34, 8, 3, 0, 0, Math.PI * 2)
+          ctx.fill()
+
+          if (row === 3) {
+            ctx.fillStyle = colors.hair
+            ctx.fillRect(ox + 11, oy + 4, 10, 10)
+          }
+
+          ctx.fillStyle = colors.skin
+          ctx.fillRect(ox + 11, oy + 6, 10, 10)
+
+          if (row === 0) {
+            ctx.fillStyle = colors.hair
+            ctx.fillRect(ox + 10, oy + 3, 12, 4)
+            ctx.fillStyle = '#000000'
+            ctx.fillRect(ox + 13, oy + 10, 2, 2)
+            ctx.fillRect(ox + 17, oy + 10, 2, 2)
+          } else if (row === 1) {
+            ctx.fillStyle = colors.hair
+            ctx.fillRect(ox + 10, oy + 3, 11, 4)
+            ctx.fillStyle = '#000000'
+            ctx.fillRect(ox + 12, oy + 10, 2, 2)
+          } else if (row === 2) {
+            ctx.fillStyle = colors.hair
+            ctx.fillRect(ox + 11, oy + 3, 11, 4)
+            ctx.fillStyle = '#000000'
+            ctx.fillRect(ox + 18, oy + 10, 2, 2)
+          }
+
+          ctx.fillStyle = colors.shirt
+          ctx.fillRect(ox + 10, oy + 16, 12, 10)
+
+          ctx.fillStyle = colors.pants
+          ctx.fillRect(ox + 11, oy + 26, 4, 6 + legOffset)
+          ctx.fillRect(ox + 17, oy + 26, 4, 6 - legOffset)
+
+          ctx.fillStyle = colors.shoes
+          ctx.fillRect(ox + 10, oy + 31 + legOffset, 5, 3)
+          ctx.fillRect(ox + 17, oy + 31 - legOffset, 5, 3)
+        }
+      }
+      charSheet.refresh()
+    }
+  }
+
+  private createNPCAnimations() {
+    ['npc_spritesheet_red', 'npc_spritesheet_green'].forEach((sheetKey) => {
+      if (!this.textures.exists(sheetKey)) return
+      const sheet = this.textures.get(sheetKey)
+      sheet.add(0, 0, 0, 0, 32, 36)
+      sheet.add(1, 0, 32, 0, 32, 36)
+      sheet.add(2, 0, 64, 0, 32, 36)
+
+      sheet.add(3, 0, 0, 36, 32, 36)
+      sheet.add(4, 0, 32, 36, 32, 36)
+      sheet.add(5, 0, 64, 36, 32, 36)
+
+      sheet.add(6, 0, 0, 72, 32, 36)
+      sheet.add(7, 0, 32, 72, 32, 36)
+      sheet.add(8, 0, 64, 72, 32, 36)
+
+      sheet.add(9, 0, 0, 108, 32, 36)
+      sheet.add(10, 0, 32, 108, 32, 36)
+      sheet.add(11, 0, 64, 108, 32, 36)
+
+      const prefix = sheetKey === 'npc_spritesheet_red' ? 'npc_red' : 'npc_green'
+
+      this.anims.create({
+        key: `${prefix}_walk_down`,
+        frames: [{ key: sheetKey, frame: 1 }, { key: sheetKey, frame: 0 }, { key: sheetKey, frame: 2 }],
+        frameRate: 6,
+        repeat: -1,
+      })
+      this.anims.create({
+        key: `${prefix}_walk_left`,
+        frames: [{ key: sheetKey, frame: 4 }, { key: sheetKey, frame: 3 }, { key: sheetKey, frame: 5 }],
+        frameRate: 6,
+        repeat: -1,
+      })
+      this.anims.create({
+        key: `${prefix}_walk_right`,
+        frames: [{ key: sheetKey, frame: 7 }, { key: sheetKey, frame: 6 }, { key: sheetKey, frame: 8 }],
+        frameRate: 6,
+        repeat: -1,
+      })
+      this.anims.create({
+        key: `${prefix}_walk_up`,
+        frames: [{ key: sheetKey, frame: 10 }, { key: sheetKey, frame: 9 }, { key: sheetKey, frame: 11 }],
+        frameRate: 6,
+        repeat: -1,
+      })
+      this.anims.create({
+        key: `${prefix}_idle`,
+        frames: [{ key: sheetKey, frame: 0 }],
+        frameRate: 1,
+      })
     })
   }
 }

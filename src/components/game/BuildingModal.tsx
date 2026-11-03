@@ -78,13 +78,9 @@ export default function BuildingModal() {
 
   const handleAction = () => {
     if (current.actionType === 'work') {
-      const cur = wallet?.balance ?? 500
-      updateBalance(cur + 75)
-      addNotification({
-        title: 'Pengantaran Selesai!',
-        message: 'Kamu mengantarkan paket warga dan mendapatkan +75 Netizen Coins!',
-        type: 'success',
-      })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('start-courier-job'))
+      }
       closeModal()
     } else if (current.actionType === 'vote') {
       addNotification({

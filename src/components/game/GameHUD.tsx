@@ -13,6 +13,8 @@ import {
   LogOut,
   MapPin,
   HelpCircle,
+  Moon,
+  Package,
 } from 'lucide-react'
 import { InstagramIcon } from '@/components/ui/InstagramIcon'
 import { useGameStore } from '@/lib/stores/useGameStore'
@@ -150,6 +152,19 @@ export default function GameHUD() {
             <ShieldCheck className="w-4 h-4" />
           </button>
 
+          {/* Job Mission Courier shortcut */}
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('start-courier-job'))
+              }
+            }}
+            title="Mulai Misi Kurir Pengantar Paket (+100 Koin)"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 transition-colors"
+          >
+            <Package className="w-4 h-4" />
+          </button>
+
           {/* Mall Shop shortcut */}
           <button
             onClick={() => openModal('mall')}
@@ -157,6 +172,19 @@ export default function GameHUD() {
             className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-blue-400 hover:text-blue-300 transition-colors"
           >
             <ShoppingBag className="w-4 h-4" />
+          </button>
+
+          {/* Day / Night Atmospheric Mode */}
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('toggle-day-night'))
+              }
+            }}
+            title="Ubah Suasana Siang / Malam"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-300 hover:text-sky-200 transition-colors"
+          >
+            <Moon className="w-4 h-4" />
           </button>
 
           {/* Daily Reward shortcut */}
@@ -231,13 +259,9 @@ export default function GameHUD() {
           {/* Controls helper tooltip */}
           <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-slate-900/80 border border-slate-800 rounded-lg text-[10px] text-slate-400">
             <span className="font-mono bg-slate-800 px-1 py-0.5 rounded text-white font-bold">
-              WASD
+              WASD / Klik Tanah
             </span>
-            <span>atau</span>
-            <span className="font-mono bg-slate-800 px-1 py-0.5 rounded text-white font-bold">
-              Panah
-            </span>
-            <span>untuk Jalan &bull; Scroll untuk Zoom</span>
+            <span>Jalan &bull; Tabrak Sampah (+15 Koin) &bull; Klik NPC untuk Ngobrol</span>
           </div>
 
           <MiniMap />

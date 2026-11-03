@@ -1,9 +1,18 @@
 {
-  "followerCount": 26150,
+  "followerCount": 51000,
   "source": "manual",
-  "lastSyncAt": "2026-11-03T15:00:21.700Z",
+  "lastSyncAt": "2026-11-03T15:03:09.157Z",
   "lastError": null,
   "history": [
+    {
+      "id": "asi9ib2",
+      "followerCount": 51000,
+      "source": "manual",
+      "oldValue": 26150,
+      "reason": "sync",
+      "updatedBy": "Admin Netizen",
+      "recordedAt": "2026-11-03T15:03:09.157Z"
+    },
     {
       "id": "5l426h4",
       "followerCount": 26150,
