@@ -9,6 +9,8 @@ export interface CityStats {
   officialPopulation: number
   registeredCitizens: number
   onlineNow: number
+  lastUpdated?: string
+  isApiConnected?: boolean
 }
 
 interface GameState {

@@ -1,0 +1,475 @@
+{
+  "citizens": [
+    {
+      "id": "c-netizen-01",
+      "user_id": "u-netizen-01",
+      "email": "warga@netizencity.id",
+      "password_hash": "123456",
+      "username": "warga_netizen",
+      "display_name": "Warga Netizen",
+      "ktn_number": "KTN-20261103-W4RG4",
+      "avatar_config": {
+        "skinTone": "#f5d0b0",
+        "hairStyle": "short",
+        "hairColor": "#1e293b",
+        "shirtColor": "#2563eb",
+        "pantsColor": "#1e293b",
+        "shoesColor": "#f1f5f9",
+        "expression": "happy"
+      },
+      "level": 1,
+      "xp": 150,
+      "job": "Kurir Pengiriman Kota",
+      "housing_id": "house-apt-01",
+      "housing_name": "Rusunawa Harapan Baru Blok A - Unit 304",
+      "district": "Perumahan Utara",
+      "biography": "Warga aktif pertama NETIZENCITY. Suka menjelajahi Alun-Alun dan berbelanja di Mall!",
+      "is_online": true,
+      "role": "citizen",
+      "onboarding_completed": true,
+      "joined_at": "2026-11-03T15:37:43.878Z",
+      "updated_at": "2026-11-03T15:37:43.878Z"
+    },
+    {
+      "id": "c-rewlc5s",
+      "user_id": "u-3hr79v9",
+      "email": "budi@netizencity.id",
+      "password_hash": "password123",
+      "username": "budi_netizen",
+      "display_name": "Budi Santoso",
+      "ktn_number": "KTN-20261103-8GSF6",
+      "avatar_config": {
+        "skinTone": "#f5d0b0",
+        "hairStyle": "short",
+        "hairColor": "#1e293b",
+        "shirtColor": "#2563eb",
+        "pantsColor": "#1e293b",
+        "shoesColor": "#f1f5f9",
+        "expression": "happy"
+      },
+      "level": 1,
+      "xp": 0,
+      "job": "Warga Baru",
+      "housing_id": "house-apt-02",
+      "housing_name": "Rusunawa Harapan Baru Blok B - Unit 201",
+      "district": "Perumahan Utara",
+      "biography": "Warga resmi baru NETIZENCITY.",
+      "is_online": true,
+      "role": "citizen",
+      "onboarding_completed": true,
+      "joined_at": "2026-11-03T15:44:33.670Z",
+      "updated_at": "2026-11-03T15:44:33.670Z"
+    }
+  ],
+  "wallets": [
+    {
+      "id": "w-netizen-01",
+      "citizen_id": "c-netizen-01",
+      "balance": 515,
+      "total_earned": 665,
+      "total_spent": 150,
+      "updated_at": "2026-11-03T15:44:10.201Z"
+    },
+    {
+      "id": "w-c-rewlc5s",
+      "citizen_id": "c-rewlc5s",
+      "balance": 500,
+      "total_earned": 500,
+      "total_spent": 0,
+      "updated_at": "2026-11-03T15:44:33.670Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-mluap2y",
+      "citizen_id": "c-netizen-01",
+      "type": "spend",
+      "amount": 150,
+      "previous_balance": 665,
+      "new_balance": 515,
+      "description": "Membeli item: Hoodie Merah Netizen",
+      "reference_type": "item",
+      "reference_id": "top_hoodie_red",
+      "created_at": "2026-11-03T15:44:10.201Z"
+    },
+    {
+      "id": "tx-49zepcx",
+      "citizen_id": "c-netizen-01",
+      "type": "earn",
+      "amount": 15,
+      "previous_balance": 650,
+      "new_balance": 665,
+      "description": "Membersihkan sampah trotoar",
+      "reference_type": null,
+      "reference_id": null,
+      "created_at": "2026-11-03T15:43:59.356Z"
+    },
+    {
+      "id": "tx-init-01",
+      "citizen_id": "c-netizen-01",
+      "type": "reward",
+      "amount": 500,
+      "previous_balance": 0,
+      "new_balance": 500,
+      "description": "Bonus Selamat Datang Balai Kota",
+      "reference_type": "onboarding",
+      "reference_id": null,
+      "created_at": "2026-11-03T15:37:43.878Z"
+    },
+    {
+      "id": "tx-zkewnrp",
+      "citizen_id": "c-rewlc5s",
+      "type": "reward",
+      "amount": 500,
+      "previous_balance": 0,
+      "new_balance": 500,
+      "description": "Bonus Selamat Datang Balai Kota",
+      "reference_type": "onboarding",
+      "reference_id": null,
+      "created_at": "2026-11-03T15:44:33.670Z"
+    }
+  ],
+  "housing_units": [
+    {
+      "id": "house-apt-01",
+      "name": "Rusunawa Harapan Baru Blok A",
+      "type": "public_housing",
+      "district": "Perumahan Utara",
+      "unit_number": "Unit 304",
+      "status": "occupied"
+    },
+    {
+      "id": "house-apt-02",
+      "name": "Rusunawa Harapan Baru Blok B",
+      "type": "public_housing",
+      "district": "Perumahan Utara",
+      "unit_number": "Unit 201",
+      "status": "occupied"
+    },
+    {
+      "id": "house-apt-03",
+      "name": "Menara Netizen City View",
+      "type": "apartment",
+      "district": "Perumahan Utara",
+      "unit_number": "Lantai 12 #12B",
+      "status": "available"
+    },
+    {
+      "id": "house-melati-01",
+      "name": "Perumahan Asri Jalan Melati",
+      "type": "small_house",
+      "district": "Perumahan Utara",
+      "unit_number": "No. 12",
+      "status": "available"
+    },
+    {
+      "id": "house-mawar-01",
+      "name": "Perumahan Hijau Jalan Mawar",
+      "type": "standard_house",
+      "district": "Perumahan Utara",
+      "unit_number": "No. 8",
+      "status": "available"
+    },
+    {
+      "id": "house-downtown-01",
+      "name": "Menara Sudirman Netizen",
+      "type": "premium",
+      "district": "Downtown",
+      "unit_number": "Penthouse #01",
+      "status": "available"
+    }
+  ],
+  "housing_assignments": [
+    {
+      "id": "ha-01",
+      "citizen_id": "c-netizen-01",
+      "housing_id": "house-apt-01",
+      "moved_in_at": "2026-11-03T15:37:43.878Z",
+      "is_active": true
+    }
+  ],
+  "items": [
+    {
+      "id": "top_basic_blue",
+      "name": "Kaos Biru Komunitas",
+      "description": "Kaos kasual resmi Netizen City",
+      "category": "tops",
+      "price": 0,
+      "rarity": "common",
+      "color": "#2563eb",
+      "sprite_key": "top_blue",
+      "is_available": true
+    },
+    {
+      "id": "top_hoodie_red",
+      "name": "Hoodie Merah Netizen",
+      "description": "Hoodie hangat berbahan tebal",
+      "category": "tops",
+      "price": 150,
+      "rarity": "uncommon",
+      "color": "#dc2626",
+      "sprite_key": "top_red",
+      "is_available": true
+    },
+    {
+      "id": "top_jacket_leather",
+      "name": "Jaket Kulit Downtown",
+      "description": "Jaket kulit stylish khas pusat kota",
+      "category": "tops",
+      "price": 450,
+      "rarity": "rare",
+      "color": "#334155",
+      "sprite_key": "top_black",
+      "is_available": true
+    },
+    {
+      "id": "top_batik_gold",
+      "name": "Kemeja Batik Emas",
+      "description": "Batik modern untuk acara formal balai kota",
+      "category": "tops",
+      "price": 900,
+      "rarity": "epic",
+      "color": "#f59e0b",
+      "sprite_key": "top_gold",
+      "is_available": true
+    },
+    {
+      "id": "bottom_denim_sky",
+      "name": "Jeans Denim Vintage",
+      "description": "Celana denim tahan lama",
+      "category": "bottoms",
+      "price": 120,
+      "rarity": "common",
+      "color": "#0284c7",
+      "sprite_key": "bottom_blue",
+      "is_available": true
+    },
+    {
+      "id": "bottom_cargo_black",
+      "name": "Celana Kargo Taktis",
+      "description": "Banyak kantong untuk kurir pengiriman",
+      "category": "bottoms",
+      "price": 200,
+      "rarity": "uncommon",
+      "color": "#0f172a",
+      "sprite_key": "bottom_dark",
+      "is_available": true
+    },
+    {
+      "id": "shoes_sneakers_gold",
+      "name": "Sneakers Emas Edisi Terbatas",
+      "description": "Sepatu emas berkilau hadiah komunitas",
+      "category": "shoes",
+      "price": 800,
+      "rarity": "epic",
+      "color": "#f59e0b",
+      "sprite_key": "shoes_gold",
+      "is_available": true
+    },
+    {
+      "id": "shoes_sneakers_white",
+      "name": "Sneakers Putih Kasual",
+      "description": "Sneakers ringan nyaman untuk jalan santai",
+      "category": "shoes",
+      "price": 80,
+      "rarity": "common",
+      "color": "#f1f5f9",
+      "sprite_key": "shoes_white",
+      "is_available": true
+    },
+    {
+      "id": "hair_punk_cyan",
+      "name": "Gaya Rambut Cyberpunk",
+      "description": "Potongan rambut gaya masa depan",
+      "category": "hairstyles",
+      "price": 350,
+      "rarity": "rare",
+      "color": "#06b6d4",
+      "sprite_key": "hair_cyan",
+      "is_available": true
+    }
+  ],
+  "inventory": [
+    {
+      "id": "inv-01",
+      "citizen_id": "c-netizen-01",
+      "item_id": "top_basic_blue",
+      "is_equipped": true,
+      "acquired_at": "2026-11-03T15:37:43.878Z"
+    },
+    {
+      "id": "inv-02",
+      "citizen_id": "c-netizen-01",
+      "item_id": "bottom_denim_sky",
+      "is_equipped": true,
+      "acquired_at": "2026-11-03T15:37:43.878Z"
+    },
+    {
+      "id": "inv-03",
+      "citizen_id": "c-netizen-01",
+      "item_id": "shoes_sneakers_white",
+      "is_equipped": true,
+      "acquired_at": "2026-11-03T15:37:43.878Z"
+    },
+    {
+      "id": "inv-r55b1c2",
+      "citizen_id": "c-netizen-01",
+      "item_id": "top_hoodie_red",
+      "is_equipped": false,
+      "acquired_at": "2026-11-03T15:44:10.201Z"
+    }
+  ],
+  "daily_login_rewards": [
+    {
+      "id": "dlr-01",
+      "citizen_id": "c-netizen-01",
+      "day_number": 1,
+      "reward_coins": 50,
+      "streak_count": 1,
+      "claimed_date": "2026-11-03",
+      "claimed_at": "2026-11-03T15:37:43.878Z"
+    }
+  ],
+  "missions": [
+    {
+      "id": "m-01",
+      "name": "Jelajah Kota",
+      "description": "Berjalan sejauh 500 langkah di kota",
+      "type": "daily",
+      "reward_coins": 50,
+      "reward_xp": 25,
+      "target": 500
+    },
+    {
+      "id": "m-02",
+      "name": "Petugas Kebersihan",
+      "description": "Bersihkan 3 sampah yang berserakan di trotoar",
+      "type": "daily",
+      "reward_coins": 75,
+      "reward_xp": 40,
+      "target": 3
+    },
+    {
+      "id": "m-03",
+      "name": "Antar Paket Kurir",
+      "description": "Selesaikan 2 pengantaran paket barang dari pabrik",
+      "type": "daily",
+      "reward_coins": 150,
+      "reward_xp": 80,
+      "target": 2
+    },
+    {
+      "id": "m-04",
+      "name": "Suara Demokrasi",
+      "description": "Berikan suaramu pada polling kebijakan kota di Balai Kota",
+      "type": "weekly",
+      "reward_coins": 100,
+      "reward_xp": 50,
+      "target": 1
+    }
+  ],
+  "citizen_missions": [
+    {
+      "id": "cm-01",
+      "citizen_id": "c-netizen-01",
+      "mission_id": "m-01",
+      "progress": 320,
+      "target": 500,
+      "status": "active"
+    },
+    {
+      "id": "cm-02",
+      "citizen_id": "c-netizen-01",
+      "mission_id": "m-02",
+      "progress": 1,
+      "target": 3,
+      "status": "active"
+    },
+    {
+      "id": "cm-03",
+      "citizen_id": "c-netizen-01",
+      "mission_id": "m-03",
+      "progress": 0,
+      "target": 2,
+      "status": "active"
+    },
+    {
+      "id": "cm-idh15mc",
+      "citizen_id": "c-netizen-01",
+      "mission_id": "m-04",
+      "progress": 1,
+      "target": 1,
+      "status": "completed"
+    }
+  ],
+  "votes": [
+    {
+      "id": "vote-01",
+      "title": "Fasilitas Publik Baru NETIZENCITY",
+      "description": "Pilih fasilitas umum berikutnya yang akan diprioritaskan dibangun oleh Pemerintah Kota.",
+      "options": [
+        {
+          "id": 0,
+          "title": "Stadion Olahraga & Mini-Game Sepakbola Kota",
+          "votes": 1985
+        },
+        {
+          "id": 1,
+          "title": "Museum Seni Pixel & Bioskop Terbuka Komunitas",
+          "votes": 923
+        },
+        {
+          "id": 2,
+          "title": "Jalur Sepeda & Taman Rekreasi Danau Netizen",
+          "votes": 513
+        }
+      ],
+      "is_active": true
+    }
+  ],
+  "vote_submissions": [
+    {
+      "id": "vs-2uyou4k",
+      "vote_id": "vote-01",
+      "citizen_id": "c-netizen-01",
+      "selected_option": 0,
+      "submitted_at": "2026-11-03T15:43:23.561Z"
+    }
+  ],
+  "chat_messages": [
+    {
+      "id": "msg-01",
+      "citizen_id": "system",
+      "sender_name": "Pemerintah Kota",
+      "channel": "global",
+      "content": "Selamat datang di NETIZENCITY! Kota virtual komunitas Instagram @netizencity.id",
+      "created_at": "2026-11-03T15:37:43.878Z"
+    },
+    {
+      "id": "msg-02",
+      "citizen_id": "c-admin",
+      "sender_name": "Admin Kota",
+      "channel": "global",
+      "content": "Ambil pekerjaan kurir di kawasan pabrik selatan untuk menghasilkan koin cepat!",
+      "created_at": "2026-11-03T15:37:43.878Z"
+    },
+    {
+      "id": "msg-uzrndco",
+      "citizen_id": "c-netizen-01",
+      "sender_name": "Warga Netizen",
+      "channel": "global",
+      "content": "Halo warga Netizen City! Kota ini keren banget!",
+      "created_at": "2026-11-03T15:44:26.014Z"
+    }
+  ],
+  "announcements": [
+    {
+      "id": "ann-01",
+      "title": "Peresmian Kota Virtual NETIZENCITY",
+      "content": "Balai Kota resmi membuka pendaftaran warga baru dengan penerbitan Kartu Tanda Netizen (KTN) digital.",
+      "category": "government",
+      "author": "Kantor Walikota",
+      "created_at": "2026-11-03T15:37:43.878Z"
+    }
+  ]
+}

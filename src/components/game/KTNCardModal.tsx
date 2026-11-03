@@ -1,35 +1,70 @@
+// ============================================================
+// NETIZENCITY - Kartu Tanda Netizen (KTN) Modal
+// Displays Official Citizen Identity Card from Active Profile
+// ============================================================
+
 'use client'
 
-import React from 'react'
-import { ShieldCheck, Download, Home, Award, Calendar, QrCode } from 'lucide-react'
+import React, { useState } from 'react'
+import {
+  ShieldCheck,
+  Copy,
+  Check,
+  Home,
+  Award,
+  Calendar,
+  QrCode,
+  Sparkles,
+} from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { useUIStore } from '@/lib/stores/useUIStore'
+import { useCitizenStore } from '@/lib/stores/useCitizenStore'
 
 export default function KTNCardModal() {
   const activeModal = useUIStore((s) => s.activeModal)
   const closeModal = useUIStore((s) => s.closeModal)
+  const addNotification = useUIStore((s) => s.addNotification)
+  const profile = useCitizenStore((s) => s.profile)
 
   const isOpen = activeModal === 'ktn_card'
+  const [copied, setCopied] = useState(false)
 
   const citizenData = {
-    displayName: 'Warga Netizen',
-    username: 'warga_01',
-    ktnNumber: 'KTN-20261103-8A29F',
-    joinedDate: '3 Nov 2026',
-    level: 1,
-    job: 'Kurir Pengiriman',
-    housing: 'Rusunawa Harapan Baru Unit 304',
-    district: 'Perumahan Utara',
+    displayName: profile?.displayName || 'Warga Netizen',
+    username: profile?.username || 'warga_netizen',
+    ktnNumber: profile?.ktnNumber || 'KTN-20261103-8A29F',
+    joinedDate: profile?.joinedAt
+      ? new Date(profile.joinedAt).toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })
+      : '3 Nov 2026',
+    level: profile?.level || 1,
+    job: profile?.job || 'Warga Baru',
+    housing: profile?.housingName || 'Rusunawa Harapan Baru Unit 304',
+    district: profile?.district || 'Perumahan Utara',
+    skinTone: profile?.avatarConfig?.skinTone || '#f5d0b0',
+    hairColor: profile?.avatarConfig?.hairColor || '#1e293b',
+    shirtColor: profile?.avatarConfig?.outfit?.top || '#2563eb',
   }
 
-  const handleDownload = () => {
-    alert('Kartu Tanda Netizen (KTN) berhasil diunduh ke perangkatmu!')
+  const handleCopyKTN = () => {
+    navigator.clipboard?.writeText(citizenData.ktnNumber)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+
+    addNotification({
+      title: 'Nomor KTN Disalin! 📋',
+      message: `${citizenData.ktnNumber} tersalin ke papan klip.`,
+      type: 'info',
+    })
   }
 
   return (
     <Modal isOpen={isOpen} onClose={closeModal} title="KARTU TANDA NETIZEN (KTN)" maxWidth="lg">
-      <div className="space-y-6 pointer-events-auto select-auto">
+      <div className="space-y-6">
         {/* Physical-style Card Display */}
         <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-900 via-slate-900 to-indigo-950 border-2 border-blue-500/40 shadow-2xl relative overflow-hidden">
           {/* Card Hologram & Watermark */}
@@ -61,19 +96,31 @@ export default function KTNCardModal() {
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
             {/* Avatar Photo Frame */}
             <div className="sm:col-span-4 flex flex-col items-center">
-              <div className="w-24 h-32 rounded-xl bg-slate-950/90 border border-blue-400/30 flex flex-col items-center justify-center p-2 text-center shadow-inner">
-                {/* 2D avatar face representation */}
-                <div className="w-10 h-10 rounded-full bg-amber-200 border-2 border-amber-900 mb-1 flex items-center justify-center">
+              <div className="w-24 h-32 rounded-xl bg-slate-950/90 border border-blue-400/30 flex flex-col items-center justify-center p-2 text-center shadow-inner relative overflow-hidden">
+                {/* Hair */}
+                <div
+                  className="w-10 h-3 rounded-t-lg -mb-1 z-10"
+                  style={{ backgroundColor: citizenData.hairColor }}
+                />
+                {/* Face */}
+                <div
+                  className="w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-black/20"
+                  style={{ backgroundColor: citizenData.skinTone }}
+                >
                   <div className="flex space-x-1.5">
                     <div className="w-1 h-1 bg-black rounded-full" />
                     <div className="w-1 h-1 bg-black rounded-full" />
                   </div>
                 </div>
-                <div className="w-12 h-8 rounded-t bg-blue-600 flex items-center justify-center text-[8px] text-white font-bold">
+                {/* Shirt */}
+                <div
+                  className="w-12 h-9 rounded-t-md flex items-center justify-center text-[8px] text-white font-bold"
+                  style={{ backgroundColor: citizenData.shirtColor }}
+                >
                   NC
                 </div>
-                <span className="text-[9px] text-slate-400 font-mono mt-1">
-                  OFFICIAL AVATAR
+                <span className="text-[8px] text-slate-400 font-mono mt-0.5 uppercase">
+                  AVATAR RESMI
                 </span>
               </div>
             </div>
@@ -94,11 +141,25 @@ export default function KTNCardModal() {
 
               <div>
                 <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
-                  Nomor KTN:
+                  Nomor Identitas KTN:
                 </span>
-                <span className="font-mono font-bold text-amber-300 tracking-wider text-sm">
-                  {citizenData.ktnNumber}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="font-mono font-bold text-amber-300 tracking-wider text-sm">
+                    {citizenData.ktnNumber}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyKTN}
+                    title="Salin Nomor KTN"
+                    className="p-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  >
+                    {copied ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-1">
@@ -125,7 +186,7 @@ export default function KTNCardModal() {
                   Alamat Domisili Kota:
                 </span>
                 <span className="font-medium text-sky-200">
-                  {citizenData.housing}
+                  {citizenData.housing} ({citizenData.district})
                 </span>
               </div>
             </div>
@@ -142,7 +203,7 @@ export default function KTNCardModal() {
               </div>
             </div>
             <div className="text-right text-[10px] text-slate-500 font-mono">
-              VALID FOREVER &bull; DIGITAL CITIZEN
+              VALID PERMANEN &bull; DIGITAL CITIZEN ID
             </div>
           </div>
         </div>
@@ -152,9 +213,13 @@ export default function KTNCardModal() {
           <Button variant="ghost" onClick={closeModal}>
             Tutup
           </Button>
-          <Button variant="accent" onClick={handleDownload}>
-            <Download className="w-4 h-4" />
-            <span>Unduh KTN (Gambar)</span>
+          <Button variant="accent" onClick={handleCopyKTN}>
+            {copied ? (
+              <Check className="w-4 h-4 mr-1.5" />
+            ) : (
+              <Copy className="w-4 h-4 mr-1.5" />
+            )}
+            <span>{copied ? 'Tersalin!' : 'Salin Nomor KTN'}</span>
           </Button>
         </div>
       </div>

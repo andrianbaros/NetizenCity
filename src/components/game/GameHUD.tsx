@@ -1,6 +1,11 @@
+// ============================================================
+// NETIZENCITY - Primary Game Heads-Up Display (GameHUD)
+// Complete Navigation, Population Counters, Quick Actions, & Modals
+// ============================================================
+
 'use client'
 
-import React from 'react'
+import React, { useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Coins,
@@ -12,9 +17,10 @@ import {
   Sparkles,
   LogOut,
   MapPin,
-  HelpCircle,
   Moon,
   Package,
+  Award,
+  Vote,
 } from 'lucide-react'
 import { InstagramIcon } from '@/components/ui/InstagramIcon'
 import { useGameStore } from '@/lib/stores/useGameStore'
@@ -27,18 +33,89 @@ import KTNCardModal from './KTNCardModal'
 import MallModal from './MallModal'
 import DailyRewardModal from './DailyRewardModal'
 import BuildingModal from './BuildingModal'
+import MissionsModal from './MissionsModal'
 
 export default function GameHUD() {
   const cityStats = useGameStore((s) => s.cityStats)
+  const setCityStats = useGameStore((s) => s.setCityStats)
   const currentDistrict = useGameStore((s) => s.currentDistrict)
   const selectedBuilding = useGameStore((s) => s.selectedBuilding)
+  const setSelectedBuilding = useGameStore((s) => s.setSelectedBuilding)
 
   const wallet = useCitizenStore((s) => s.wallet)
   const profile = useCitizenStore((s) => s.profile)
+  const setProfile = useCitizenStore((s) => s.setProfile)
+  const setWallet = useCitizenStore((s) => s.setWallet)
+  const setInventory = useCitizenStore((s) => s.setInventory)
 
   const openModal = useUIStore((s) => s.openModal)
   const notifications = useUIStore((s) => s.notifications)
   const removeNotification = useUIStore((s) => s.removeNotification)
+
+  // Fetch active citizen profile and city population on mount
+  const initGameData = useCallback(async () => {
+    try {
+      // 1. Fetch Citizen Profile & Wallet
+      const citRes = await fetch('/api/citizens/me')
+      if (citRes.ok) {
+        const citData = await citRes.json()
+        if (citData.citizen) {
+          setProfile({
+            id: citData.citizen.id,
+            userId: citData.citizen.user_id,
+            username: citData.citizen.username,
+            displayName: citData.citizen.display_name,
+            ktnNumber: citData.citizen.ktn_number,
+            avatarConfig: citData.citizen.avatar_config,
+            level: citData.citizen.level || 1,
+            xp: citData.citizen.xp || 0,
+            job: citData.citizen.job || 'Warga Baru',
+            housingId: citData.citizen.housing_id,
+            housingName: citData.citizen.housing_name || 'Rusunawa Harapan Baru',
+            district: citData.citizen.district || 'Perumahan Utara',
+            biography: citData.citizen.biography || '',
+            isOnline: true,
+            role: citData.citizen.role || 'citizen',
+            lastLocation: null,
+            joinedAt: citData.citizen.joined_at,
+            updatedAt: citData.citizen.updated_at || citData.citizen.joined_at,
+          })
+        }
+        if (citData.wallet) {
+          setWallet({
+            id: citData.wallet.id,
+            citizenId: citData.wallet.citizen_id,
+            balance: citData.wallet.balance,
+            totalEarned: citData.wallet.total_earned,
+            totalSpent: citData.wallet.total_spent,
+            updatedAt: citData.wallet.updated_at,
+          })
+        }
+        if (citData.inventory) {
+          setInventory(citData.inventory)
+        }
+      }
+
+      // 2. Fetch Live Population Stats
+      const popRes = await fetch('/api/population')
+      if (popRes.ok) {
+        const popData = await popRes.json()
+        setCityStats({
+          officialPopulation: popData.officialPopulation || 26150,
+          registeredCitizens: popData.registeredCitizens || 3420,
+          onlineNow: popData.onlineNow || 142,
+          lastUpdated: popData.lastUpdated || new Date().toISOString(),
+          isApiConnected: popData.isApiConnected ?? false,
+        })
+      }
+    } catch {
+      // ignore
+    }
+  }, [setProfile, setWallet, setInventory, setCityStats])
+
+  useEffect(() => {
+    initGameData()
+  }, [initGameData])
 
   const districtNames: Record<string, string> = {
     town_square: 'Downtown (Alun-Alun Pusat)',
@@ -51,6 +128,11 @@ export default function GameHUD() {
 
   const currentCoins = wallet?.balance ?? 500
 
+  const handleOpenCityHall = () => {
+    setSelectedBuilding('city_hall')
+    openModal('building_details')
+  }
+
   return (
     <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between p-3 sm:p-5 select-none">
       {/* ============================================================ */}
@@ -60,8 +142,10 @@ export default function GameHUD() {
         {/* Left: Citizen Profile Badge & District */}
         <div className="flex items-center space-x-2.5 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-1.5 pr-4 shadow-2xl backdrop-blur-md">
           <button
+            type="button"
             onClick={() => openModal('ktn_card')}
-            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 flex items-center justify-center text-white font-bold text-xs shadow-md hover:scale-105 transition-transform"
+            title="Klik untuk melihat Kartu Tanda Netizen"
+            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 flex items-center justify-center text-white font-bold text-xs shadow-md hover:scale-105 transition-transform cursor-pointer"
           >
             <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-blue-400">
               NC
@@ -73,7 +157,7 @@ export default function GameHUD() {
                 {profile?.displayName || 'Warga Netizen'}
               </span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30">
-                Lvl 1
+                Lvl {profile?.level || 1}
               </span>
             </div>
             <div className="flex items-center space-x-1 text-[10px] text-slate-400 font-medium">
@@ -145,53 +229,78 @@ export default function GameHUD() {
 
           {/* KTN Card shortcut */}
           <button
+            type="button"
             onClick={() => openModal('ktn_card')}
-            title="Buka Kartu Tanda Netizen"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors"
+            title="Buka Kartu Tanda Netizen (KTN)"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4" />
           </button>
 
+          {/* Balai Kota & Poling Kebijakan Shortcut */}
+          <button
+            type="button"
+            onClick={handleOpenCityHall}
+            title="Balai Kota & Poling Kebijakan (+25 Koin)"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+          >
+            <Vote className="w-4 h-4" />
+          </button>
+
+          {/* Missions / Quests shortcut */}
+          <button
+            type="button"
+            onClick={() => openModal('missions')}
+            title="Misi & Prestasi Warga (+Koin & XP)"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+          >
+            <Award className="w-4 h-4" />
+          </button>
+
           {/* Job Mission Courier shortcut */}
           <button
+            type="button"
             onClick={() => {
               if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('start-courier-job'))
               }
             }}
             title="Mulai Misi Kurir Pengantar Paket (+100 Koin)"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 transition-colors"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 hover:text-amber-200 transition-colors cursor-pointer"
           >
             <Package className="w-4 h-4" />
           </button>
 
           {/* Mall Shop shortcut */}
           <button
+            type="button"
             onClick={() => openModal('mall')}
             title="Buka Mall Busana"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-blue-400 hover:text-blue-300 transition-colors"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-pink-400 hover:text-pink-300 transition-colors cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4" />
           </button>
 
           {/* Day / Night Atmospheric Mode */}
           <button
+            type="button"
             onClick={() => {
               if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('toggle-day-night'))
               }
             }}
             title="Ubah Suasana Siang / Malam"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-300 hover:text-sky-200 transition-colors"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-300 hover:text-sky-200 transition-colors cursor-pointer"
           >
             <Moon className="w-4 h-4" />
           </button>
 
           {/* Daily Reward shortcut */}
           <button
+            type="button"
             onClick={() => openModal('daily_rewards')}
-            title="Hadiah Harian"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-purple-400 hover:text-purple-300 transition-colors relative"
+            title="Hadiah Login Harian"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-purple-400 hover:text-purple-300 transition-colors relative cursor-pointer"
           >
             <Gift className="w-4 h-4" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
@@ -236,8 +345,9 @@ export default function GameHUD() {
       {selectedBuilding && (
         <div className="self-center pointer-events-auto mb-2 animate-bounce">
           <button
+            type="button"
             onClick={() => openModal('building_details')}
-            className="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-xl shadow-blue-900/50 border border-blue-400/40 flex items-center space-x-2 transition-transform active:scale-95"
+            className="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-xl shadow-blue-900/50 border border-blue-400/40 flex items-center space-x-2 transition-transform active:scale-95 cursor-pointer"
           >
             <Building2 className="w-4 h-4" />
             <span>Klik Untuk Berinteraksi dengan Gedung</span>
@@ -257,7 +367,7 @@ export default function GameHUD() {
         {/* Right: Controls Guide & MiniMap */}
         <div className="flex flex-col items-end space-y-2">
           {/* Controls helper tooltip */}
-          <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-slate-900/80 border border-slate-800 rounded-lg text-[10px] text-slate-400">
+          <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-slate-900/90 border border-slate-800 rounded-lg text-[10px] text-slate-400 shadow-md">
             <span className="font-mono bg-slate-800 px-1 py-0.5 rounded text-white font-bold">
               WASD / Klik Tanah
             </span>
@@ -268,13 +378,12 @@ export default function GameHUD() {
         </div>
       </footer>
 
-      {/* MODALS */}
-      <div className="pointer-events-auto select-auto">
-        <KTNCardModal />
-        <MallModal />
-        <DailyRewardModal />
-        <BuildingModal />
-      </div>
+      {/* MODALS RENDERED VIA PORTAL TO DOCUMENT BODY */}
+      <KTNCardModal />
+      <MallModal />
+      <DailyRewardModal />
+      <BuildingModal />
+      <MissionsModal />
     </div>
   )
 }

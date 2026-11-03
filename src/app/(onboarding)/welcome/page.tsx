@@ -44,11 +44,19 @@ export default function OnboardingPage() {
 
   const updateAvatar = useCitizenStore((s) => s.updateAvatar)
 
-  const handleFinishOnboarding = () => {
-    updateAvatar({
+  const handleFinishOnboarding = async () => {
+    const avatarConfig = {
       skinTone: avatar.skinTone,
       hairStyle: avatar.hairStyle,
       hairColor: avatar.hairColor,
+      shirtColor: avatar.shirtColor,
+      pantsColor: avatar.pantsColor,
+      shoesColor: avatar.shoesColor,
+      expression: avatar.expression,
+    }
+
+    updateAvatar({
+      ...avatarConfig,
       eyeColor: '#000000',
       outfit: {
         top: avatar.shirtColor,
@@ -56,8 +64,17 @@ export default function OnboardingPage() {
         shoes: avatar.shoesColor,
         accessory: null,
       },
-      expression: avatar.expression,
     })
+
+    try {
+      await fetch('/api/citizens/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarConfig }),
+      })
+    } catch {
+      // ignore
+    }
 
     router.push('/city')
   }

@@ -36,9 +36,11 @@ export interface CitizenProfile {
   xp: number
   job: string | null
   housingId: string | null
+  housingName?: string
   district: string | null
   biography: string | null
   isOnline: boolean
+  role?: 'citizen' | 'moderator' | 'admin' | 'mayor'
   lastLocation: { x: number; y: number } | null
   joinedAt: string
   updatedAt: string

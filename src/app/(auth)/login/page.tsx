@@ -32,10 +32,19 @@ function LoginForm() {
         !supabaseUrl || supabaseUrl.includes('your_supabase_url_here')
 
       if (isPlaceholder) {
-        // Mock demo login when credentials not yet configured
-        setTimeout(() => {
-          router.push(redirectTo)
-        }, 600)
+        // Authenticate via persistent local database
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        })
+        const data = await res.json()
+        if (!res.ok || data.error) {
+          setError(data.error || 'Email atau kata sandi tidak cocok')
+          return
+        }
+
+        router.push(redirectTo)
         return
       }
 

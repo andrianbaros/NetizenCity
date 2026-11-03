@@ -313,6 +313,8 @@ export class CityScene extends Phaser.Scene {
     this.buildingsGroup.add(img)
 
     img.on('pointerdown', () => {
+      this.targetMovePosition = null
+      useGameStore.getState().setSelectedBuilding(data.id)
       this.openBuildingModal(data)
     })
 
@@ -586,6 +588,17 @@ export class CityScene extends Phaser.Scene {
         const balance = curWallet?.balance ?? 500
         useCitizenStore.getState().updateBalance(balance + 15)
 
+        // Persist to local database
+        fetch('/api/economy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'earn',
+            amount: 15,
+            description: 'Membersihkan sampah trotoar kota',
+          }),
+        }).catch(() => {})
+
         useUIStore.getState().addNotification({
           title: 'Trotoar Bersih! (+15 Koin)',
           message: 'Terima kasih telah menjaga kebersihan kota!',
@@ -690,6 +703,17 @@ export class CityScene extends Phaser.Scene {
       const reward = this.activeDelivery.reward
       const cur = useCitizenStore.getState().wallet?.balance ?? 500
       useCitizenStore.getState().updateBalance(cur + reward)
+
+      // Persist to local database
+      fetch('/api/economy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'earn',
+          amount: reward,
+          description: `Pengantaran paket ke ${this.activeDelivery.targetName}`,
+        }),
+      }).catch(() => {})
 
       useUIStore.getState().addNotification({
         title: 'Paket Berhasil Diantar! 📦',
@@ -918,6 +942,7 @@ export class CityScene extends Phaser.Scene {
   }
 
   private openBuildingModal(data: BuildingInteractiveData) {
+    useGameStore.getState().setSelectedBuilding(data.id)
     if (data.id === 'netizen_mall') {
       useUIStore.getState().openModal('mall')
     } else if (data.id === 'industrial_factory') {

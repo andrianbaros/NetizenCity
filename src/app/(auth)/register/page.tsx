@@ -48,10 +48,25 @@ export default function RegisterPage() {
         !supabaseUrl || supabaseUrl.includes('your_supabase_url_here')
 
       if (isPlaceholder) {
-        // Mock demo registration flow
-        setTimeout(() => {
-          router.push('/onboarding')
-        }, 600)
+        // Authenticate & create citizen in local database
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            username: formData.username,
+            displayName: formData.displayName,
+          }),
+        })
+
+        const data = await res.json()
+        if (!res.ok || data.error) {
+          setError(data.error || 'Pendaftaran gagal. Coba username atau email lain.')
+          return
+        }
+
+        router.push('/welcome')
         return
       }
 
