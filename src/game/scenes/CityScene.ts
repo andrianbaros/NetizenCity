@@ -50,7 +50,7 @@ interface DeliveryMission {
 
 export class CityScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite
-  private playerContainer!: Phaser.GameObjects.Container
+  private playerNameText!: Phaser.GameObjects.Text
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   private wasd!: {
     W: Phaser.Input.Keyboard.Key
@@ -70,6 +70,7 @@ export class CityScene extends Phaser.Scene {
   // Active Job Mission
   private activeDelivery: DeliveryMission | null = null
 
+  private buildingsGroup!: Phaser.Physics.Arcade.StaticGroup
   private interactiveBuildings: Map<Phaser.GameObjects.GameObject, BuildingInteractiveData> =
     new Map()
 
@@ -91,26 +92,30 @@ export class CityScene extends Phaser.Scene {
     const WORLD_HEIGHT = 2400
     this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
 
-    // 1. Build 2D City Environment & Roads
+    // 1. Build 2D City Environment, Roads & Props
     this.createCityTerrain(WORLD_WIDTH, WORLD_HEIGHT)
     this.createRoadsAndSidewalks()
-    this.createBuildings()
     this.createEnvironmentProps()
 
-    // 2. Spawn Interactive City Life (Fountain, Vehicles, NPCs, Cleaning Trash)
+    // 2. Spawn Player first (Central Alun-Alun)
+    this.createPlayer(1600, 1200)
+
+    // 3. Buildings with collision group
+    this.buildingsGroup = this.physics.add.staticGroup()
+    this.createBuildings()
+    this.physics.add.collider(this.player, this.buildingsGroup)
+
+    // 4. Spawn Interactive City Life (Fountain, Vehicles, NPCs, Cleaning Trash)
     this.createFountainAndSquare()
     this.spawnCityVehicles()
     this.spawnCitizenNPCs()
     this.spawnStreetTrash()
 
-    // 3. Spawn Player at Central Alun-Alun
-    this.createPlayer(1600, 1200)
-
-    // 4. Setup Camera & Day/Night Overlay
+    // 5. Setup Camera & Day/Night Overlay
     this.setupCamera(WORLD_WIDTH, WORLD_HEIGHT)
     this.setupLightingOverlay(WORLD_WIDTH, WORLD_HEIGHT)
 
-    // 5. Setup Keyboard & Click-to-Move Controls
+    // 6. Setup Keyboard & Click-to-Move Controls
     this.setupControls()
 
     // Listen to custom global events for jobs
@@ -298,14 +303,14 @@ export class CityScene extends Phaser.Scene {
     img.setInteractive({ cursor: 'pointer' })
     this.interactiveBuildings.set(img, data)
 
-    // Physics static body for collision
-    const body = this.physics.add.staticBody(
-      img.x - img.width / 2 + 10,
-      img.y - img.height / 2 + 20,
-      img.width - 20,
-      img.height - 30
-    )
-    this.physics.add.collider(this.player, body)
+    // Add static collision body to buildingsGroup
+    this.physics.add.existing(img, true)
+    const body = img.body as Phaser.Physics.Arcade.StaticBody
+    if (body) {
+      body.setSize(img.width - 24, 36)
+      body.setOffset(12, img.height - 36)
+    }
+    this.buildingsGroup.add(img)
 
     img.on('pointerdown', () => {
       this.openBuildingModal(data)
@@ -703,24 +708,20 @@ export class CityScene extends Phaser.Scene {
   // PLAYER, CONTROLS, AND CAMERA
   // ============================================================
   private createPlayer(spawnX: number, spawnY: number) {
-    this.playerContainer = this.add.container(spawnX, spawnY)
-
-    this.player = this.physics.add.sprite(0, 0, 'character_spritesheet', 0)
+    this.player = this.physics.add.sprite(spawnX, spawnY, 'character_spritesheet', 0)
     this.player.setCollideWorldBounds(true)
     this.player.setSize(20, 24)
     this.player.setOffset(6, 12)
+    this.player.setDepth(spawnY)
 
-    const username = 'Kamu (Warga)'
-    const nameText = this.add.text(0, -26, username, {
+    this.playerNameText = this.add.text(spawnX, spawnY - 26, 'Kamu (Warga)', {
       font: 'bold 11px monospace',
       color: '#ffffff',
       backgroundColor: 'rgba(15, 23, 42, 0.75)',
       padding: { x: 4, y: 2 },
     })
-    nameText.setOrigin(0.5, 0.5)
-
-    this.playerContainer.add([this.player, nameText])
-    this.playerContainer.setDepth(spawnY)
+    this.playerNameText.setOrigin(0.5, 0.5)
+    this.playerNameText.setDepth(spawnY + 1)
   }
 
   private setupLightingOverlay(worldWidth: number, worldHeight: number) {
@@ -862,10 +863,10 @@ export class CityScene extends Phaser.Scene {
       this.player.anims.play(`idle_${this.lastDirection}`, true)
     }
 
-    if (this.playerContainer) {
-      this.playerContainer.x = this.player.x
-      this.playerContainer.y = this.player.y
-      this.playerContainer.setDepth(this.player.y)
+    if (this.playerNameText && this.player) {
+      this.playerNameText.setPosition(this.player.x, this.player.y - 26)
+      this.playerNameText.setDepth(this.player.y + 1)
+      this.player.setDepth(this.player.y)
     }
 
     if (time - this.lastMoveBroadcast > 100) {

@@ -414,25 +414,27 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   private createPlayerAnimations() {
-    // Generate spritesheet config with 32x36 frames
+    if (this.anims.exists('walk_down')) return
     if (!this.textures.exists('character_spritesheet')) return
 
     const sheet = this.textures.get('character_spritesheet')
-    sheet.add(0, 0, 0, 0, 32, 36)
-    sheet.add(1, 0, 32, 0, 32, 36)
-    sheet.add(2, 0, 64, 0, 32, 36)
+    if (!sheet.has('0')) {
+      sheet.add(0, 0, 0, 0, 32, 36)
+      sheet.add(1, 0, 32, 0, 32, 36)
+      sheet.add(2, 0, 64, 0, 32, 36)
 
-    sheet.add(3, 0, 0, 36, 32, 36)
-    sheet.add(4, 0, 32, 36, 32, 36)
-    sheet.add(5, 0, 64, 36, 32, 36)
+      sheet.add(3, 0, 0, 36, 32, 36)
+      sheet.add(4, 0, 32, 36, 32, 36)
+      sheet.add(5, 0, 64, 36, 32, 36)
 
-    sheet.add(6, 0, 0, 72, 32, 36)
-    sheet.add(7, 0, 32, 72, 32, 36)
-    sheet.add(8, 0, 64, 72, 32, 36)
+      sheet.add(6, 0, 0, 72, 32, 36)
+      sheet.add(7, 0, 32, 72, 32, 36)
+      sheet.add(8, 0, 64, 72, 32, 36)
 
-    sheet.add(9, 0, 0, 108, 32, 36)
-    sheet.add(10, 0, 32, 108, 32, 36)
-    sheet.add(11, 0, 64, 108, 32, 36)
+      sheet.add(9, 0, 0, 108, 32, 36)
+      sheet.add(10, 0, 32, 108, 32, 36)
+      sheet.add(11, 0, 64, 108, 32, 36)
+    }
 
     // Create walk & idle animations
     this.anims.create({
@@ -736,24 +738,28 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   private createNPCAnimations() {
+    if (this.anims.exists('npc_red_walk_down')) return
+
     ['npc_spritesheet_red', 'npc_spritesheet_green'].forEach((sheetKey) => {
       if (!this.textures.exists(sheetKey)) return
       const sheet = this.textures.get(sheetKey)
-      sheet.add(0, 0, 0, 0, 32, 36)
-      sheet.add(1, 0, 32, 0, 32, 36)
-      sheet.add(2, 0, 64, 0, 32, 36)
+      if (!sheet.has('0')) {
+        sheet.add(0, 0, 0, 0, 32, 36)
+        sheet.add(1, 0, 32, 0, 32, 36)
+        sheet.add(2, 0, 64, 0, 32, 36)
 
-      sheet.add(3, 0, 0, 36, 32, 36)
-      sheet.add(4, 0, 32, 36, 32, 36)
-      sheet.add(5, 0, 64, 36, 32, 36)
+        sheet.add(3, 0, 0, 36, 32, 36)
+        sheet.add(4, 0, 32, 36, 32, 36)
+        sheet.add(5, 0, 64, 36, 32, 36)
 
-      sheet.add(6, 0, 0, 72, 32, 36)
-      sheet.add(7, 0, 32, 72, 32, 36)
-      sheet.add(8, 0, 64, 72, 32, 36)
+        sheet.add(6, 0, 0, 72, 32, 36)
+        sheet.add(7, 0, 32, 72, 32, 36)
+        sheet.add(8, 0, 64, 72, 32, 36)
 
-      sheet.add(9, 0, 0, 108, 32, 36)
-      sheet.add(10, 0, 32, 108, 32, 36)
-      sheet.add(11, 0, 64, 108, 32, 36)
+        sheet.add(9, 0, 0, 108, 32, 36)
+        sheet.add(10, 0, 32, 108, 32, 36)
+        sheet.add(11, 0, 64, 108, 32, 36)
+      }
 
       const prefix = sheetKey === 'npc_spritesheet_red' ? 'npc_red' : 'npc_green'
 
