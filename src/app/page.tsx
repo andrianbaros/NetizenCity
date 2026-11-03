@@ -147,8 +147,15 @@ export default function LandingPage() {
                 <div className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   {formatNumber(stats.officialPopulation)}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1 font-medium">
-                  Follower @netizencity.id
+                <div className="text-[11px] text-slate-500 mt-1 font-medium flex items-center justify-center space-x-2">
+                  <span>Follower @netizencity.id</span>
+                  <span>&bull;</span>
+                  <Link
+                    href="/admin/instagram"
+                    className="text-pink-400 hover:text-pink-300 font-semibold underline underline-offset-2"
+                  >
+                    Sync / Kelola
+                  </Link>
                 </div>
               </div>
 

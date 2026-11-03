@@ -84,17 +84,21 @@ export default function GameHUD() {
         {/* Center: 3 Separate Population Counters */}
         <div className="hidden lg:flex items-center space-x-4 bg-slate-900/90 border border-slate-700/80 rounded-2xl px-4 py-2 shadow-2xl backdrop-blur-md text-xs">
           {/* 1. Official Instagram Population */}
-          <div className="flex items-center space-x-2">
-            <InstagramIcon className="w-4 h-4 text-pink-400 flex-shrink-0" />
+          <Link
+            href="/admin/instagram"
+            title="Kelola Integrasi Instagram @netizencity.id"
+            className="flex items-center space-x-2 group hover:opacity-80 transition-opacity"
+          >
+            <InstagramIcon className="w-4 h-4 text-pink-400 flex-shrink-0 group-hover:scale-110 transition-transform" />
             <div>
-              <span className="text-[10px] text-slate-400 block uppercase font-semibold leading-none">
+              <span className="text-[10px] text-slate-400 block uppercase font-semibold leading-none group-hover:text-pink-300">
                 Populasi Resmi
               </span>
               <span className="font-extrabold text-white text-xs font-mono">
                 {formatNumber(cityStats.officialPopulation)}
               </span>
             </div>
-          </div>
+          </Link>
 
           <div className="w-px h-6 bg-slate-800" />
 

@@ -1,0 +1,26 @@
+{
+  "followerCount": 26150,
+  "source": "manual",
+  "lastSyncAt": "2026-11-03T15:00:21.700Z",
+  "lastError": null,
+  "history": [
+    {
+      "id": "5l426h4",
+      "followerCount": 26150,
+      "source": "manual",
+      "oldValue": 25800,
+      "reason": "Update follower real Instagram @netizencity.id",
+      "updatedBy": "Admin Netizen",
+      "recordedAt": "2026-11-03T15:00:21.700Z"
+    },
+    {
+      "id": "init-1",
+      "followerCount": 25800,
+      "source": "manual",
+      "oldValue": 0,
+      "reason": "Inisialisasi awal basis data populasi @netizencity.id",
+      "updatedBy": "Sistem Kota",
+      "recordedAt": "2026-11-03T15:00:21.700Z"
+    }
+  ]
+}
