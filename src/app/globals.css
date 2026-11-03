@@ -13,8 +13,12 @@ body {
   color: var(--foreground);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   overflow-x: hidden;
-  user-select: none;
   -webkit-font-smoothing: antialiased;
+}
+
+#phaser-game-container {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Crisp pixel art rendering for game canvas */

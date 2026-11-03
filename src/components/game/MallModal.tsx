@@ -125,7 +125,7 @@ export default function MallModal() {
       title="MALL PERBELANJAAN NETIZEN"
       maxWidth="xl"
     >
-      <div className="space-y-5">
+      <div className="space-y-5 pointer-events-auto select-auto">
         {/* Top Mall Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 gap-3">
           <div className="flex items-center space-x-2">

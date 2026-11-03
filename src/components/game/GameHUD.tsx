@@ -269,10 +269,12 @@ export default function GameHUD() {
       </footer>
 
       {/* MODALS */}
-      <KTNCardModal />
-      <MallModal />
-      <DailyRewardModal />
-      <BuildingModal />
+      <div className="pointer-events-auto select-auto">
+        <KTNCardModal />
+        <MallModal />
+        <DailyRewardModal />
+        <BuildingModal />
+      </div>
     </div>
   )
 }

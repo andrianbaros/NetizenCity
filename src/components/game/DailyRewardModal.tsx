@@ -61,7 +61,7 @@ export default function DailyRewardModal() {
       title="HADIAH LOGIN HARIAN (7 HARI)"
       maxWidth="lg"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 pointer-events-auto select-auto">
         <div className="text-center">
           <p className="text-xs text-slate-300">
             Masuk ke kota setiap hari untuk mempertahankan streak dan dapatkan bonus koin serta item eksklusif pada hari ke-7!

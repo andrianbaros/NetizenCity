@@ -29,7 +29,7 @@ export default function KTNCardModal() {
 
   return (
     <Modal isOpen={isOpen} onClose={closeModal} title="KARTU TANDA NETIZEN (KTN)" maxWidth="lg">
-      <div className="space-y-6">
+      <div className="space-y-6 pointer-events-auto select-auto">
         {/* Physical-style Card Display */}
         <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-900 via-slate-900 to-indigo-950 border-2 border-blue-500/40 shadow-2xl relative overflow-hidden">
           {/* Card Hologram & Watermark */}
