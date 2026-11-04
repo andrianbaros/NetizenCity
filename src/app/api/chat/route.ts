@@ -20,9 +20,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Pesan tidak boleh kosong' }, { status: 400 })
     }
 
-    const citizen = getActiveCitizen()
+    const citizenIdCookie = request.cookies.get('nc_citizen_id')?.value
+    const citizen = getActiveCitizen(citizenIdCookie)
     const citizenId = citizen ? citizen.id : 'anon'
-    const senderName = citizen ? citizen.display_name : 'Warga Netizen'
+    const username = citizen ? citizen.username : 'warga'
+    const senderName = `${username} (Kamu)`
 
     const message = addChatMessage(citizenId, senderName, content.trim())
     return NextResponse.json({ success: true, message })

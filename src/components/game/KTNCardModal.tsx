@@ -134,8 +134,8 @@ export default function KTNCardModal() {
                 <span className="font-extrabold text-white text-base">
                   {citizenData.displayName}
                 </span>
-                <span className="text-slate-400 text-xs ml-2">
-                  (@{citizenData.username})
+                <span className="text-emerald-400 text-xs ml-2 font-mono">
+                  (@{citizenData.username} &bull; Kamu)
                 </span>
               </div>
 

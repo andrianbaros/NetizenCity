@@ -161,6 +161,9 @@ export default function GameHUD() {
               <span className="text-xs font-bold text-white">
                 {profile?.displayName || 'Warga Netizen'}
               </span>
+              <span className="text-[10px] text-emerald-400 font-mono">
+                @{profile?.username || 'warga'} (Kamu)
+              </span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30">
                 Lvl {profile?.level || 1}
               </span>

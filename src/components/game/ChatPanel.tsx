@@ -82,9 +82,11 @@ export default function ChatPanel() {
     setIsSending(true)
 
     // Optimistic local update
+    const myName = profile?.username ? `${profile.username} (Kamu)` : 'Kamu'
     const tempMsg: ChatMsg = {
       id: 'temp-' + Date.now(),
-      sender_name: profile?.displayName || 'Kamu (Warga)',
+      sender_name: myName,
+      citizen_id: profile?.id,
       content: text,
       created_at: new Date().toISOString(),
     }
@@ -148,6 +150,16 @@ export default function ChatPanel() {
         {messages.map((m) => {
           const isSystem =
             m.sender_name === 'Pemerintah Kota' || m.sender_name === 'Admin Kota'
+          const isMe =
+            m.citizen_id === profile?.id ||
+            m.sender_name.endsWith('(Kamu)') ||
+            (profile?.username &&
+              m.sender_name.toLowerCase().includes(profile.username.toLowerCase()))
+
+          const displaySender = isMe
+            ? `${profile?.username || 'warga'} (Kamu)`
+            : m.sender_name
+
           const timeStr = m.created_at
             ? new Date(m.created_at).toLocaleTimeString('id-ID', {
                 hour: '2-digit',
@@ -161,16 +173,22 @@ export default function ChatPanel() {
               className={`p-2.5 rounded-xl border transition-all ${
                 isSystem
                   ? 'bg-blue-950/40 border-blue-500/30 text-blue-200'
+                  : isMe
+                  ? 'bg-emerald-950/30 border-emerald-500/40 text-slate-100'
                   : 'bg-slate-950/60 border-slate-800 text-slate-200'
               }`}
             >
               <div className="flex items-center justify-between text-[10px] text-slate-400 mb-0.5">
                 <span
                   className={`font-bold ${
-                    isSystem ? 'text-blue-300' : 'text-amber-400'
+                    isSystem
+                      ? 'text-blue-300'
+                      : isMe
+                      ? 'text-emerald-400'
+                      : 'text-amber-400'
                   }`}
                 >
-                  {m.sender_name}
+                  {displaySender}
                 </span>
                 <span className="font-mono text-slate-500">{timeStr}</span>
               </div>

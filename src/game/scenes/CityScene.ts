@@ -743,7 +743,8 @@ export class CityScene extends Phaser.Scene {
     this.player.setOffset(6, 12)
     this.player.setDepth(spawnY)
 
-    this.playerNameText = this.add.text(spawnX, spawnY - 26, 'Kamu (Warga)', {
+    const currentUsername = useCitizenStore.getState().profile?.username || 'warga'
+    this.playerNameText = this.add.text(spawnX, spawnY - 26, `${currentUsername} (Kamu)`, {
       font: 'bold 11px monospace',
       color: '#ffffff',
       backgroundColor: 'rgba(15, 23, 42, 0.75)',
@@ -973,9 +974,12 @@ export class CityScene extends Phaser.Scene {
   }
 
   public updatePlayerSpritesheet() {
+    const profile = useCitizenStore.getState().profile
+    if (this.playerNameText && profile?.username) {
+      this.playerNameText.setText(`${profile.username} (Kamu)`)
+    }
     if (!this.textures.exists('character_spritesheet')) return
     const sheet = this.textures.get('character_spritesheet') as Phaser.Textures.CanvasTexture
-    const profile = useCitizenStore.getState().profile
     const colors = resolveAvatarColors(profile?.avatarConfig)
     drawCharacterSpritesheetCanvas(sheet, colors)
   }
