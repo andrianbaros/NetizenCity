@@ -6,6 +6,7 @@
 import fs from 'fs'
 import path from 'path'
 import { generateKTNNumber } from '@/lib/utils/ktn'
+import type { AvatarConfig } from '@/types/citizen'
 
 const DB_PATH = path.join(process.cwd(), 'data', 'local_db.json')
 
@@ -18,15 +19,7 @@ export interface LocalDBSchema {
     username: string
     display_name: string
     ktn_number: string
-    avatar_config: {
-      skinTone: string
-      hairStyle: string
-      hairColor: string
-      shirtColor: string
-      pantsColor: string
-      shoesColor: string
-      expression: string
-    }
+    avatar_config: AvatarConfig
     level: number
     xp: number
     job: string | null
@@ -79,12 +72,13 @@ export interface LocalDBSchema {
     id: string
     name: string
     description: string
-    category: 'tops' | 'bottoms' | 'shoes' | 'hairstyles' | 'accessories'
+    category: 'tops' | 'bottoms' | 'shoes' | 'hairstyles' | 'accessories' | 'back'
     price: number
     rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
     color: string
     sprite_key: string
     is_available: boolean
+    pattern?: string
   }>
   inventory: Array<{
     id: string
@@ -231,16 +225,415 @@ function getInitialSeedData(): LocalDBSchema {
       },
     ],
     items: [
-      { id: 'top_basic_blue', name: 'Kaos Biru Komunitas', description: 'Kaos kasual resmi Netizen City', category: 'tops', price: 0, rarity: 'common', color: '#2563eb', sprite_key: 'top_blue', is_available: true },
-      { id: 'top_hoodie_red', name: 'Hoodie Merah Netizen', description: 'Hoodie hangat berbahan tebal', category: 'tops', price: 150, rarity: 'uncommon', color: '#dc2626', sprite_key: 'top_red', is_available: true },
-      { id: 'top_jacket_leather', name: 'Jaket Kulit Downtown', description: 'Jaket kulit stylish khas pusat kota', category: 'tops', price: 450, rarity: 'rare', color: '#334155', sprite_key: 'top_black', is_available: true },
-      { id: 'top_batik_gold', name: 'Kemeja Batik Emas', description: 'Batik modern untuk acara formal balai kota', category: 'tops', price: 900, rarity: 'epic', color: '#f59e0b', sprite_key: 'top_gold', is_available: true },
-      { id: 'bottom_denim_sky', name: 'Jeans Denim Vintage', description: 'Celana denim tahan lama', category: 'bottoms', price: 120, rarity: 'common', color: '#0284c7', sprite_key: 'bottom_blue', is_available: true },
-      { id: 'bottom_cargo_black', name: 'Celana Kargo Taktis', description: 'Banyak kantong untuk kurir pengiriman', category: 'bottoms', price: 200, rarity: 'uncommon', color: '#0f172a', sprite_key: 'bottom_dark', is_available: true },
-      { id: 'shoes_sneakers_gold', name: 'Sneakers Emas Edisi Terbatas', description: 'Sepatu emas berkilau hadiah komunitas', category: 'shoes', price: 800, rarity: 'epic', color: '#f59e0b', sprite_key: 'shoes_gold', is_available: true },
-      { id: 'shoes_sneakers_white', name: 'Sneakers Putih Kasual', description: 'Sneakers ringan nyaman untuk jalan santai', category: 'shoes', price: 80, rarity: 'common', color: '#f1f5f9', sprite_key: 'shoes_white', is_available: true },
-      { id: 'hair_punk_cyan', name: 'Gaya Rambut Cyberpunk', description: 'Potongan rambut gaya masa depan', category: 'hairstyles', price: 350, rarity: 'rare', color: '#06b6d4', sprite_key: 'hair_cyan', is_available: true },
-    ],
+      {
+            "id": "top_basic_blue",
+            "name": "Kaos Biru Komunitas",
+            "description": "Kaos kasual resmi Netizen City",
+            "category": "tops",
+            "price": 0,
+            "rarity": "common",
+            "color": "#2563eb",
+            "sprite_key": "top_blue",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "top_jersey_garuda",
+            "name": "Jersey Timnas Garuda Netizen",
+            "description": "Jersey merah menyala dengan lambang perisai emas & nomor 10 di punggung",
+            "category": "tops",
+            "price": 250,
+            "rarity": "rare",
+            "color": "#dc2626",
+            "sprite_key": "top_jersey",
+            "is_available": true,
+            "pattern": "jersey"
+      },
+      {
+            "id": "top_bomber_ojol",
+            "name": "Jaket Bomber Ojol Hijau Neon",
+            "description": "Jaket driver ikonik kota virtual dengan strip reflektif silver menyala",
+            "category": "tops",
+            "price": 180,
+            "rarity": "uncommon",
+            "color": "#16a34a",
+            "sprite_key": "top_ojol",
+            "is_available": true,
+            "pattern": "ojol"
+      },
+      {
+            "id": "top_cyber_samurai",
+            "name": "Jaket Techwear Street Samurai",
+            "description": "Jaket futuristik kerah tinggi berhiaskan garis neon cyan menyala",
+            "category": "tops",
+            "price": 500,
+            "rarity": "epic",
+            "color": "#0f172a",
+            "sprite_key": "top_cyber",
+            "is_available": true,
+            "pattern": "cyber"
+      },
+      {
+            "id": "top_batik_keraton",
+            "name": "Batik Keraton Sutra Emas",
+            "description": "Batik motif parang emas megah untuk acara kenegaraan Balai Kota",
+            "category": "tops",
+            "price": 650,
+            "rarity": "epic",
+            "color": "#f59e0b",
+            "sprite_key": "top_batik",
+            "is_available": true,
+            "pattern": "batik"
+      },
+      {
+            "id": "top_armor_ksatria",
+            "name": "Baju Zirah Ksatria Pixel",
+            "description": "Armor pelat baja perak bertatahkan kristal safir biru di dada",
+            "category": "tops",
+            "price": 850,
+            "rarity": "legendary",
+            "color": "#64748b",
+            "sprite_key": "top_armor",
+            "is_available": true,
+            "pattern": "armor"
+      },
+      {
+            "id": "top_tuxedo_walikota",
+            "name": "Jas Tuxedo Eksekutif Walikota",
+            "description": "Jas hitam formal dengan dasi kupu-kupu satin emas khas walikota",
+            "category": "tops",
+            "price": 1000,
+            "rarity": "legendary",
+            "color": "#020617",
+            "sprite_key": "top_tuxedo",
+            "is_available": true,
+            "pattern": "tuxedo"
+      },
+      {
+            "id": "top_pantai_hawaii",
+            "name": "Kemeja Pantai Tropis Kelapa",
+            "description": "Kemeja santai warna toska cerah dengan motif daun kelapa",
+            "category": "tops",
+            "price": 140,
+            "rarity": "common",
+            "color": "#06b6d4",
+            "sprite_key": "top_hawaii",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "top_hoodie_red",
+            "name": "Hoodie Merah Netizen",
+            "description": "Hoodie hangat berbahan tebal warna merah cerah",
+            "category": "tops",
+            "price": 150,
+            "rarity": "uncommon",
+            "color": "#dc2626",
+            "sprite_key": "top_red",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "bottom_denim_sky",
+            "name": "Jeans Denim Vintage",
+            "description": "Celana denim tahan lama khas perkotaan",
+            "category": "bottoms",
+            "price": 120,
+            "rarity": "common",
+            "color": "#0284c7",
+            "sprite_key": "bottom_blue",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "bottom_sarung_ronda",
+            "name": "Sarung Batik Kotak Warga",
+            "description": "Sarung santai motif kotak-kotak khas warga ronda dan nongkrong malam",
+            "category": "bottoms",
+            "price": 90,
+            "rarity": "common",
+            "color": "#047857",
+            "sprite_key": "bottom_sarung",
+            "is_available": true,
+            "pattern": "sarung"
+      },
+      {
+            "id": "bottom_techwear_jogger",
+            "name": "Jogger Techwear Tali Taktis",
+            "description": "Celana jogger hitam pekat dengan sabuk tali kargo gantung futuristik",
+            "category": "bottoms",
+            "price": 280,
+            "rarity": "rare",
+            "color": "#0f172a",
+            "sprite_key": "bottom_techwear",
+            "is_available": true,
+            "pattern": "techwear"
+      },
+      {
+            "id": "bottom_rok_tartan",
+            "name": "Rok Mini Tartan Harajuku",
+            "description": "Rok lipit kotak-kotak merah gaya anime Harajuku Jepang",
+            "category": "bottoms",
+            "price": 260,
+            "rarity": "rare",
+            "color": "#dc2626",
+            "sprite_key": "bottom_skirt",
+            "is_available": true,
+            "pattern": "skirt"
+      },
+      {
+            "id": "bottom_cargo_black",
+            "name": "Celana Kargo Taktis",
+            "description": "Banyak kantong fungsional untuk kurir paket logistik",
+            "category": "bottoms",
+            "price": 200,
+            "rarity": "uncommon",
+            "color": "#1e293b",
+            "sprite_key": "bottom_cargo",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "bottom_loreng_militer",
+            "name": "Celana Kargo Loreng Gurun",
+            "description": "Celana militer kamuflase tebal untuk petualang sejati",
+            "category": "bottoms",
+            "price": 310,
+            "rarity": "rare",
+            "color": "#78350f",
+            "sprite_key": "bottom_camo",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "shoes_sneakers_white",
+            "name": "Sneakers Putih Kasual",
+            "description": "Sneakers ringan nyaman untuk jalan santai di alun-alun",
+            "category": "shoes",
+            "price": 80,
+            "rarity": "common",
+            "color": "#f1f5f9",
+            "sprite_key": "shoes_white",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "shoes_sandal_swallow",
+            "name": "Sandal Jepit Karet Hijau",
+            "description": "Sandal jepit legendaris anti-hilang paling santai sedunia",
+            "category": "shoes",
+            "price": 50,
+            "rarity": "common",
+            "color": "#10b981",
+            "sprite_key": "shoes_swallow",
+            "is_available": true,
+            "pattern": "swallow"
+      },
+      {
+            "id": "shoes_roller_glider",
+            "name": "Sepatu Roda Glider Neon",
+            "description": "Sepatu roller berseluncur cepat dengan roda cyan bercahaya",
+            "category": "shoes",
+            "price": 520,
+            "rarity": "epic",
+            "color": "#06b6d4",
+            "sprite_key": "shoes_roller",
+            "is_available": true,
+            "pattern": "roller"
+      },
+      {
+            "id": "shoes_sneakers_air",
+            "name": "Sneakers Air Netizen High-Top",
+            "description": "Sneakers basket hypebeast merah-putih edisi komunitas",
+            "category": "shoes",
+            "price": 480,
+            "rarity": "rare",
+            "color": "#dc2626",
+            "sprite_key": "shoes_air",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "shoes_boots_tempur",
+            "name": "Sepatu Boots Tempur Obsidian",
+            "description": "Boots kulit baja hitam tahan banting anti-lumpur",
+            "category": "shoes",
+            "price": 380,
+            "rarity": "rare",
+            "color": "#0f172a",
+            "sprite_key": "shoes_boots",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "shoes_sneakers_gold",
+            "name": "Sneakers Emas Edisi Komunitas",
+            "description": "Sepatu emas berkilau hadiah kehormatan warga berprestasi",
+            "category": "shoes",
+            "price": 800,
+            "rarity": "legendary",
+            "color": "#f59e0b",
+            "sprite_key": "shoes_gold",
+            "is_available": true,
+            "pattern": "plain"
+      },
+      {
+            "id": "acc_cat_headset",
+            "name": "Headset Mecha Kucing RGB",
+            "description": "Headset gaming dengan telinga kucing menyala warna magenta neon",
+            "category": "accessories",
+            "price": 400,
+            "rarity": "epic",
+            "color": "#ec4899",
+            "sprite_key": "acc_cat",
+            "is_available": true,
+            "pattern": "cat_ears"
+      },
+      {
+            "id": "acc_crown_gold",
+            "name": "Mahkota Emas Raja Netizen",
+            "description": "Mahkota emas murni bertabur batu permata rubi merah mewah",
+            "category": "accessories",
+            "price": 1200,
+            "rarity": "legendary",
+            "color": "#f59e0b",
+            "sprite_key": "acc_crown",
+            "is_available": true,
+            "pattern": "crown"
+      },
+      {
+            "id": "acc_thug_glasses",
+            "name": "Kacamata Hitam Pixel 8-Bit",
+            "description": "Kacamata hitam pixel-art ikonik meme santai",
+            "category": "accessories",
+            "price": 220,
+            "rarity": "rare",
+            "color": "#000000",
+            "sprite_key": "acc_glasses",
+            "is_available": true,
+            "pattern": "glasses"
+      },
+      {
+            "id": "acc_straw_hat",
+            "name": "Topi Jerami Petualang Kota",
+            "description": "Topi jerami pita merah gaya kapten bajak laut penjelajah",
+            "category": "accessories",
+            "price": 300,
+            "rarity": "uncommon",
+            "color": "#fde047",
+            "sprite_key": "acc_straw",
+            "is_available": true,
+            "pattern": "straw_hat"
+      },
+      {
+            "id": "acc_beanie_lofi",
+            "name": "Topi Beanie Rapper Lo-Fi",
+            "description": "Beanie rajut mustard kekinian untuk nongkrong malam",
+            "category": "accessories",
+            "price": 160,
+            "rarity": "common",
+            "color": "#f59e0b",
+            "sprite_key": "acc_beanie",
+            "is_available": true,
+            "pattern": "beanie"
+      },
+      {
+            "id": "acc_cyber_visor",
+            "name": "Visor Neon Cyberpunk 2077",
+            "description": "Kacamata visor strip neon biru bersinar khas masa depan",
+            "category": "accessories",
+            "price": 450,
+            "rarity": "epic",
+            "color": "#06b6d4",
+            "sprite_key": "acc_visor",
+            "is_available": true,
+            "pattern": "cyber_visor"
+      },
+      {
+            "id": "acc_halo_malaikat",
+            "name": "Halo Cincin Cahaya Malaikat",
+            "description": "Lingkaran suci melayang berkilau emas di atas kepala",
+            "category": "accessories",
+            "price": 950,
+            "rarity": "legendary",
+            "color": "#fef08a",
+            "sprite_key": "acc_halo",
+            "is_available": true,
+            "pattern": "halo"
+      },
+      {
+            "id": "hair_spiky_anime",
+            "name": "Rambut Super Saiyan Emas",
+            "description": "Rambut jabrik pirang gaya anime legendaris berkarakter kuat",
+            "category": "hairstyles",
+            "price": 350,
+            "rarity": "rare",
+            "color": "#f59e0b",
+            "sprite_key": "hair_spiky",
+            "is_available": true,
+            "pattern": "spiky"
+      },
+      {
+            "id": "hair_punk_cyan",
+            "name": "Mohawk Cyberpunk Neon",
+            "description": "Gaya mohawk biru cyan menyala terang di malam hari",
+            "category": "hairstyles",
+            "price": 300,
+            "rarity": "rare",
+            "color": "#06b6d4",
+            "sprite_key": "hair_cyan",
+            "is_available": true,
+            "pattern": "punk"
+      },
+      {
+            "id": "hair_afro_disco",
+            "name": "Afro Klasik Kribo Funk",
+            "description": "Rambut afro mekar bulat tebal khas funk retro tahun 80-an",
+            "category": "hairstyles",
+            "price": 280,
+            "rarity": "uncommon",
+            "color": "#334155",
+            "sprite_key": "hair_afro",
+            "is_available": true,
+            "pattern": "afro"
+      },
+      {
+            "id": "hair_long_silver",
+            "name": "Rambut Panjang Lurus Silver",
+            "description": "Rambut panjang perak anggun berkilau jatuh melewati bahu",
+            "category": "hairstyles",
+            "price": 380,
+            "rarity": "epic",
+            "color": "#e2e8f0",
+            "sprite_key": "hair_long",
+            "is_available": true,
+            "pattern": "long"
+      },
+      {
+            "id": "back_sayap_malaikat",
+            "name": "Sayap Malaikat Pixel Putih",
+            "description": "Sepasang sayap bulu suci yang mengepak anggun di punggungmu",
+            "category": "back",
+            "price": 1500,
+            "rarity": "legendary",
+            "color": "#ffffff",
+            "sprite_key": "back_wings",
+            "is_available": true,
+            "pattern": "wings"
+      },
+      {
+            "id": "back_tas_astronaut",
+            "name": "Ransel Kapsul Kucing Angkasa",
+            "description": "Tas ransel futuristik dengan kubah kaca berisi kucing oranye lucu",
+            "category": "back",
+            "price": 600,
+            "rarity": "epic",
+            "color": "#38bdf8",
+            "sprite_key": "back_cat",
+            "is_available": true,
+            "pattern": "astronaut"
+      }
+],
     inventory: [
       { id: 'inv-01', citizen_id: defaultCitizenId, item_id: 'top_basic_blue', is_equipped: true, acquired_at: new Date().toISOString() },
       { id: 'inv-02', citizen_id: defaultCitizenId, item_id: 'bottom_denim_sky', is_equipped: true, acquired_at: new Date().toISOString() },

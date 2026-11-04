@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // NETIZENCITY - Preload & Procedural Asset Generation Scene
 // ============================================================
 
@@ -601,74 +601,51 @@ export class PreloadScene extends Phaser.Scene {
       trash.refresh()
     }
 
-    // 8. Citizen NPC Spritesheet (Red shirt: 96x144)
-    this.createCustomCharSheet('npc_spritesheet_red', '#dc2626')
-    // 9. Citizen NPC Spritesheet (Green shirt: 96x144)
-    this.createCustomCharSheet('npc_spritesheet_green', '#16a34a')
+    // 8. Citizen NPC Spritesheet (Red shirt - Siti_Netizen with Straw Hat & Long Hair)
+    this.createCustomCharSheet('npc_spritesheet_red', {
+      shirt: '#dc2626',
+      hair: '#f59e0b',
+      hairStyle: 'long',
+      outfitPattern: 'plain',
+      accessory: 'straw_hat',
+    })
+    // 9. Citizen NPC Spritesheet (Green shirt - Pak_RT_Budi with Ojol Reflective Jacket)
+    this.createCustomCharSheet('npc_spritesheet_green', {
+      shirt: '#16a34a',
+      hair: '#0f172a',
+      hairStyle: 'short',
+      outfitPattern: 'ojol',
+      accessory: null,
+    })
   }
 
-  private createCustomCharSheet(key: string, shirtColor: string) {
+  private createCustomCharSheet(
+    key: string,
+    colors: {
+      skin?: string
+      hair?: string
+      shirt?: string
+      pants?: string
+      shoes?: string
+      hairStyle?: string
+      outfitPattern?: string
+      accessory?: string | null
+      backpack?: string | null
+    }
+  ) {
     const charSheet = this.textures.createCanvas(key, 96, 144)
     if (charSheet) {
-      const ctx = charSheet.getContext()
-      const colors = {
-        skin: '#f5d0b0',
-        hair: '#78350f',
-        shirt: shirtColor,
-        pants: '#334155',
-        shoes: '#0f172a',
-      }
-
-      for (let row = 0; row < 4; row++) {
-        for (let col = 0; col < 3; col++) {
-          const ox = col * 32
-          const oy = row * 36
-          const legOffset = col === 1 ? -2 : col === 2 ? 2 : 0
-
-          ctx.fillStyle = 'rgba(0,0,0,0.3)'
-          ctx.beginPath()
-          ctx.ellipse(ox + 16, oy + 34, 8, 3, 0, 0, Math.PI * 2)
-          ctx.fill()
-
-          if (row === 3) {
-            ctx.fillStyle = colors.hair
-            ctx.fillRect(ox + 11, oy + 4, 10, 10)
-          }
-
-          ctx.fillStyle = colors.skin
-          ctx.fillRect(ox + 11, oy + 6, 10, 10)
-
-          if (row === 0) {
-            ctx.fillStyle = colors.hair
-            ctx.fillRect(ox + 10, oy + 3, 12, 4)
-            ctx.fillStyle = '#000000'
-            ctx.fillRect(ox + 13, oy + 10, 2, 2)
-            ctx.fillRect(ox + 17, oy + 10, 2, 2)
-          } else if (row === 1) {
-            ctx.fillStyle = colors.hair
-            ctx.fillRect(ox + 10, oy + 3, 11, 4)
-            ctx.fillStyle = '#000000'
-            ctx.fillRect(ox + 12, oy + 10, 2, 2)
-          } else if (row === 2) {
-            ctx.fillStyle = colors.hair
-            ctx.fillRect(ox + 11, oy + 3, 11, 4)
-            ctx.fillStyle = '#000000'
-            ctx.fillRect(ox + 18, oy + 10, 2, 2)
-          }
-
-          ctx.fillStyle = colors.shirt
-          ctx.fillRect(ox + 10, oy + 16, 12, 10)
-
-          ctx.fillStyle = colors.pants
-          ctx.fillRect(ox + 11, oy + 26, 4, 6 + legOffset)
-          ctx.fillRect(ox + 17, oy + 26, 4, 6 - legOffset)
-
-          ctx.fillStyle = colors.shoes
-          ctx.fillRect(ox + 10, oy + 31 + legOffset, 5, 3)
-          ctx.fillRect(ox + 17, oy + 31 - legOffset, 5, 3)
-        }
-      }
-      charSheet.refresh()
+      drawCharacterSpritesheetCanvas(charSheet, {
+        skin: colors.skin || '#f5d0b0',
+        hair: colors.hair || '#78350f',
+        shirt: colors.shirt || '#2563eb',
+        pants: colors.pants || '#334155',
+        shoes: colors.shoes || '#0f172a',
+        hairStyle: colors.hairStyle || 'short',
+        outfitPattern: colors.outfitPattern || 'plain',
+        accessory: colors.accessory || null,
+        backpack: colors.backpack || null,
+      })
     }
   }
 

@@ -18,6 +18,10 @@ export interface AvatarConfig {
     accessory: string | null
   }
   expression: string
+  outfitPattern?: string
+  accessory?: string | null
+  headwear?: string | null
+  backpack?: string | null
 }
 
 /** KTN (Kartu Tanda Netizen) number */
