@@ -85,13 +85,25 @@
     {
       "id": "w-c-rewlc5s",
       "citizen_id": "c-rewlc5s",
-      "balance": 105,
-      "total_earned": 725,
+      "balance": 99999,
+      "total_earned": 99999,
       "total_spent": 620,
-      "updated_at": "2026-11-04T03:46:16.807Z"
+      "updated_at": "2026-11-04T03:50:03.278Z"
     }
   ],
   "transactions": [
+    {
+      "id": "tx-gqf7plm",
+      "citizen_id": "c-rewlc5s",
+      "type": "reward",
+      "amount": 99894,
+      "previous_balance": 105,
+      "new_balance": 99999,
+      "description": "Grant saldo testing developer",
+      "reference_type": "developer_grant",
+      "reference_id": null,
+      "created_at": "2026-11-04T03:50:03.279Z"
+    },
     {
       "id": "tx-wmlgngk",
       "citizen_id": "c-rewlc5s",
