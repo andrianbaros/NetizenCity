@@ -6,6 +6,10 @@ import * as Phaser from 'phaser'
 import { useGameStore } from '@/lib/stores/useGameStore'
 import { useUIStore } from '@/lib/stores/useUIStore'
 import { useCitizenStore } from '@/lib/stores/useCitizenStore'
+import {
+  resolveAvatarColors,
+  drawCharacterSpritesheetCanvas,
+} from '@/game/utils/characterRenderer'
 
 export interface BuildingInteractiveData {
   id: string
@@ -99,6 +103,7 @@ export class CityScene extends Phaser.Scene {
 
     // 2. Spawn Player first (Central Alun-Alun)
     this.createPlayer(1600, 1200)
+    this.updatePlayerSpritesheet()
 
     // 3. Buildings with collision group
     this.buildingsGroup = this.physics.add.staticGroup()
@@ -961,6 +966,17 @@ export class CityScene extends Phaser.Scene {
       window.addEventListener('toggle-day-night', () => {
         this.toggleDayNight()
       })
+      window.addEventListener('avatar-updated', () => {
+        this.updatePlayerSpritesheet()
+      })
     }
+  }
+
+  public updatePlayerSpritesheet() {
+    if (!this.textures.exists('character_spritesheet')) return
+    const sheet = this.textures.get('character_spritesheet') as Phaser.Textures.CanvasTexture
+    const profile = useCitizenStore.getState().profile
+    const colors = resolveAvatarColors(profile?.avatarConfig)
+    drawCharacterSpritesheetCanvas(sheet, colors)
   }
 }

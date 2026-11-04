@@ -28,7 +28,7 @@ export async function GET() {
       source: igStatus.source,
       last_sync: igStatus.lastSyncAt,
       lastUpdated: igStatus.lastSyncAt,
-      isApiConnected: igStatus.isConnected,
+      isApiConnected: igStatus.isConfigured,
     }
 
     return NextResponse.json(payload)

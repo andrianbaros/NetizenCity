@@ -1,6 +1,6 @@
 // ============================================================
-// NETIZENCITY - Mall Modal (Full Persistence & Equipping)
-// Connects to /api/mall and updates localDb & Avatar colors
+// NETIZENCITY - Mall Modal (Full Persistence & Real-Time Equipping)
+// Connects to /api/mall, updates localDb & Avatar colors live
 // ============================================================
 
 'use client'
@@ -13,12 +13,11 @@ import {
   Sparkles,
   Loader2,
   Shirt,
-  Scissors,
+  User,
   CheckCircle2,
 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
 import { useUIStore } from '@/lib/stores/useUIStore'
 import { useCitizenStore } from '@/lib/stores/useCitizenStore'
 import { formatCoins } from '@/lib/utils/formatting'
@@ -47,7 +46,6 @@ export default function MallModal() {
   const [items, setItems] = useState<ShopItem[]>([])
   const [ownedIds, setOwnedIds] = useState<string[]>([])
   const [activeCategory, setActiveCategory] = useState<string>('all')
-  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isPurchasing, setIsPurchasing] = useState(false)
 
@@ -91,7 +89,7 @@ export default function MallModal() {
     {
       id: 'bottom_denim_sky',
       name: 'Jeans Denim Vintage',
-      description: 'Celana denim tahan lama',
+      description: 'Celana denim tahan lama khas perkotaan',
       category: 'bottoms',
       price: 120,
       rarity: 'common',
@@ -173,6 +171,38 @@ export default function MallModal() {
 
   const currentCoins = wallet?.balance ?? 500
 
+  // Resolve current avatar colors
+  const currentShirt =
+    profile?.avatarConfig?.shirtColor ||
+    profile?.avatarConfig?.outfit?.top ||
+    '#2563eb'
+  const currentPants =
+    profile?.avatarConfig?.pantsColor ||
+    profile?.avatarConfig?.outfit?.bottom ||
+    '#1e293b'
+  const currentShoes =
+    profile?.avatarConfig?.shoesColor ||
+    profile?.avatarConfig?.outfit?.shoes ||
+    '#f1f5f9'
+  const currentHair = profile?.avatarConfig?.hairColor || '#1e293b'
+  const currentSkin = profile?.avatarConfig?.skinTone || '#f5d0b0'
+
+  const checkIsEquipped = (item: ShopItem) => {
+    if (item.category === 'tops') {
+      return currentShirt.toLowerCase() === item.color.toLowerCase()
+    }
+    if (item.category === 'bottoms') {
+      return currentPants.toLowerCase() === item.color.toLowerCase()
+    }
+    if (item.category === 'shoes') {
+      return currentShoes.toLowerCase() === item.color.toLowerCase()
+    }
+    if (item.category === 'hairstyles') {
+      return currentHair.toLowerCase() === item.color.toLowerCase()
+    }
+    return false
+  }
+
   const handlePurchase = async (item: ShopItem) => {
     if (ownedIds.includes(item.id)) return
     if (currentCoins < item.price) {
@@ -201,7 +231,7 @@ export default function MallModal() {
 
         addNotification({
           title: 'Pembelian Berhasil! 🛍️',
-          message: `${item.name} telah disimpan ke lemari pakaianmu.`,
+          message: `${item.name} telah disimpan ke lemari pakaianmu. Klik "Pakai" untuk mengenakannya!`,
           type: 'success',
         })
       } else {
@@ -227,12 +257,15 @@ export default function MallModal() {
     }
   }
 
-  const handleEquip = (item: ShopItem) => {
+  const handleEquip = async (item: ShopItem) => {
     const curAvatar = profile?.avatarConfig || {
       skinTone: '#f5d0b0',
       hairStyle: 'short',
       hairColor: '#1e293b',
       eyeColor: '#000000',
+      shirtColor: '#2563eb',
+      pantsColor: '#1e293b',
+      shoesColor: '#f1f5f9',
       outfit: {
         top: '#2563eb',
         bottom: '#1e293b',
@@ -242,15 +275,21 @@ export default function MallModal() {
       expression: 'happy',
     }
 
-    const updatedOutfit = { ...curAvatar.outfit }
-    let hairColor = curAvatar.hairColor
+    const updatedOutfit = { ...(curAvatar.outfit || {}) }
+    let hairColor = curAvatar.hairColor || '#1e293b'
+    let shirtColor = curAvatar.shirtColor || updatedOutfit.top || '#2563eb'
+    let pantsColor = curAvatar.pantsColor || updatedOutfit.bottom || '#1e293b'
+    let shoesColor = curAvatar.shoesColor || updatedOutfit.shoes || '#f1f5f9'
 
     if (item.category === 'tops') {
       updatedOutfit.top = item.color
+      shirtColor = item.color
     } else if (item.category === 'bottoms') {
       updatedOutfit.bottom = item.color
+      pantsColor = item.color
     } else if (item.category === 'shoes') {
       updatedOutfit.shoes = item.color
+      shoesColor = item.color
     } else if (item.category === 'hairstyles') {
       hairColor = item.color
     }
@@ -258,14 +297,41 @@ export default function MallModal() {
     const updatedAvatar = {
       ...curAvatar,
       hairColor,
-      outfit: updatedOutfit,
+      shirtColor,
+      pantsColor,
+      shoesColor,
+      outfit: {
+        top: shirtColor,
+        bottom: pantsColor,
+        shoes: shoesColor,
+        accessory: curAvatar.outfit?.accessory ?? null,
+      },
     }
 
+    // 1. Update Zustand client store
     updateAvatar(updatedAvatar)
+
+    // 2. Dispatch custom event to Phaser CityScene so player sprite immediately changes appearance
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('avatar-updated', { detail: updatedAvatar })
+      )
+    }
+
+    // 3. Persist to server /api/citizens/avatar
+    try {
+      await fetch('/api/citizens/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarConfig: updatedAvatar, itemId: item.id }),
+      })
+    } catch {
+      // ignore
+    }
 
     addNotification({
       title: 'Pakaian Dipasang! ✨',
-      message: `Karaktermu sekarang mengenakan ${item.name}.`,
+      message: `Karaktermu sekarang mengenakan ${item.name}!`,
       type: 'success',
     })
   }
@@ -289,17 +355,50 @@ export default function MallModal() {
   return (
     <Modal isOpen={isOpen} onClose={closeModal} title="MALL BUSANA NETIZEN" maxWidth="xl">
       <div className="space-y-5">
-        {/* Header & Wallet Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
-          <div>
-            <span className="text-xs font-semibold text-slate-300">
-              Koleksi Busana & Kustomisasi Warga
-            </span>
-            <p className="text-[11px] text-slate-400">
-              Beli dan kenakan pakaian favorit untuk mengubah penampilan karaktermu!
-            </p>
+        {/* Header & Wallet Banner with Live Character Preview */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
+          {/* Live Mini Avatar Preview */}
+          <div className="flex items-center space-x-3.5">
+            <div className="w-14 h-16 rounded-xl bg-slate-900 border border-slate-700 p-1 flex flex-col items-center justify-center shadow-inner relative overflow-hidden">
+              {/* Hair */}
+              <div
+                className="w-7 h-2 rounded-t-md -mb-0.5 z-10 transition-colors duration-300"
+                style={{ backgroundColor: currentHair }}
+              />
+              {/* Face */}
+              <div
+                className="w-6 h-6 rounded-full mb-0.5 flex items-center justify-center border border-black/20 transition-colors duration-300"
+                style={{ backgroundColor: currentSkin }}
+              >
+                <div className="flex space-x-1">
+                  <div className="w-0.5 h-0.5 bg-black rounded-full" />
+                  <div className="w-0.5 h-0.5 bg-black rounded-full" />
+                </div>
+              </div>
+              {/* Shirt */}
+              <div
+                className="w-8 h-5 rounded-t-sm flex items-center justify-center text-[6px] text-white font-bold transition-colors duration-300"
+                style={{ backgroundColor: currentShirt }}
+              >
+                NC
+              </div>
+              {/* Pants */}
+              <div
+                className="w-6 h-2 rounded-b-sm transition-colors duration-300"
+                style={{ backgroundColor: currentPants }}
+              />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-white block">
+                Penampilan Karaktermu
+              </span>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Karakter di dalam game langsung mengenakan warna busana ini secara live.
+              </p>
+            </div>
           </div>
-          <div className="flex items-center space-x-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800 self-start sm:self-auto">
+
+          <div className="flex items-center space-x-2 bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-800 self-end sm:self-auto">
             <Coins className="w-4 h-4 text-amber-400" />
             <span className="text-xs font-extrabold text-amber-300 font-mono">
               {formatCoins(currentCoins)}
@@ -329,7 +428,7 @@ export default function MallModal() {
         {isLoading && (
           <div className="flex items-center justify-center py-10 text-slate-400 text-xs">
             <Loader2 className="w-5 h-5 animate-spin mr-2 text-blue-400" />
-            <span>Memuat katalog mall kota...</span>
+            <span>Memuat katalog busana kota...</span>
           </div>
         )}
 
@@ -338,13 +437,16 @@ export default function MallModal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[50vh] overflow-y-auto pr-1">
             {filteredItems.map((item) => {
               const isOwned = ownedIds.includes(item.id) || item.price === 0
+              const isEquipped = checkIsEquipped(item)
               const canAfford = currentCoins >= item.price
 
               return (
                 <div
                   key={item.id}
                   className={`p-3.5 rounded-2xl border flex flex-col justify-between transition-all ${
-                    isOwned
+                    isEquipped
+                      ? 'bg-blue-950/40 border-blue-500 shadow-md ring-1 ring-blue-500/40'
+                      : isOwned
                       ? 'bg-slate-950/70 border-emerald-500/30'
                       : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
                   }`}
@@ -388,13 +490,18 @@ export default function MallModal() {
                       </span>
                     </div>
 
-                    {isOwned ? (
+                    {isEquipped ? (
+                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/40 flex items-center space-x-1">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Sedang Dipakai</span>
+                      </span>
+                    ) : isOwned ? (
                       <button
                         type="button"
                         onClick={() => handleEquip(item)}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white text-[11px] font-bold border border-emerald-500/40 transition-colors flex items-center space-x-1 cursor-pointer"
+                        className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold shadow-md transition-transform active:scale-95 flex items-center space-x-1 cursor-pointer"
                       >
-                        <Check className="w-3 h-3" />
+                        <Sparkles className="w-3 h-3" />
                         <span>Pakai</span>
                       </button>
                     ) : (

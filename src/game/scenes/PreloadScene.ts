@@ -1,8 +1,13 @@
-// ============================================================
+﻿// ============================================================
 // NETIZENCITY - Preload & Procedural Asset Generation Scene
 // ============================================================
 
 import * as Phaser from 'phaser'
+import { useCitizenStore } from '@/lib/stores/useCitizenStore'
+import {
+  resolveAvatarColors,
+  drawCharacterSpritesheetCanvas,
+} from '@/game/utils/characterRenderer'
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -334,82 +339,12 @@ export class PreloadScene extends Phaser.Scene {
       airport.refresh()
     }
 
-    // 13. Dynamic Character Spritesheet (128x144, 4 directions x 3 frames = 32x36 per frame)
+    // 13. Dynamic Character Spritesheet (96x144, 4 directions x 3 frames = 32x36 per frame)
     const charSheet = this.textures.createCanvas('character_spritesheet', 96, 144)
     if (charSheet) {
-      const ctx = charSheet.getContext()
-      // Row 0: Down (frames 0, 1, 2)
-      // Row 1: Left (frames 3, 4, 5)
-      // Row 2: Right (frames 6, 7, 8)
-      // Row 3: Up (frames 9, 10, 11)
-
-      const colors = {
-        skin: '#f5d0b0',
-        hair: '#1e293b',
-        shirt: '#2563eb',
-        pants: '#1e293b',
-        shoes: '#f1f5f9',
-      }
-
-      for (let row = 0; row < 4; row++) {
-        for (let col = 0; col < 3; col++) {
-          const ox = col * 32
-          const oy = row * 36
-          const legOffset = col === 1 ? -2 : col === 2 ? 2 : 0
-
-          // Shadow
-          ctx.fillStyle = 'rgba(0,0,0,0.3)'
-          ctx.beginPath()
-          ctx.ellipse(ox + 16, oy + 34, 8, 3, 0, 0, Math.PI * 2)
-          ctx.fill()
-
-          // Hair back (if facing away)
-          if (row === 3) {
-            ctx.fillStyle = colors.hair
-            ctx.fillRect(ox + 11, oy + 4, 10, 10)
-          }
-
-          // Head
-          ctx.fillStyle = colors.skin
-          ctx.fillRect(ox + 11, oy + 6, 10, 10)
-
-          // Face details based on direction
-          if (row === 0) {
-            // Facing down
-            ctx.fillStyle = colors.hair
-            ctx.fillRect(ox + 10, oy + 3, 12, 4) // Hair top
-            ctx.fillStyle = '#000000'
-            ctx.fillRect(ox + 13, oy + 10, 2, 2) // Left eye
-            ctx.fillRect(ox + 17, oy + 10, 2, 2) // Right eye
-          } else if (row === 1) {
-            // Facing left
-            ctx.fillStyle = colors.hair
-            ctx.fillRect(ox + 10, oy + 3, 11, 4)
-            ctx.fillStyle = '#000000'
-            ctx.fillRect(ox + 12, oy + 10, 2, 2)
-          } else if (row === 2) {
-            // Facing right
-            ctx.fillStyle = colors.hair
-            ctx.fillRect(ox + 11, oy + 3, 11, 4)
-            ctx.fillStyle = '#000000'
-            ctx.fillRect(ox + 18, oy + 10, 2, 2)
-          }
-
-          // Body / Torso
-          ctx.fillStyle = colors.shirt
-          ctx.fillRect(ox + 10, oy + 16, 12, 10)
-
-          // Legs & Shoes
-          ctx.fillStyle = colors.pants
-          ctx.fillRect(ox + 11, oy + 26, 4, 6 + legOffset)
-          ctx.fillRect(ox + 17, oy + 26, 4, 6 - legOffset)
-
-          ctx.fillStyle = colors.shoes
-          ctx.fillRect(ox + 10, oy + 31 + legOffset, 5, 3)
-          ctx.fillRect(ox + 17, oy + 31 - legOffset, 5, 3)
-        }
-      }
-      charSheet.refresh()
+      const citizenProfile = useCitizenStore.getState().profile
+      const colors = resolveAvatarColors(citizenProfile?.avatarConfig)
+      drawCharacterSpritesheetCanvas(charSheet, colors)
     }
   }
 

@@ -80,6 +80,11 @@ export default function GameHUD() {
             joinedAt: citData.citizen.joined_at,
             updatedAt: citData.citizen.updated_at || citData.citizen.joined_at,
           })
+
+          // Notify Phaser to re-render character with fetched avatar config
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('avatar-updated'))
+          }
         }
         if (citData.wallet) {
           setWallet({

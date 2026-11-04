@@ -7,8 +7,11 @@ export interface AvatarConfig {
   skinTone: string
   hairStyle: string
   hairColor: string
-  eyeColor: string
-  outfit: {
+  eyeColor?: string
+  shirtColor?: string
+  pantsColor?: string
+  shoesColor?: string
+  outfit?: {
     top: string | null
     bottom: string | null
     shoes: string | null

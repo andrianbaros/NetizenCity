@@ -42,10 +42,16 @@
         "skinTone": "#f5d0b0",
         "hairStyle": "short",
         "hairColor": "#1e293b",
-        "shirtColor": "#2563eb",
+        "shirtColor": "#dc2626",
         "pantsColor": "#1e293b",
         "shoesColor": "#f1f5f9",
-        "expression": "happy"
+        "expression": "happy",
+        "outfit": {
+          "top": "#dc2626",
+          "bottom": "#1e293b",
+          "shoes": "#f1f5f9",
+          "accessory": null
+        }
       },
       "level": 1,
       "xp": 0,
@@ -58,7 +64,7 @@
       "role": "citizen",
       "onboarding_completed": true,
       "joined_at": "2026-11-03T15:44:33.670Z",
-      "updated_at": "2026-11-03T15:44:33.670Z"
+      "updated_at": "2026-11-04T03:17:13.184Z"
     }
   ],
   "wallets": [
@@ -73,13 +79,37 @@
     {
       "id": "w-c-rewlc5s",
       "citizen_id": "c-rewlc5s",
-      "balance": 500,
-      "total_earned": 500,
-      "total_spent": 0,
-      "updated_at": "2026-11-03T15:44:33.670Z"
+      "balance": 400,
+      "total_earned": 550,
+      "total_spent": 150,
+      "updated_at": "2026-11-04T03:07:05.918Z"
     }
   ],
   "transactions": [
+    {
+      "id": "tx-sxuroos",
+      "citizen_id": "c-rewlc5s",
+      "type": "spend",
+      "amount": 150,
+      "previous_balance": 550,
+      "new_balance": 400,
+      "description": "Membeli item: Hoodie Merah Netizen",
+      "reference_type": "item",
+      "reference_id": "top_hoodie_red",
+      "created_at": "2026-11-04T03:07:05.918Z"
+    },
+    {
+      "id": "tx-7mu3vrn",
+      "citizen_id": "c-rewlc5s",
+      "type": "reward",
+      "amount": 50,
+      "previous_balance": 500,
+      "new_balance": 550,
+      "description": "Hadiah Login Harian Hari ke-1",
+      "reference_type": "daily_reward",
+      "reference_id": null,
+      "created_at": "2026-11-04T03:06:58.067Z"
+    },
     {
       "id": "tx-mluap2y",
       "citizen_id": "c-netizen-01",
@@ -317,6 +347,13 @@
       "item_id": "top_hoodie_red",
       "is_equipped": false,
       "acquired_at": "2026-11-03T15:44:10.201Z"
+    },
+    {
+      "id": "inv-imdw7zw",
+      "citizen_id": "c-rewlc5s",
+      "item_id": "top_hoodie_red",
+      "is_equipped": true,
+      "acquired_at": "2026-11-04T03:07:05.918Z"
     }
   ],
   "daily_login_rewards": [
@@ -328,6 +365,15 @@
       "streak_count": 1,
       "claimed_date": "2026-11-03",
       "claimed_at": "2026-11-03T15:37:43.878Z"
+    },
+    {
+      "id": "dlr-3k8s31j",
+      "citizen_id": "c-rewlc5s",
+      "day_number": 1,
+      "reward_coins": 50,
+      "streak_count": 1,
+      "claimed_date": "2026-11-04",
+      "claimed_at": "2026-11-04T03:06:58.067Z"
     }
   ],
   "missions": [
