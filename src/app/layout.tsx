@@ -30,7 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" className={`h-full antialiased ${fredoka.variable} ${quicksand.variable}`}>
-      <body className="min-h-full font-sans bg-[#FBF7F0] text-[#3B3340] flex flex-col antialiased selection:bg-[#F4A98C]/30 selection:text-[#3B3340]">
+      <body className="h-full min-h-[100dvh] overflow-hidden font-sans bg-[#FBF7F0] text-[#3B3340] flex flex-col antialiased selection:bg-[#F4A98C]/30 selection:text-[#3B3340]">
         {children}
       </body>
     </html>

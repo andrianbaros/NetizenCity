@@ -56,6 +56,15 @@ export default function GameHUD() {
   const removeNotification = useUIStore((s) => s.removeNotification)
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isTuguMode, setIsTuguMode] = useState(false)
+
+  useEffect(() => {
+    const onMode = (e: any) => {
+      setIsTuguMode(e.detail?.mode === 'tugu')
+    }
+    window.addEventListener('tugu-mode-changed', onMode)
+    return () => window.removeEventListener('tugu-mode-changed', onMode)
+  }, [])
 
   // Fetch active citizen profile and city population on mount
   const initGameData = useCallback(async () => {
@@ -221,30 +230,30 @@ export default function GameHUD() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center space-x-2 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 sm:p-1.5 pr-2.5 sm:pr-3 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#78634B] shrink-0">
-              <User className="w-4 h-4" />
+          <div className="flex items-center space-x-1.5 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 sm:p-1.5 pr-2 sm:pr-3 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto shrink-0">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#78634B] shrink-0">
+              <User className="w-3.5 h-3.5" />
             </div>
             <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="text-xs font-heading font-bold text-[#343B35]">
+              <div className="flex items-center space-x-1 sm:space-x-1.5">
+                <span className="text-[11px] sm:text-xs font-heading font-bold text-[#343B35]">
                   Tamu
                 </span>
-                <span className="text-[9px] text-[#78634B] font-heading font-semibold bg-[#EFE9D8] px-1.5 py-0.2 rounded-md">
+                <span className="hidden sm:inline-block text-[9px] text-[#78634B] font-heading font-semibold bg-[#EFE9D8] px-1.5 py-0.2 rounded-md">
                   Belum Masuk
                 </span>
               </div>
-              <div className="flex items-center space-x-2 mt-0.5 text-[10px] font-heading font-bold">
+              <div className="flex items-center space-x-1.5 text-[10px] font-heading font-bold leading-none mt-0.5">
                 <Link
                   href="/login"
-                  className="text-[#78634B] hover:text-[#343B35] hover:underline"
+                  className="text-[#78634B] hover:text-[#343B35]"
                 >
                   Masuk
                 </Link>
                 <span className="text-[#C6BBA8]">•</span>
                 <Link
                   href="/welcome"
-                  className="text-[#668B65] hover:text-[#4F6E4E] hover:underline"
+                  className="text-[#668B65] hover:text-[#4F6E4E]"
                 >
                   Daftar
                 </Link>
@@ -253,72 +262,76 @@ export default function GameHUD() {
           </div>
         )}
 
-        {/* B. City Statistics — Top Center */}
-        {/* Desktop View (md+) */}
-        <div className="hidden md:flex items-center space-x-3 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl px-3 py-1.5 shadow-[0_3px_10px_rgba(52,59,53,0.08)] text-xs pointer-events-auto">
-          {/* 1. Official Instagram Population */}
-          <Link
-            href="/admin/instagram"
-            title="Kelola Integrasi Instagram @netizencity.id"
-            className="flex items-center space-x-1.5 group hover:opacity-80 transition-opacity"
-          >
-            <div className="w-6 h-6 rounded-md bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#78634B]">
-              <InstagramIcon className="w-3.5 h-3.5" />
-            </div>
-            <div className="leading-tight">
-              <span className="text-[9px] text-[#78634B] block font-heading font-bold uppercase">
-                Populasi
-              </span>
-              <span className="font-heading font-extrabold text-[#343B35] text-xs">
-                {formatNumber(cityStats.officialPopulation)}
-              </span>
-            </div>
-          </Link>
+        {/* B. City Statistics — Top Center (Hidden in Tugu mode to prevent overlapping with Room pills) */}
+        {!isTuguMode && (
+          <>
+            {/* Desktop View (md+) */}
+            <div className="hidden md:flex items-center space-x-3 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl px-3 py-1.5 shadow-[0_3px_10px_rgba(52,59,53,0.08)] text-xs pointer-events-auto">
+              {/* 1. Official Instagram Population */}
+              <Link
+                href="/admin/instagram"
+                title="Kelola Integrasi Instagram @netizencity.id"
+                className="flex items-center space-x-1.5 group hover:opacity-80 transition-opacity"
+              >
+                <div className="w-6 h-6 rounded-md bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#78634B]">
+                  <InstagramIcon className="w-3.5 h-3.5" />
+                </div>
+                <div className="leading-tight">
+                  <span className="text-[9px] text-[#78634B] block font-heading font-bold uppercase">
+                    Populasi
+                  </span>
+                  <span className="font-heading font-extrabold text-[#343B35] text-xs">
+                    {formatNumber(cityStats.officialPopulation)}
+                  </span>
+                </div>
+              </Link>
 
-          <div className="w-px h-5 bg-[#D8CEBE]" />
+              <div className="w-px h-5 bg-[#D8CEBE]" />
 
-          {/* 2. Registered Citizens */}
-          <div className="flex items-center space-x-1.5">
-            <div className="w-6 h-6 rounded-md bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#78634B]">
-              <Users className="w-3.5 h-3.5" />
-            </div>
-            <div className="leading-tight">
-              <span className="text-[9px] text-[#78634B] block font-heading font-bold uppercase">
-                Warga
-              </span>
-              <span className="font-heading font-extrabold text-[#343B35] text-xs">
-                {formatNumber(cityStats.registeredCitizens)}
-              </span>
-            </div>
-          </div>
+              {/* 2. Registered Citizens */}
+              <div className="flex items-center space-x-1.5">
+                <div className="w-6 h-6 rounded-md bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#78634B]">
+                  <Users className="w-3.5 h-3.5" />
+                </div>
+                <div className="leading-tight">
+                  <span className="text-[9px] text-[#78634B] block font-heading font-bold uppercase">
+                    Warga
+                  </span>
+                  <span className="font-heading font-extrabold text-[#343B35] text-xs">
+                    {formatNumber(cityStats.registeredCitizens)}
+                  </span>
+                </div>
+              </div>
 
-          <div className="w-px h-5 bg-[#D8CEBE]" />
+              <div className="w-px h-5 bg-[#D8CEBE]" />
 
-          {/* 3. Online Citizens */}
-          <div className="flex items-center space-x-1.5">
-            <div className="w-6 h-6 rounded-md bg-[#E6F0E4] border border-[#C5D8C4] flex items-center justify-center text-[#4F6E4E]">
-              <span className="w-2 h-2 rounded-full bg-[#668B65] animate-pulse" />
+              {/* 3. Online Citizens */}
+              <div className="flex items-center space-x-1.5">
+                <div className="w-6 h-6 rounded-md bg-[#E6F0E4] border border-[#C5D8C4] flex items-center justify-center text-[#4F6E4E]">
+                  <span className="w-2 h-2 rounded-full bg-[#668B65] animate-pulse" />
+                </div>
+                <div className="leading-tight">
+                  <span className="text-[9px] text-[#78634B] block font-heading font-bold uppercase">
+                    Online
+                  </span>
+                  <span className="font-heading font-extrabold text-[#668B65] text-xs">
+                    {formatNumber(cityStats.onlineNow)}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="leading-tight">
-              <span className="text-[9px] text-[#78634B] block font-heading font-bold uppercase">
-                Online
-              </span>
-              <span className="font-heading font-extrabold text-[#668B65] text-xs">
-                {formatNumber(cityStats.onlineNow)}
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Mobile View: Micro summary badge */}
-        <div className="md:hidden flex items-center space-x-1.5 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl px-2 py-1 shadow-xs text-[10px] font-heading font-bold pointer-events-auto">
-          <span className="text-[#343B35]">{formatNumber(cityStats.officialPopulation)}</span>
-          <span className="text-[#C6BBA8]">•</span>
-          <span className="text-[#668B65] flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#668B65]" />
-            {cityStats.onlineNow}
-          </span>
-        </div>
+            {/* Mobile View: Micro summary badge */}
+            <div className="md:hidden flex items-center space-x-1.5 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl px-2 py-1 shadow-xs text-[10px] font-heading font-bold pointer-events-auto">
+              <span className="text-[#343B35]">{formatNumber(cityStats.officialPopulation)}</span>
+              <span className="text-[#C6BBA8]">•</span>
+              <span className="text-[#668B65] flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#668B65]" />
+                {cityStats.onlineNow}
+              </span>
+            </div>
+          </>
+        )}
 
         {/* C. Main Action Bar — Top Right */}
         <div className="flex items-center space-x-1 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto">
@@ -539,9 +552,9 @@ export default function GameHUD() {
       {/* ============================================================ */}
       {/* BOTTOM AREA: CHAT OVERLAY (Elevated & Centered)              */}
       {/* ============================================================ */}
-      <footer className="flex items-center justify-center pointer-events-auto w-full pb-2 sm:pb-4">
+      <div className="fixed bottom-14 sm:bottom-16 left-1/2 -translate-x-1/2 z-40 pointer-events-auto flex items-center justify-center">
         <ChatPanel />
-      </footer>
+      </div>
 
       {/* MODALS RENDERED VIA PORTAL TO DOCUMENT BODY */}
       <KTNCardModal />

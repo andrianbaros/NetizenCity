@@ -409,15 +409,15 @@ export default function GameCanvas() {
       {/* ============================================================ */}
       {/* TOP CANVAS CONTROLS (Time & Camera / Exit Tugu)              */}
       {/* ============================================================ */}
-      <div className="absolute top-14 sm:top-16 left-3 sm:left-4 z-20 flex flex-col space-y-2 pointer-events-auto font-sans">
+      <div className="absolute top-[48px] sm:top-16 left-2 sm:left-4 z-20 flex flex-col space-y-2 pointer-events-auto font-sans">
         {viewMode === 'tugu' ? (
           <button
             type="button"
             onClick={handleExitTugu}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] font-semibold text-xs border border-[#D8CEBE] shadow-md transition-colors cursor-pointer"
+            className="flex items-center space-x-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] text-[#343B35] font-bold text-[11px] sm:text-xs shadow-sm transition-transform cursor-pointer"
           >
-            <Compass className="w-3.5 h-3.5 text-[#668B65]" />
-            <span>Kembali ke Orbit Kota</span>
+            <Navigation className="w-3.5 h-3.5 text-[#668B65]" />
+            <span>Kembali ke Kota</span>
           </button>
         ) : (
           <div className="flex flex-col space-y-1.5">
@@ -558,7 +558,7 @@ export default function GameCanvas() {
       {/* TUGU MULTIPLAYER ROOM STATUS & SWITCHER (Max 10 per room)     */}
       {/* ============================================================ */}
       {viewMode === 'tugu' && (
-        <div className="absolute top-14 sm:top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-2">
+        <div className="absolute top-2 sm:top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-1 sm:gap-2">
           {/* Room Switcher Pill */}
           <div className="relative">
             <button
@@ -567,14 +567,14 @@ export default function GameCanvas() {
                 setShowRoomSwitcher(!showRoomSwitcher)
                 setShowRoster(false)
               }}
-              className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-3 py-1.5 shadow-md text-xs font-semibold text-[#343B35] cursor-pointer transition-colors"
+              className="flex items-center space-x-1 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-2 sm:px-3 py-1 sm:py-1.5 shadow-sm text-[11px] sm:text-xs font-semibold text-[#343B35] cursor-pointer transition-colors"
             >
               <span className="w-2 h-2 rounded-full bg-[#668B65]" />
               <span>Ruang #{currentRoomId}</span>
-              <span className="text-[11px] px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
+              <span className="text-[10px] sm:text-[11px] px-1 sm:px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
                 {roomUserCount}/10
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#78634B]" />
+              <ChevronDown className="w-3 h-3 text-[#78634B]" />
             </button>
 
             {showRoomSwitcher && (
@@ -625,12 +625,12 @@ export default function GameCanvas() {
                 setShowRoster(!showRoster)
                 setShowRoomSwitcher(false)
               }}
-              className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-2.5 py-1.5 shadow-md text-xs font-semibold text-[#343B35] cursor-pointer transition-colors"
+              className="flex items-center space-x-1 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 shadow-sm text-[11px] sm:text-xs font-semibold text-[#343B35] cursor-pointer transition-colors"
               title="Lihat warga di sekitar"
             >
               <Users className="w-3.5 h-3.5 text-[#668B65]" />
-              <span className="hidden sm:inline">Warga di Sekitar</span>
-              <span className="text-[11px] px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
+              <span className="hidden sm:inline">Warga:</span>
+              <span className="text-[10px] sm:text-[11px] px-1 sm:px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
                 {roomPlayers.length || roomUserCount}
               </span>
             </button>

@@ -23,7 +23,7 @@ export default function CityPage() {
   }
 
   return (
-    <main className="relative w-full h-full overflow-hidden bg-[#CDE7F0]">
+    <main className="relative w-full h-[100dvh] min-h-[100dvh] overflow-hidden bg-[#CDE7F0]">
       {/* 3D Diorama Three.js Game Canvas */}
       <GameCanvas />
 
