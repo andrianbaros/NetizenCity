@@ -112,7 +112,12 @@ function makeSpeechBubbleSprite(text: string, bgColor = '#FFFDF9', textColor = '
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
-  const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const mat = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: true,
+    depthWrite: false,
+  });
   const sprite = new THREE.Sprite(mat);
   sprite.scale.set(4.0, 2.0, 1);
   return sprite;
@@ -166,7 +171,12 @@ function makeNameTagSprite(name: string, isGuest = false, isSelf = false): THREE
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
-  const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+  const mat = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: true,
+    depthWrite: false,
+  });
   const sprite = new THREE.Sprite(mat);
   sprite.scale.set(1.9, 0.44, 1);
   return sprite;
@@ -533,6 +543,7 @@ export class City3DManager {
       powerPreference: 'high-performance',
       antialias: true,
       preserveDrawingBuffer: false,
+      logarithmicDepthBuffer: true,
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.setSize(W, H);
@@ -555,8 +566,8 @@ export class City3DManager {
     this.scene.add(this.tuguWorldGroup);
     this.tuguWorldGroup.visible = false; // Initially hidden
 
-    // 3. Camera Setup
-    this.camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 3500);
+    // 3. Camera Setup (near 0.5 and far 1400 combined with logarithmic depth eliminates Z-fighting & flicker)
+    this.camera = new THREE.PerspectiveCamera(40, W / H, 0.5, 1400);
     this.updateCameraTransform();
 
     // 4. Lighting & Sky Setup
@@ -1044,26 +1055,44 @@ export class City3DManager {
 
     const plaza = new THREE.Mesh(
       new THREE.CircleGeometry(16, 64),
-      new THREE.MeshStandardMaterial({ color: '#F5EEDB', roughness: 0.85 })
+      new THREE.MeshStandardMaterial({
+        color: '#F5EEDB',
+        roughness: 0.85,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      })
     );
     plaza.rotation.x = -Math.PI / 2;
-    plaza.position.set(0, 0.02, 0);
+    plaza.position.set(0, 0.03, 0);
     plaza.receiveShadow = false;
     this.tuguWorldGroup.add(plaza);
 
     const decRing = new THREE.Mesh(
       new THREE.RingGeometry(11, 12.2, 64).rotateX(-Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: '#E4D5BE', roughness: 0.9 })
+      new THREE.MeshStandardMaterial({
+        color: '#E4D5BE',
+        roughness: 0.9,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+      })
     );
-    decRing.position.set(0, 0.03, 0);
+    decRing.position.set(0, 0.045, 0);
     decRing.receiveShadow = false;
     this.tuguWorldGroup.add(decRing);
 
-    const walkwayMat = new THREE.MeshStandardMaterial({ color: '#F5EEDB', roughness: 0.85 });
+    const walkwayMat = new THREE.MeshStandardMaterial({
+      color: '#F5EEDB',
+      roughness: 0.85,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
     const angles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
     angles.forEach((rot) => {
       const walk = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.04, 12), walkwayMat);
-      walk.position.set(Math.sin(rot) * 20, 0.02, Math.cos(rot) * 20);
+      walk.position.set(Math.sin(rot) * 20, 0.035, Math.cos(rot) * 20);
       walk.rotation.y = rot;
       walk.receiveShadow = false;
       this.tuguWorldGroup.add(walk);

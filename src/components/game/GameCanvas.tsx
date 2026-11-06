@@ -244,13 +244,29 @@ export default function GameCanvas() {
             setCurrentRoomId(data.roomId)
           }
           if (typeof data.userCount === 'number') {
-            setRoomUserCount(data.userCount)
+            setRoomUserCount((prev) => (prev === data.userCount ? prev : data.userCount))
           }
           if (data.allRooms) {
-            setAllRooms(data.allRooms)
+            setAllRooms((prev) => {
+              if (
+                prev.length === data.allRooms.length &&
+                prev.every((r, i) => r.roomId === data.allRooms[i].roomId && r.userCount === data.allRooms[i].userCount)
+              ) {
+                return prev
+              }
+              return data.allRooms
+            })
           }
           if (data.players) {
-            setRoomPlayers(data.players)
+            setRoomPlayers((prev) => {
+              if (
+                prev.length === data.players.length &&
+                prev.every((p, i) => p.id === data.players[i].id && p.name === data.players[i].name)
+              ) {
+                return prev
+              }
+              return data.players
+            })
             cityManagerRef.current?.updateRemotePlayers(data.players, myClientIdRef.current)
           }
         }
