@@ -709,21 +709,27 @@ function getInitialSeedData(): LocalDBSchema {
   }
 }
 
-export function readLocalDB(): LocalDBSchema {
-  if (globalThis.__netizen_local_db) {
-    return globalThis.__netizen_local_db
-  }
+let lastDbMtime = 0
 
-  // 1. Try reading from TMP_DB_PATH (writable on Vercel)
+export function readLocalDB(): LocalDBSchema {
+  // 1. Try reading from TMP_DB_PATH if it has been updated on disk
   try {
     if (fs.existsSync(TMP_DB_PATH)) {
-      const data = fs.readFileSync(TMP_DB_PATH, 'utf-8')
-      const parsed = JSON.parse(data)
-      globalThis.__netizen_local_db = parsed
-      return parsed
+      const stat = fs.statSync(TMP_DB_PATH)
+      if (!globalThis.__netizen_local_db || stat.mtimeMs > lastDbMtime) {
+        const data = fs.readFileSync(TMP_DB_PATH, 'utf-8')
+        const parsed = JSON.parse(data)
+        globalThis.__netizen_local_db = parsed
+        lastDbMtime = stat.mtimeMs
+        return parsed
+      }
     }
   } catch {
     // ignore
+  }
+
+  if (globalThis.__netizen_local_db) {
+    return globalThis.__netizen_local_db
   }
 
   // 2. Try reading from project DB_PATH
@@ -745,6 +751,28 @@ export function readLocalDB(): LocalDBSchema {
 }
 
 export function writeLocalDB(data: LocalDBSchema): void {
+  // Merge concurrent chat_messages from disk if available to avoid race-condition overwriting across lambdas
+  try {
+    if (fs.existsSync(TMP_DB_PATH)) {
+      const diskRaw = fs.readFileSync(TMP_DB_PATH, 'utf-8')
+      const diskData = JSON.parse(diskRaw)
+      if (diskData.chat_messages && Array.isArray(diskData.chat_messages)) {
+        const mergedMap = new Map<string, any>()
+        for (const m of diskData.chat_messages) {
+          mergedMap.set(m.id, m)
+        }
+        for (const m of (data.chat_messages || [])) {
+          mergedMap.set(m.id, m)
+        }
+        data.chat_messages = pruneExpiredChatMessages(Array.from(mergedMap.values())).sort(
+          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        )
+      }
+    }
+  } catch {
+    // ignore
+  }
+
   globalThis.__netizen_local_db = data
 
   // 1. Try writing to TMP_DB_PATH (always works on Vercel & OS temp)
@@ -754,6 +782,9 @@ export function writeLocalDB(data: LocalDBSchema): void {
       fs.mkdirSync(tmpDir, { recursive: true })
     }
     fs.writeFileSync(TMP_DB_PATH, JSON.stringify(data, null, 2), 'utf-8')
+    try {
+      lastDbMtime = fs.statSync(TMP_DB_PATH).mtimeMs
+    } catch {}
   } catch {
     // ignore
   }
@@ -978,11 +1009,18 @@ export function claimDailyStreakReward(citizenId: string) {
   return { success: true, dayNumber: streak, rewardCoins, streak }
 }
 
-export const CHAT_RETENTION_MS = 30 * 60 * 1000 // 30 minutes retention
+export const CHAT_RETENTION_MS = 30 * 60 * 1000 // 30 minutes retention per individual message
 
+/**
+ * Prunes ONLY individual chat messages that have exceeded 30 minutes since creation.
+ * Individual messages younger than 30 minutes are strictly preserved.
+ */
 export function pruneExpiredChatMessages(messages: Array<any>): Array<any> {
-  const cutoff = Date.now() - CHAT_RETENTION_MS
+  if (!Array.isArray(messages)) return []
+  const now = Date.now()
+  const cutoff = now - CHAT_RETENTION_MS
   return messages.filter((m) => {
+    if (!m || !m.created_at) return false
     const time = new Date(m.created_at).getTime()
     return !isNaN(time) && time >= cutoff
   })
@@ -1005,7 +1043,7 @@ export function addChatMessage(citizenId: string, senderName: string, content: s
     db.chat_messages = []
   }
 
-  // Prune messages older than 30 minutes
+  // Prune only individual messages older than 30 minutes
   db.chat_messages = pruneExpiredChatMessages(db.chat_messages)
 
   // Prevent immediate duplicate message within 2.5 seconds
@@ -1013,7 +1051,7 @@ export function addChatMessage(citizenId: string, senderName: string, content: s
   const isDuplicate = db.chat_messages.some(
     (m) =>
       m.content === content &&
-      m.sender_name === senderName &&
+      (m.sender_name === senderName || m.citizen_id === citizenId) &&
       now - new Date(m.created_at).getTime() < 2500
   )
   if (isDuplicate) {
@@ -1030,7 +1068,7 @@ export function addChatMessage(citizenId: string, senderName: string, content: s
   }
 
   db.chat_messages.push(msg)
-  if (db.chat_messages.length > 200) {
+  if (db.chat_messages.length > 250) {
     db.chat_messages.shift()
   }
 

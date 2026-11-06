@@ -55,9 +55,8 @@ export async function POST(req: NextRequest) {
       chatText: body.chatText,
     })
 
-    if (typeof body.chatText === 'string' && body.chatText.trim().length > 0) {
-      addChatMessage(citizen?.id || clientId, displayName, body.chatText.trim())
-    }
+    // Note: Persistent chat messages are handled by /api/chat.
+    // Tugu room sync distributes chatText for real-time 3D speech bubbles among players in the room.
 
     return NextResponse.json({
       success: true,

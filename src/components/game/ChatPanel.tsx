@@ -17,7 +17,51 @@ interface ChatMsg {
   citizen_id?: string
 }
 
-const CHAT_RETENTION_MS = 30 * 60 * 1000 // 30 minutes retention
+const CHAT_RETENTION_MS = 30 * 60 * 1000 // 30 minutes retention per individual message
+const CHAT_STORAGE_KEY = 'nc_city_chat_history'
+
+function mergeChatMessages(existingList: ChatMsg[], incomingList: ChatMsg[]): ChatMsg[] {
+  const now = Date.now()
+  const cutoff = now - CHAT_RETENTION_MS
+
+  // 1. Keep only unexpired messages (< 30 minutes old) from existing list
+  const validExisting = existingList.filter((m) => {
+    const t = new Date(m.created_at).getTime()
+    return !isNaN(t) && t >= cutoff
+  })
+
+  // 2. Keep only unexpired messages (< 30 minutes old) from incoming list
+  const validIncoming = incomingList.filter((m) => {
+    const t = new Date(m.created_at).getTime()
+    return !isNaN(t) && t >= cutoff
+  })
+
+  const map = new Map<string, ChatMsg>()
+
+  // Retain all existing valid messages
+  for (const m of validExisting) {
+    map.set(m.id, m)
+  }
+
+  // Merge incoming messages, seamlessly replacing matching optimistic local messages
+  for (const inc of validIncoming) {
+    for (const [key, ex] of map.entries()) {
+      if (
+        key.startsWith('local-') &&
+        ex.content === inc.content &&
+        ex.sender_name === inc.sender_name &&
+        Math.abs(new Date(ex.created_at).getTime() - new Date(inc.created_at).getTime()) < 15000
+      ) {
+        map.delete(key)
+      }
+    }
+    map.set(inc.id, inc)
+  }
+
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
+}
 
 export default function ChatPanel() {
   const isChatOpen = useUIStore((s) => s.isChatOpen)
@@ -28,8 +72,8 @@ export default function ChatPanel() {
   const [messages, setMessages] = useState<ChatMsg[]>([
     {
       id: 'init-1',
-      sender_name: 'Mayor',
-      content: 'Selamat datang di NETIZENCITY! Obrolan kota aktif dan terhapus otomatis setiap 30 menit.',
+      sender_name: 'Pak Mayor',
+      content: 'Selamat datang di NETIZENCITY! Obrolan kota aktif. Setiap pesan tersimpan selama 30 menit agar database tetap bersih.',
       created_at: new Date().toISOString(),
     },
   ])
@@ -40,39 +84,43 @@ export default function ChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  // Load cached chats on mount
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem(CHAT_STORAGE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages((prev) => mergeChatMessages(prev, parsed))
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  // Persist valid chats to session storage
+  useEffect(() => {
+    try {
+      const now = Date.now()
+      const cutoff = now - CHAT_RETENTION_MS
+      const valid = messages.filter((m) => {
+        const t = new Date(m.created_at).getTime()
+        return !isNaN(t) && t >= cutoff
+      })
+      sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(valid))
+    } catch {
+      // ignore
+    }
+  }, [messages])
+
   const fetchMessages = useCallback(async () => {
     try {
       const res = await fetch(`/api/chat?_t=${Date.now()}`)
       if (res.ok) {
         const data = await res.json()
         if (data.messages && Array.isArray(data.messages)) {
-          const now = Date.now()
-          // Filter messages strictly within 30 minutes
-          const fresh = data.messages.filter((m: ChatMsg) => {
-            const t = new Date(m.created_at).getTime()
-            return !isNaN(t) && now - t <= CHAT_RETENTION_MS
-          })
-
-          setMessages((prev) => {
-            // Retain recent local pending messages that haven't expired and aren't in fresh yet
-            const localPending = prev.filter(
-              (p) => p.id.startsWith('local-') && now - new Date(p.created_at).getTime() < 12000
-            )
-            const merged = [...fresh]
-            for (const lp of localPending) {
-              if (
-                !merged.some(
-                  (m) =>
-                    m.content === lp.content &&
-                    m.sender_name === lp.sender_name &&
-                    Math.abs(new Date(m.created_at).getTime() - new Date(lp.created_at).getTime()) < 5000
-                )
-              ) {
-                merged.push(lp)
-              }
-            }
-            return merged
-          })
+          setMessages((prev) => mergeChatMessages(prev, data.messages))
         }
       }
     } catch {
@@ -86,17 +134,19 @@ export default function ChatPanel() {
     return () => clearInterval(interval)
   }, [fetchMessages])
 
-  // Periodic purge timer on client side (every 15 seconds) to remove messages older than 30 minutes
+  // Periodic purge timer on client side (every 10 seconds)
+  // Prunes ONLY individual messages that have exceeded 30 minutes since creation
   useEffect(() => {
     const pruneTimer = setInterval(() => {
       const now = Date.now()
+      const cutoff = now - CHAT_RETENTION_MS
       setMessages((prev) =>
         prev.filter((m) => {
           const t = new Date(m.created_at).getTime()
-          return !isNaN(t) && now - t <= CHAT_RETENTION_MS
+          return !isNaN(t) && t >= cutoff
         })
       )
-    }, 15000)
+    }, 10000)
     return () => clearInterval(pruneTimer)
   }, [])
 
@@ -123,7 +173,7 @@ export default function ChatPanel() {
       content: text,
       created_at: new Date().toISOString(),
     }
-    setMessages((prev) => [...prev, tempMsg])
+    setMessages((prev) => mergeChatMessages(prev, [tempMsg]))
 
     // Trigger 3D speech bubble above avatar
     if (typeof window !== 'undefined') {
@@ -148,9 +198,7 @@ export default function ChatPanel() {
       if (res.ok) {
         const data = await res.json()
         if (data.message) {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === tempMsg.id ? data.message : m))
-          )
+          setMessages((prev) => mergeChatMessages(prev, [data.message]))
         }
       }
     } catch {
@@ -193,7 +241,7 @@ export default function ChatPanel() {
           </span>
           <span
             className="text-[10px] px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-semibold"
-            title="Pesan otomatis diperbarui dan terhapus setelah 30 menit"
+            title="Setiap pesan otomatis dihapus dari database setelah berumur 30 menit"
           >
             Live • 30m
           </span>
@@ -216,7 +264,7 @@ export default function ChatPanel() {
             </div>
             <p className="font-heading font-bold text-xs text-[#343B35]">Obrolan Masih Kosong</p>
             <p className="text-[11px] text-[#78634B] mt-0.5 leading-snug">
-              Pesan obrolan aktif dan otomatis terhapus setelah 30 menit. Ketik pesan untuk menyapa warga!
+              Obrolan warga aktif. Setiap pesan yang berumur 30 menit otomatis dihapus dari database. Ketik pesan untuk menyapa warga!
             </p>
           </div>
         ) : (
