@@ -455,56 +455,56 @@ export default function MallModal() {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={closeModal} title="MALL BUSANA & AKSESORIS NETIZENCITY" maxWidth="2xl">
-      <div className="space-y-4">
-        {/* Header & Wallet Banner with Real 2D Pixel-Art Character Preview */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-[#FFFDF9] via-[#FFF9F1] to-[#FCEEE3] border-2 border-[#EADBCC] shadow-sm">
+    <Modal isOpen={isOpen} onClose={closeModal} title="Mall Busana & Aksesoris" maxWidth="2xl">
+      <div className="space-y-3.5">
+        {/* Header & Wallet Banner with Real Character Preview */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-xl bg-[#EFE9D8] border border-[#D8CEBE]">
           {/* Live Mini Avatar Preview Canvas */}
-          <div className="flex items-center space-x-3.5">
-            <div className="relative w-16 h-18 rounded-2xl bg-[#FFF9F1] border-2 border-[#EADBCC] p-1 flex items-center justify-center shadow-inner overflow-hidden ring-2 ring-[#F4A98C]/30">
+          <div className="flex items-center space-x-3">
+            <div className="relative w-14 h-16 rounded-xl bg-[#F7F4E9] border border-[#D8CEBE] p-1 flex items-center justify-center overflow-hidden">
               <canvas
                 ref={previewCanvasRef}
                 width={64}
                 height={72}
-                className="w-full h-full object-contain [image-rendering:auto]"
+                className="w-full h-full object-contain"
               />
-              <span className="absolute bottom-0.5 right-1 text-[8px] font-black text-[#1E7250] bg-[#D2F0E3] px-1 rounded-full shadow-xs">
+              <span className="absolute bottom-0.5 right-1 text-[8px] font-bold text-[#668B65] bg-[#EFE9D8] px-1 rounded-sm border border-[#D8CEBE]">
                 LIVE
               </span>
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-extrabold text-[#3B3340] tracking-wide">
+                <span className="text-xs font-bold text-[#343B35]">
                   {profile?.displayName || 'Tamu Netizen'}
                 </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded border ${
                   profile
-                    ? 'text-[#2C6ECB] bg-[#EBF3FB] border-[#A9C8EC]'
-                    : 'text-[#8C7E70] bg-[#EFE9E0] border-[#DDD3C7]'
+                    ? 'text-[#668B65] bg-[#F7F4E9] border-[#D8CEBE]'
+                    : 'text-[#78634B] bg-[#F7F4E9] border-[#D8CEBE]'
                 }`}>
-                  {profile ? 'Avatar Warga' : 'Avatar Tamu'}
+                  {profile ? 'Warga' : 'Tamu'}
                 </span>
               </div>
-              <p className="text-[11px] text-[#6F6675] mt-0.5 leading-snug">
+              <p className="text-[11px] text-[#78634B] mt-0.5 leading-snug">
                 Pakaian yang kamu pakai langsung muncul pada karakter di dalam kota!
               </p>
-              <div className="flex items-center space-x-2 mt-1 text-[11px] text-[#5C5265]">
-                <span className="inline-flex items-center text-[#186D48] font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                  {ownedIds.length} Koleksi Dimiliki
+              <div className="flex items-center space-x-2 mt-0.5 text-[11px]">
+                <span className="inline-flex items-center text-[#668B65] font-semibold">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  {ownedIds.length} Dimiliki
                 </span>
               </div>
             </div>
           </div>
 
           {/* User Wallet Balance */}
-          <div className="flex items-center space-x-2.5 bg-[#FFF8DF] px-4 py-2.5 rounded-2xl border-2 border-[#F7D772] shadow-xs self-stretch sm:self-auto justify-center">
-            <Coins className="w-5 h-5 text-[#D4980B] animate-pulse" />
+          <div className="flex items-center space-x-2 bg-[#F7F4E9] px-3.5 py-2 rounded-xl border border-[#D8CEBE] self-stretch sm:self-auto justify-center">
+            <Coins className="w-4 h-4 text-[#E6C66F]" />
             <div>
-              <span className="text-[10px] uppercase font-bold text-[#8C6008] block leading-none">
+              <span className="text-[10px] uppercase font-semibold text-[#78634B] block leading-none">
                 Saldo Koin
               </span>
-              <span className="text-sm font-extrabold text-[#8C6008] font-mono">
+              <span className="text-xs font-bold text-[#343B35]">
                 {formatCoins(currentCoins)}
               </span>
             </div>
@@ -513,16 +513,16 @@ export default function MallModal() {
 
         {/* Guest Warning */}
         {!profile && (
-          <div className="p-3.5 rounded-2xl bg-[#FFF5EC] border-2 border-[#F4C8B4] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div className="flex items-center space-x-2.5">
-              <UserPlus className="w-4 h-4 text-[#D97858] flex-shrink-0" />
-              <span className="text-[#3B3340] font-medium">
-                Kamu sedang berkunjung sebagai Tamu. Masuk atau daftar warga agar koleksi pakaian dan tabungan koin tersimpan permanen.
+          <div className="p-3 rounded-xl bg-[#EFE9D8] border border-[#D8CEBE] flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center space-x-2">
+              <UserPlus className="w-4 h-4 text-[#78634B] flex-shrink-0" />
+              <span className="text-[#343B35]">
+                Kamu sedang berkunjung sebagai Tamu. Daftar warga agar pakaian & koin tersimpan.
               </span>
             </div>
             <Link
               href="/welcome"
-              className="px-3.5 py-1.5 rounded-xl bg-[#F4A98C] text-white font-heading font-bold text-xs hover:bg-[#E88968] transition-colors whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg bg-[#668B65] text-white font-semibold text-xs hover:bg-[#557754] transition-colors whitespace-nowrap"
             >
               Daftar Warga
             </Link>
@@ -530,16 +530,16 @@ export default function MallModal() {
         )}
 
         {/* Category Filter Tabs */}
-        <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-thin">
+        <div className="flex space-x-1.5 overflow-x-auto pb-1">
           {categories.map((c) => (
             <button
               key={c.id}
               type="button"
               onClick={() => setActiveCategory(c.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
                 activeCategory === c.id
-                  ? 'bg-[#F4A98C] text-white shadow-sm border-b-2 border-[#B85838]'
-                  : 'bg-[#FFFDF9] hover:bg-[#F8F4EE] text-[#5C5265] border border-[#EADBCC]'
+                  ? 'bg-[#668B65] text-white border border-[#557754]'
+                  : 'bg-[#EFE9D8] hover:bg-[#E2DACB] text-[#343B35] border border-[#D8CEBE]'
               }`}
             >
               {c.label}
@@ -549,15 +549,15 @@ export default function MallModal() {
 
         {/* Loading Indicator */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12 text-[#6F6675] text-xs">
-            <Loader2 className="w-5 h-5 animate-spin mr-2 text-[#76A9EA]" />
-            <span>Memuat katalog busana kota...</span>
+          <div className="flex items-center justify-center py-10 text-[#78634B] text-xs">
+            <Loader2 className="w-4 h-4 animate-spin mr-2 text-[#668B65]" />
+            <span>Memuat busana...</span>
           </div>
         )}
 
         {/* Items Catalog Grid */}
         {!isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[52vh] overflow-y-auto pr-1 scrollbar-thin">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[50vh] overflow-y-auto pr-1">
             {filteredItems.map((item) => {
               const isOwned = ownedIds.includes(item.id) || item.price === 0
               const isEquipped = checkIsEquipped(item)
@@ -567,90 +567,85 @@ export default function MallModal() {
               return (
                 <div
                   key={item.id}
-                  className={`p-3.5 rounded-2xl border-2 flex flex-col justify-between transition-all ${
+                  className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
                     isEquipped
-                      ? 'bg-[#F0F7FF] border-[#76A9EA] shadow-md ring-2 ring-[#A9C8EC]/40'
+                      ? 'bg-[#F7F4E9] border-2 border-[#668B65] shadow-xs'
                       : isOwned
-                      ? 'bg-[#FFFDF9] border-[#A8DCC8] shadow-sm'
-                      : 'bg-[#FFFDF9] border-[#EADBCC] shadow-sm hover:border-[#D6C2AC] hover:shadow-md'
+                      ? 'bg-[#F7F4E9] border-[#D8CEBE]'
+                      : 'bg-[#EFE9D8] border-[#D8CEBE]'
                   }`}
                 >
                   <div>
                     {/* Item Preview Color & Icon Badge */}
-                    <div className="flex items-start justify-between mb-2.5">
+                    <div className="flex items-start justify-between mb-2">
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center border-2 shadow-inner relative"
+                        className="w-10 h-10 rounded-lg flex items-center justify-center border shadow-xs relative"
                         style={{
                           backgroundColor: item.color,
-                          borderColor: 'rgba(255,255,255,0.6)',
+                          borderColor: '#D8CEBE',
                         }}
                       >
                         {getCategoryIcon(item.category)}
                         {item.price === 0 && (
-                          <span className="absolute -top-1.5 -left-1.5 bg-[#4EBA88] text-[8px] font-black text-white px-1.5 py-0.2 rounded-full uppercase shadow">
+                          <span className="absolute -top-1.5 -left-1.5 bg-[#668B65] text-[8px] font-bold text-white px-1.5 py-0.2 rounded-full uppercase">
                             Gratis
                           </span>
                         )}
                       </div>
 
-                      <div className="flex flex-col items-end space-y-1">
-                        <span
-                          className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                            rarityColor[item.rarity] || rarityColor.common
-                          }`}
-                        >
+                      <div className="flex flex-col items-end space-y-0.5">
+                        <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-[#F7F4E9] text-[#78634B] border border-[#D8CEBE]">
                           {item.rarity}
                         </span>
                         {isOwned && (
-                          <span className="text-[10px] font-bold text-[#186D48] flex items-center">
+                          <span className="text-[10px] font-medium text-[#668B65] flex items-center">
                             <Check className="w-3 h-3 mr-0.5" /> Milikmu
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <h5 className="font-extrabold text-[#3B3340] text-xs leading-snug">
+                    <h5 className="font-bold text-[#343B35] text-xs leading-snug">
                       {item.name}
                     </h5>
 
                     {/* Special Trait Badge */}
                     {trait && (
                       <div className="mt-1">
-                        <span className="inline-block text-[10px] font-bold text-[#8C6008] bg-[#FFF8DF] border border-[#F7D772] px-2 py-0.5 rounded-md">
+                        <span className="inline-block text-[10px] text-[#78634B] bg-[#F7F4E9] border border-[#D8CEBE] px-1.5 py-0.5 rounded">
                           {trait}
                         </span>
                       </div>
                     )}
 
-                    <p className="text-[11px] text-[#6F6675] mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] text-[#78634B] mt-1 line-clamp-2 leading-relaxed">
                       {item.description || 'Pakaian eksklusif warga Netizen City.'}
                     </p>
                   </div>
 
                   {/* Actions / Price */}
-                  <div className="mt-3.5 pt-3 border-t border-[#F0EAE1] flex items-center justify-between">
-                    <div className="flex items-center space-x-1.5 bg-[#FFF9F1] px-2.5 py-1 rounded-xl border border-[#EADBCC]">
-                      <Coins className="w-3.5 h-3.5 text-[#D4980B]" />
-                      <span className="text-xs font-black text-[#8C6008] font-mono">
+                  <div className="mt-2.5 pt-2.5 border-t border-[#D8CEBE] flex items-center justify-between">
+                    <div className="flex items-center space-x-1 bg-[#F7F4E9] px-2 py-0.5 rounded-lg border border-[#D8CEBE]">
+                      <Coins className="w-3 h-3 text-[#E6C66F]" />
+                      <span className="text-xs font-bold text-[#343B35]">
                         {item.price === 0 ? 'Gratis' : item.price}
                       </span>
                     </div>
 
                     {isEquipped ? (
                       <div className="flex items-center space-x-1.5">
-                        <span className="px-3 py-1 rounded-xl bg-[#E8F8F0] text-[#186D48] text-[11px] font-black border border-[#A8DCC8] flex items-center space-x-1">
-                          <Check className="w-3.5 h-3.5" />
+                        <span className="px-2.5 py-1 rounded-lg bg-[#668B65]/15 text-[#668B65] text-[11px] font-semibold border border-[#668B65]/30 flex items-center space-x-1">
+                          <Check className="w-3 h-3" />
                           <span>Terpakai</span>
                         </span>
-                        {/* If accessory or back, allow unequip */}
                         {(item.category === 'accessories' || item.category === 'back') && (
                           <button
                             type="button"
                             onClick={() => handleUnequip(item)}
                             title="Lepas item ini"
-                            className="p-1 rounded-lg bg-[#F8F4EE] hover:bg-[#EFE6D8] text-[#5C5265] border border-[#EADBCC] transition-colors cursor-pointer"
+                            className="p-1 rounded-md bg-[#F7F4E9] hover:bg-[#E2DACB] text-[#78634B] border border-[#D8CEBE] transition-colors cursor-pointer"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-3 h-3" />
                           </button>
                         )}
                       </div>
@@ -658,9 +653,9 @@ export default function MallModal() {
                       <button
                         type="button"
                         onClick={() => handleEquip(item)}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#76A9EA] hover:bg-[#6297DC] text-white text-[11px] font-bold border-b-3 border-[#4A7BB8] active:border-b-0 active:translate-y-0.5 shadow-sm transition-transform flex items-center space-x-1 cursor-pointer"
+                        className="px-3 py-1 rounded-lg bg-[#78634B] hover:bg-[#64513B] text-white text-[11px] font-semibold border border-[#584632] transition-colors flex items-center space-x-1 cursor-pointer"
                       >
-                        <Check className="w-3.5 h-3.5" />
+                        <Check className="w-3 h-3" />
                         <span>Pakai</span>
                       </button>
                     ) : (
@@ -668,10 +663,10 @@ export default function MallModal() {
                         type="button"
                         disabled={!canAfford || isPurchasing}
                         onClick={() => handlePurchase(item)}
-                        className={`px-3.5 py-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm ${
+                        className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors flex items-center space-x-1 cursor-pointer ${
                           canAfford
-                            ? 'bg-[#4EBA88] hover:bg-[#3FA675] text-white border-b-3 border-[#2E7F59] active:border-b-0 active:translate-y-0.5'
-                            : 'bg-[#F0EAE1] text-[#A89E92] border border-[#E0D5C7] cursor-not-allowed'
+                            ? 'bg-[#668B65] hover:bg-[#557754] text-white border border-[#557754]'
+                            : 'bg-[#D8CEBE] text-[#78634B] cursor-not-allowed opacity-60'
                         }`}
                       >
                         <ShoppingBag className="w-3 h-3 mr-0.5" />
@@ -686,13 +681,13 @@ export default function MallModal() {
         )}
 
         {/* Footer info & button */}
-        <div className="flex items-center justify-between pt-3 border-t border-[#EADBCC] text-xs text-[#6F6675]">
+        <div className="flex items-center justify-between pt-2.5 border-t border-[#D8CEBE] text-xs text-[#78634B]">
           <div className="flex items-center space-x-1 text-[11px]">
-            <Zap className="w-3.5 h-3.5 text-[#F4A98C]" />
+            <Zap className="w-3 h-3 text-[#668B65]" />
             <span>Koleksi 34 item unik busana khas warga Netizen City.</span>
           </div>
-          <Button variant="ghost" onClick={closeModal} className="text-xs">
-            Tutup Mall
+          <Button variant="secondary" onClick={closeModal} className="text-xs">
+            Tutup
           </Button>
         </div>
       </div>

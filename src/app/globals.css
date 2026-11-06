@@ -5,17 +5,25 @@
     --font-sans: var(--font-quicksand), system-ui, -apple-system, sans-serif;
     --font-display: var(--font-fredoka), system-ui, -apple-system, sans-serif;
 
-    /* NetizenCity Signature Pastel Palette */
-    --nc-ink: #3B3340;
-    --nc-cream: #FFF9F1;
-    --nc-cream-dark: #F7EFE4;
-    --nc-peach: #F4A98C;
-    --nc-butter: #F7D772;
-    --nc-mint: #A8DCC8;
-    --nc-lav: #C9B8E8;
-    --nc-sky: #A9C8EC;
-    --nc-coral: #F2A0B4;
-    --nc-border: #E8DCCF;
+    /* NetizenCity Signature Low-Poly Cozy Game Palette */
+    --nc-ivory: #F7F4E9;
+    --nc-cream: #EFE9D8;
+    --nc-forest: #668B65;
+    --nc-muted-green: #A5BE91;
+    --nc-brown: #78634B;
+    --nc-charcoal: #343B35;
+    --nc-blue: #A9C9D8;
+    --nc-yellow: #E6C66F;
+    --nc-border: #D8CEBE;
+
+    /* Legacy semantic aliases mapped to cozy game palette */
+    --nc-ink: #343B35;
+    --nc-peach: #E08F72;
+    --nc-butter: #E6C66F;
+    --nc-mint: #A5BE91;
+    --nc-lav: #B7A8D8;
+    --nc-sky: #A9C9D8;
+    --nc-coral: #E08595;
   }
 
   body {

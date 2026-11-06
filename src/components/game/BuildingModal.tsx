@@ -385,20 +385,20 @@ export default function BuildingModal() {
 
   return (
     <Modal isOpen={isOpen} onClose={closeModal} title={current.title} maxWidth="md">
-      <div className="space-y-5 font-sans">
+      <div className="space-y-4 font-sans">
         {/* Top Info Banner */}
-        <div className="flex items-start space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-[#FFF2EB] border-2 border-[#F4C8B4] flex items-center justify-center text-[#D97858] flex-shrink-0 shadow-xs">
+        <div className="flex items-start space-x-3 p-3 bg-[#EFE9D8] rounded-xl border border-[#D8CEBE]">
+          <div className="w-10 h-10 rounded-lg bg-[#F7F4E9] border border-[#D8CEBE] flex items-center justify-center text-[#668B65] flex-shrink-0">
             {current.icon}
           </div>
           <div>
-            <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-[#245282] bg-[#EAF3FD] border border-[#BED8F6] px-2.5 py-0.5 rounded-full inline-block">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-[#78634B] bg-[#F7F4E9] border border-[#D8CEBE] px-2 py-0.5 rounded inline-block">
               {current.district}
             </span>
-            <h4 className="font-heading font-extrabold text-base text-[#3B3340] mt-1">
-              Fasilitas Publik Resmi Netizen City
+            <h4 className="font-bold text-xs text-[#343B35] mt-1">
+              Fasilitas Publik Kota
             </h4>
-            <p className="text-xs text-[#5C4F62] mt-1 leading-relaxed">
+            <p className="text-xs text-[#78634B] mt-0.5 leading-relaxed">
               {current.desc}
             </p>
           </div>
@@ -406,16 +406,16 @@ export default function BuildingModal() {
 
         {/* POLLING KEBIJAKAN KOTA (BALAI KOTA) */}
         {current.actionType === 'vote' && (
-          <div className="p-4 bg-[#FFF9F1] border-2 border-[#EADBCC] rounded-3xl space-y-3 text-xs">
-            <div className="flex items-center justify-between pb-2 border-b-2 border-[#F0E4D5]">
-              <span className="font-heading font-bold text-[#3B3340] flex items-center text-sm">
-                <Vote className="w-4 h-4 mr-1.5 text-[#245282]" />
+          <div className="p-3 bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl space-y-2.5 text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-[#D8CEBE]">
+              <span className="font-bold text-[#343B35] flex items-center text-xs">
+                <Vote className="w-3.5 h-3.5 mr-1.5 text-[#668B65]" />
                 {currentPoll.title}
               </span>
-              <span className="text-[11px] text-[#7A6E7E] font-heading font-bold">
+              <span className="text-[11px] text-[#78634B]">
                 {isLoadingVotes ? (
                   <span className="flex items-center">
-                    <Loader2 className="w-3 h-3 animate-spin mr-1 text-[#245282]" />
+                    <Loader2 className="w-3 h-3 animate-spin mr-1 text-[#668B65]" />
                     Memuat...
                   </span>
                 ) : (
@@ -424,11 +424,11 @@ export default function BuildingModal() {
               </span>
             </div>
 
-            <p className="text-xs text-[#6A5E6E] leading-relaxed">
+            <p className="text-xs text-[#78634B] leading-relaxed">
               {currentPoll.description}
             </p>
 
-            <div className="space-y-2 pt-1">
+            <div className="space-y-1.5 pt-0.5">
               {currentPoll.options.map((opt) => {
                 const isSelected = selectedPollOption === opt.id
                 const percentage =
@@ -442,43 +442,43 @@ export default function BuildingModal() {
                     onClick={() => {
                       if (!hasVoted) setSelectedPollOption(opt.id)
                     }}
-                    className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden block ${
+                    className={`w-full text-left p-2.5 rounded-lg border transition-all cursor-pointer relative overflow-hidden block ${
                       isSelected
-                        ? 'bg-[#FFF2EB] border-[#F4A98C] shadow-sm text-[#3B3340]'
-                        : 'bg-[#FFFDF9] border-[#EADBCC] hover:border-[#D5C2B0] text-[#3B3340]'
+                        ? 'bg-[#F7F4E9] border-[#668B65] text-[#343B35]'
+                        : 'bg-[#F7F4E9] border-[#D8CEBE] text-[#343B35]'
                     } ${hasVoted ? 'cursor-default' : ''}`}
                   >
                     {/* Live percentage fill bar when voted */}
                     {hasVoted && (
                       <div
-                        className="absolute inset-y-0 left-0 bg-[#F4A98C]/25 pointer-events-none transition-all duration-500"
+                        className="absolute inset-y-0 left-0 bg-[#668B65]/15 pointer-events-none transition-all duration-300"
                         style={{ width: `${percentage}%` }}
                       />
                     )}
 
                     <div className="flex items-center justify-between relative z-10">
-                      <div className="flex items-center space-x-2.5">
+                      <div className="flex items-center space-x-2">
                         <div
-                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
                             isSelected
-                              ? 'border-[#D97858] bg-[#F4A98C]'
-                              : 'border-[#C8B8A8] bg-white'
+                              ? 'border-[#668B65] bg-[#668B65]'
+                              : 'border-[#D8CEBE] bg-white'
                           }`}
                         >
                           {isSelected && (
                             <div className="w-1.5 h-1.5 rounded-full bg-white" />
                           )}
                         </div>
-                        <span className="font-heading font-bold text-xs">{opt.title}</span>
+                        <span className="font-semibold text-xs">{opt.title}</span>
                       </div>
 
                       {hasVoted && (
                         <div className="text-right pl-2">
-                          <span className="font-heading font-bold text-[#D97858] text-sm">
+                          <span className="font-bold text-[#668B65] text-xs">
                             {percentage}%
                           </span>
-                          <span className="text-[10px] text-[#8C7D91] block">
-                            {opt.votes} warga
+                          <span className="text-[10px] text-[#78634B] block">
+                            {opt.votes} suara
                           </span>
                         </div>
                       )}
@@ -489,10 +489,10 @@ export default function BuildingModal() {
             </div>
 
             {hasVoted && (
-              <div className="p-3 rounded-2xl bg-[#EBF8F3] border-2 border-[#B7E7D5] text-[#1E5D46] text-xs font-heading font-bold flex items-center space-x-2 shadow-xs">
-                <CheckCircle2 className="w-4 h-4 text-[#2F9474] flex-shrink-0" />
+              <div className="p-2.5 rounded-lg bg-[#668B65]/15 border border-[#668B65]/30 text-[#668B65] text-xs font-semibold flex items-center space-x-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#668B65] flex-shrink-0" />
                 <span>
-                  Suaramu telah terverifikasi dan tersimpan di arsip Balai Kota! (+25 Koin)
+                  Suaramu telah tersimpan di arsip Balai Kota (+25 Koin).
                 </span>
               </div>
             )}
@@ -500,32 +500,32 @@ export default function BuildingModal() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end space-x-3 pt-3 border-t-2 border-[#F0E4D5]">
-          <Button variant="ghost" onClick={closeModal}>
+        <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-[#D8CEBE]">
+          <Button variant="secondary" onClick={closeModal}>
             Tutup
           </Button>
 
           {current.actionType === 'vote' ? (
             <Button
-              variant="peach"
+              variant="primary"
               onClick={handleAction}
               disabled={hasVoted || isSubmitting}
             >
               {isSubmitting ? (
-                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
               ) : (
-                <Vote className="w-4 h-4 mr-1.5" />
+                <Vote className="w-3.5 h-3.5 mr-1" />
               )}
               <span>
                 {hasVoted
-                  ? 'Sudah Memilih (Selesai)'
+                  ? 'Sudah Memilih'
                   : isSubmitting
                   ? 'Menyimpan...'
                   : current.actionName}
               </span>
             </Button>
           ) : (
-            <Button variant="mint" onClick={handleAction}>
+            <Button variant="primary" onClick={handleAction}>
               {current.actionName}
             </Button>
           )}

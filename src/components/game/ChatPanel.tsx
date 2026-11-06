@@ -1,11 +1,11 @@
 // ============================================================
-// NETIZENCITY - Chat Panel Component (Cozy Diorama Speech Bubbles)
+// NETIZENCITY - Chat Panel Component (Cozy Simulation Game HUD)
 // ============================================================
 
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { MessageSquare, Send, X, Users, Loader2, ShieldCheck } from 'lucide-react'
+import { MessageSquare, Send, X, ShieldCheck, Loader2 } from 'lucide-react'
 import { useUIStore } from '@/lib/stores/useUIStore'
 import { useCitizenStore } from '@/lib/stores/useCitizenStore'
 
@@ -118,45 +118,45 @@ export default function ChatPanel() {
       <button
         type="button"
         onClick={toggleChat}
-        className="bg-[#FFFDF9]/95 hover:bg-[#FFF8ED] text-[#3B3340] px-5 py-3 rounded-2xl border-2 border-[#EADBCC] border-b-4 border-b-[#D6C2AC] active:border-b-2 active:translate-y-0.5 shadow-lg backdrop-blur-md flex items-center space-x-2.5 transition-transform cursor-pointer pointer-events-auto select-auto font-sans"
+        className="bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-[#D8CEBE] shadow-md flex items-center gap-2 transition-colors cursor-pointer pointer-events-auto select-auto"
       >
-        <div className="w-7 h-7 rounded-xl bg-[#FFF2EB] border border-[#F4C8B4] flex items-center justify-center text-[#D97858]">
-          <MessageSquare className="w-4 h-4" />
+        <div className="w-5 h-5 rounded-md bg-[#668B65]/15 text-[#668B65] flex items-center justify-center">
+          <MessageSquare className="w-3 h-3" />
         </div>
-        <span className="text-xs font-heading font-extrabold text-[#3B3340]">
+        <span className="text-xs font-semibold text-[#343B35]">
           Obrolan Warga
         </span>
-        <span className="w-2.5 h-2.5 rounded-full bg-[#2F9474] animate-pulse" />
+        <span className="w-2 h-2 rounded-full bg-[#668B65]" />
       </button>
     )
   }
 
   return (
-    <div className="w-80 sm:w-96 h-88 bg-[#FFFDF9]/98 border-2 border-[#EADBCC] rounded-3xl shadow-[0_20px_50px_rgba(70,50,60,0.25)] backdrop-blur-md flex flex-col overflow-hidden pointer-events-auto select-auto font-sans animate-in fade-in zoom-in-95">
+    <div className="w-[calc(100vw-24px)] max-w-sm h-72 sm:h-80 bg-[#F7F4E9] border border-[#D8CEBE] rounded-2xl shadow-xl flex flex-col overflow-hidden pointer-events-auto select-auto">
       {/* Header */}
-      <div className="px-4 py-3 bg-gradient-to-r from-[#FFF9F1] to-[#FFF3E3] border-b-2 border-[#F0E4D5] flex items-center justify-between">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-6 h-6 rounded-lg bg-[#FFF2EB] border border-[#F4C8B4] flex items-center justify-center text-[#D97858]">
-            <MessageSquare className="w-3.5 h-3.5" />
+      <div className="px-3 py-2 bg-[#EFE9D8] border-b border-[#D8CEBE] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md bg-[#668B65] text-white flex items-center justify-center">
+            <MessageSquare className="w-3 h-3" />
           </div>
-          <span className="font-heading font-bold text-sm text-[#3B3340] tracking-tight">
+          <span className="font-semibold text-xs text-[#343B35]">
             Obrolan Kota
           </span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#EBF8F3] text-[#1E5D46] border border-[#B7E7D5] font-heading font-bold">
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-medium">
             Live
           </span>
         </div>
         <button
           type="button"
           onClick={toggleChat}
-          className="w-7 h-7 rounded-full bg-[#FFF0E6] text-[#D97858] hover:bg-[#F4A98C] hover:text-white transition-colors flex items-center justify-center cursor-pointer border border-[#F2C9B6]"
+          className="w-6 h-6 rounded-md bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#78634B] flex items-center justify-center border border-[#D8CEBE] transition-colors cursor-pointer"
         >
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* Message history */}
-      <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 text-xs">
+      <div className="flex-1 p-2.5 overflow-y-auto space-y-2 text-xs">
         {messages.map((m) => {
           const isSystem =
             m.sender_name === 'Mayor' ||
@@ -185,30 +185,30 @@ export default function ChatPanel() {
           return (
             <div
               key={m.id}
-              className={`p-3 rounded-2xl border-2 transition-all ${
+              className={`p-2.5 rounded-xl border text-xs leading-relaxed ${
                 isSystem
-                  ? 'bg-[#F5F0FD] border-[#DACBF6] text-[#463167]'
+                  ? 'bg-[#EFE9D8] border-[#D8CEBE] text-[#343B35]'
                   : isMe
-                  ? 'bg-[#EBF8F3] border-[#B7E7D5] text-[#1E5D46] ml-4'
-                  : 'bg-[#FFF9F1] border-[#F0E4D5] text-[#3B3340] mr-4'
+                  ? 'bg-[#668B65]/10 border-[#668B65]/30 text-[#343B35] ml-3'
+                  : 'bg-white/90 border-[#D8CEBE] text-[#343B35] mr-3'
               }`}
             >
               <div className="flex items-center justify-between text-[11px] mb-1">
                 <span
-                  className={`font-heading font-bold flex items-center gap-1 ${
+                  className={`font-semibold flex items-center gap-1 ${
                     isSystem
-                      ? 'text-[#55387E]'
+                      ? 'text-[#78634B]'
                       : isMe
-                      ? 'text-[#1B5745]'
-                      : 'text-[#8A6814]'
+                      ? 'text-[#668B65]'
+                      : 'text-[#78634B]'
                   }`}
                 >
-                  {isSystem && <ShieldCheck className="w-3 h-3 text-[#8F7AB4]" />}
+                  {isSystem && <ShieldCheck className="w-3 h-3 text-[#78634B]" />}
                   {displaySender}
                 </span>
-                <span className="text-[10px] text-[#9A8F98]">{timeStr}</span>
+                <span className="text-[10px] text-[#78634B]/70">{timeStr}</span>
               </div>
-              <p className="leading-relaxed text-xs break-words font-medium">{m.content}</p>
+              <p className="text-xs break-words">{m.content}</p>
             </div>
           )
         })}
@@ -218,25 +218,25 @@ export default function ChatPanel() {
       {/* Input Form */}
       <form
         onSubmit={handleSendMessage}
-        className="p-3 bg-[#FFFDF9] border-t-2 border-[#F0E4D5] flex items-center space-x-2"
+        className="p-2 bg-[#EFE9D8] border-t border-[#D8CEBE] flex items-center gap-2"
       >
         <input
           type="text"
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Ketik pesan untuk warga kota..."
-          className="flex-1 bg-[#FFF9F1] border-2 border-[#EADBCC] rounded-2xl px-3.5 py-2 text-xs text-[#3B3340] placeholder-[#A499A8] focus:outline-none focus:border-[#F4A98C] transition-colors"
+          placeholder="Ketik pesan..."
+          className="flex-1 bg-[#F7F4E9] border border-[#D8CEBE] rounded-lg px-2.5 py-1.5 text-xs text-[#343B35] placeholder-[#78634B]/60 focus:outline-none focus:border-[#668B65]"
           maxLength={150}
         />
         <button
           type="submit"
           disabled={!inputMessage.trim() || isSending}
-          className="p-2.5 rounded-2xl bg-gradient-to-b from-[#F8BCA4] to-[#F4A98C] hover:from-[#FAC7B3] hover:to-[#F6B49A] text-white border-2 border-[#D98868] border-b-3 border-b-[#B86241] disabled:opacity-50 transition-all active:translate-y-0.5 cursor-pointer shadow-xs"
+          className="px-3 py-1.5 rounded-lg bg-[#668B65] hover:bg-[#527251] text-white border border-[#527251] disabled:opacity-50 transition-colors flex items-center justify-center cursor-pointer"
         >
           {isSending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <Send className="w-4 h-4" />
+            <Send className="w-3.5 h-3.5" />
           )}
         </button>
       </form>

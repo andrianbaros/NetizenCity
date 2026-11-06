@@ -1,5 +1,5 @@
 // ============================================================
-// NETIZENCITY - Modal Component (Cozy Diorama Popup)
+// NETIZENCITY - Modal Component (Cozy Simulation Game Dialog)
 // ============================================================
 
 'use client'
@@ -55,41 +55,41 @@ export const Modal: React.FC<ModalProps> = ({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-auto select-auto"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 pointer-events-auto select-auto"
       style={{ pointerEvents: 'auto' }}
     >
-      {/* Warm Backdrop with soft blur */}
+      {/* Dimmed backdrop */}
       <div
-        className="fixed inset-0 bg-[#2C2430]/60 backdrop-blur-sm transition-opacity cursor-pointer animate-fade-in"
+        className="fixed inset-0 bg-[#343B35]/50 transition-opacity cursor-pointer animate-fade-in"
         onClick={onClose}
         style={{ pointerEvents: 'auto' }}
       />
 
       {/* Modal Dialog */}
       <div
-        className={`relative z-10 w-full ${widthStyles[maxWidth]} bg-[#FFFDF9] text-[#3B3340] border-2 border-[#EADBCC] rounded-3xl shadow-[0_20px_60px_-15px_rgba(70,50,60,0.3)] overflow-hidden flex flex-col max-h-[90vh] transition-all transform duration-150`}
+        className={`relative z-10 w-full ${widthStyles[maxWidth]} bg-[#F7F4E9] text-[#343B35] border border-[#D8CEBE] rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] transition-all`}
         style={{ pointerEvents: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header: Warm cream with signature pastel badge & tactile close button */}
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[#F0E4D5] bg-gradient-to-r from-[#FFF9F1] to-[#FFF3E3]">
-          <div className="flex items-center space-x-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#F4A98C]" />
-            <h3 className="font-heading text-lg font-bold text-[#3B3340] tracking-tight">
+        {/* Header: Warm cream solid with clean accent indicator */}
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[#D8CEBE] bg-[#EFE9D8]">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#668B65]" />
+            <h3 className="font-heading text-sm sm:text-base font-bold text-[#343B35] tracking-tight">
               {title || 'NETIZENCITY'}
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#FFF0E6] text-[#D97858] hover:bg-[#F4A98C] hover:text-white transition-colors flex items-center justify-center cursor-pointer border border-[#F2C9B6] shadow-sm"
+            className="w-7 h-7 rounded-lg bg-[#F7F4E9] hover:bg-[#E2DACB] text-[#78634B] transition-colors flex items-center justify-center cursor-pointer border border-[#D8CEBE]"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto pointer-events-auto leading-relaxed">{children}</div>
+        <div className="p-4 sm:p-5 overflow-y-auto pointer-events-auto leading-relaxed">{children}</div>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 // ============================================================
 // NETIZENCITY - Daily Login Reward Modal
 // 7-day Login Streak with Local Database Persistence
-// Stylized for Cozy Pastel Diorama Aesthetic
+// Stylized for Cozy Simulation Game Aesthetic
 // ============================================================
 
 'use client'
@@ -94,7 +94,7 @@ export default function DailyRewardModal() {
         }
 
         addNotification({
-          title: 'Hadiah Harian Berhasil Diklaim! 🎁',
+          title: 'Hadiah Harian Berhasil Diklaim!',
           message: `+${earnedCoins} Netizen Coins telah ditambahkan ke dompetmu!`,
           type: 'success',
         })
@@ -107,7 +107,7 @@ export default function DailyRewardModal() {
         updateBalance(cur + earnedCoins)
 
         addNotification({
-          title: 'Hadiah Harian Berhasil Diklaim! 🎁',
+          title: 'Hadiah Harian Berhasil Diklaim!',
           message: `+${earnedCoins} Netizen Coins telah ditambahkan ke dompetmu!`,
           type: 'success',
         })
@@ -117,7 +117,7 @@ export default function DailyRewardModal() {
       const cur = wallet?.balance ?? 500
       updateBalance(cur + 75)
       addNotification({
-        title: 'Hadiah Harian Diklaim! 🎁',
+        title: 'Hadiah Harian Diklaim!',
         message: '+75 Netizen Coins masuk ke dompetmu!',
         type: 'success',
       })
@@ -130,24 +130,24 @@ export default function DailyRewardModal() {
     <Modal
       isOpen={isOpen}
       onClose={closeModal}
-      title="HADIAH LOGIN HARIAN (7 HARI)"
+      title="Hadiah Login Harian"
       maxWidth="lg"
     >
-      <div className="space-y-6">
+      <div className="space-y-5">
         <div className="text-center">
-          <p className="text-xs text-[#6F6675] leading-relaxed">
-            Masuk ke kota setiap hari untuk mempertahankan streak dan dapatkan bonus koin serta item eksklusif pada hari ke-7!
+          <p className="text-xs text-[#78634B] leading-relaxed">
+            Masuk setiap hari untuk mempertahankan streak dan dapatkan bonus koin serta item eksklusif hari ke-7!
           </p>
-          <div className="flex items-center justify-center space-x-2 mt-2.5">
-            <span className="text-[11px] text-[#6A3F98] font-bold bg-[#F3EEFA] px-3 py-1 rounded-full border border-[#C9B8E8] flex items-center">
-              <CalendarCheck className="w-3.5 h-3.5 mr-1 text-[#6A3F98]" />
-              Streak Saat Ini: {currentStreak} Hari
+          <div className="flex items-center justify-center space-x-2 mt-2">
+            <span className="text-[11px] text-[#343B35] font-semibold bg-[#EFE9D8] px-3 py-1 rounded-lg border border-[#D8CEBE] flex items-center">
+              <CalendarCheck className="w-3.5 h-3.5 mr-1 text-[#668B65]" />
+              Streak: {currentStreak} Hari
             </span>
           </div>
         </div>
 
         {/* 7 Days Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {rewards.map((r) => {
             const isClaimed = r.day < currentStreak || (r.day === currentStreak && isClaimedToday)
             const isToday = r.day === currentStreak && !isClaimedToday
@@ -155,52 +155,52 @@ export default function DailyRewardModal() {
             return (
               <div
                 key={r.day}
-                className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center relative transition-all ${
+                className={`p-3 rounded-xl border flex flex-col items-center text-center relative transition-all ${
                   isClaimed
-                    ? 'bg-[#F8F5F0] border-[#E6DDD3] opacity-75'
+                    ? 'bg-[#EFE9D8]/50 border-[#D8CEBE] opacity-60'
                     : isToday
-                    ? 'bg-gradient-to-b from-[#FFF5DE] to-[#FFF0D4] border-[#F4A98C] shadow-md ring-2 ring-[#F4A98C]/40'
+                    ? 'bg-[#F7F4E9] border-2 border-[#668B65] shadow-xs'
                     : r.day === 7
-                    ? 'bg-gradient-to-b from-[#FFF9E6] to-[#FFE8A3] border-[#E5B537] shadow-sm'
-                    : 'bg-[#FFFDF9] border-[#EADBCC] shadow-xs'
+                    ? 'bg-[#E6C66F]/15 border-[#E6C66F]'
+                    : 'bg-[#EFE9D8] border-[#D8CEBE]'
                 } ${r.day === 7 ? 'col-span-2 sm:col-span-1' : ''}`}
               >
-                <span className="text-[10px] font-black text-[#5C5265] uppercase tracking-wider mb-2">
-                  Hari ke-{r.day}
+                <span className="text-[10px] font-semibold text-[#78634B] uppercase tracking-wide mb-1.5">
+                  Hari {r.day}
                 </span>
 
                 <div
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-2 shadow-xs ${
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center mb-1.5 ${
                     r.day === 7
-                      ? 'bg-[#FFE8A3] text-[#8C6008] border border-[#E5B537]'
+                      ? 'bg-[#E6C66F]/30 text-[#78634B]'
                       : isToday
-                      ? 'bg-[#FFF8DF] text-[#D4980B] border border-[#F7D772]'
-                      : 'bg-[#F8F4EE] text-[#D4980B] border border-[#EADBCC]'
+                      ? 'bg-[#668B65]/15 text-[#668B65]'
+                      : 'bg-[#F7F4E9] text-[#78634B]'
                   }`}
                 >
                   {r.item ? (
-                    <Gift className="w-5 h-5 text-[#8C6008] animate-bounce" />
+                    <Gift className="w-4 h-4 text-[#78634B]" />
                   ) : (
-                    <Coins className="w-5 h-5" />
+                    <Coins className="w-4 h-4" />
                   )}
                 </div>
 
-                <div className="font-black text-sm text-[#3B3340] font-mono">
+                <div className="font-bold text-sm text-[#343B35]">
                   +{r.coins}
                 </div>
-                <span className="text-[10px] font-bold text-[#8C6008]">Netizen Coins</span>
+                <span className="text-[10px] text-[#78634B]">Koin</span>
 
                 {r.item && (
-                  <span className="text-[9px] text-[#6A3F98] mt-1 font-bold leading-tight bg-[#F3EEFA] px-1.5 py-0.5 rounded-md border border-[#C9B8E8]">
+                  <span className="text-[9px] text-[#343B35] mt-1 font-medium bg-[#F7F4E9] px-1.5 py-0.5 rounded border border-[#D8CEBE]">
                     + {r.item}
                   </span>
                 )}
 
                 {isClaimed && (
-                  <div className="absolute inset-0 bg-[#FFFDF9]/85 rounded-2xl flex items-center justify-center backdrop-blur-[1px] border-2 border-[#A8DCC8]">
-                    <span className="text-[11px] font-black text-[#186D48] flex items-center bg-[#E8F8F0] px-2.5 py-1 rounded-xl border border-[#A8DCC8]">
-                      <CheckCircle className="w-3.5 h-3.5 mr-1 text-[#186D48]" />
-                      Sudah Diklaim
+                  <div className="absolute inset-0 bg-[#F7F4E9]/80 rounded-xl flex items-center justify-center border border-[#668B65]/40">
+                    <span className="text-[10px] font-semibold text-[#668B65] flex items-center bg-[#EFE9D8] px-2 py-0.5 rounded border border-[#D8CEBE]">
+                      <CheckCircle className="w-3 h-3 mr-1 text-[#668B65]" />
+                      Diklaim
                     </span>
                   </div>
                 )}
@@ -211,16 +211,16 @@ export default function DailyRewardModal() {
 
         {/* Guest Warning */}
         {isGuest && (
-          <div className="p-3.5 rounded-2xl bg-[#FFF5EC] border-2 border-[#F4C8B4] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div className="flex items-center space-x-2.5">
-              <UserPlus className="w-4 h-4 text-[#D97858] flex-shrink-0" />
-              <span className="text-[#3B3340] font-medium">
-                Kamu sedang berkunjung sebagai Tamu. Masuk atau daftar warga agar streak loginmu tersimpan permanen.
+          <div className="p-3 rounded-xl bg-[#EFE9D8] border border-[#D8CEBE] flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center space-x-2">
+              <UserPlus className="w-4 h-4 text-[#78634B] flex-shrink-0" />
+              <span className="text-[#343B35]">
+                Kamu berkunjung sebagai Tamu. Daftar warga agar streak loginmu tersimpan.
               </span>
             </div>
             <Link
               href="/welcome"
-              className="px-3.5 py-1.5 rounded-xl bg-[#F4A98C] text-white font-heading font-bold text-xs hover:bg-[#E88968] transition-colors whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg bg-[#668B65] text-white font-semibold text-xs hover:bg-[#557754] transition-colors whitespace-nowrap"
             >
               Daftar Warga
             </Link>
@@ -228,36 +228,36 @@ export default function DailyRewardModal() {
         )}
 
         {/* Claim Action */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#EADBCC]">
-          <div className="text-xs text-[#6F6675]">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#D8CEBE]">
+          <div className="text-xs text-[#78634B]">
             {isClaimedToday ? (
-              <span className="text-[#186D48] font-bold flex items-center">
-                <CheckCircle className="w-4 h-4 mr-1.5" />
-                Kamu sudah mengklaim hadiah hari ini. Kembali lagi besok!
+              <span className="text-[#668B65] font-semibold flex items-center">
+                <CheckCircle className="w-3.5 h-3.5 mr-1 text-[#668B65]" />
+                Hadiah hari ini sudah kamu klaim.
               </span>
             ) : (
-              <span className="text-[#3B3340] font-semibold flex items-center">
-                <Gift className="w-4 h-4 mr-1.5 text-[#D97858]" />
-                Hadiah hari ini siap untuk kamu klaim!
+              <span className="text-[#343B35] font-medium flex items-center">
+                <Gift className="w-3.5 h-3.5 mr-1 text-[#668B65]" />
+                Hadiah hari ini siap diambil.
               </span>
             )}
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" onClick={closeModal}>
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+            <Button variant="secondary" onClick={closeModal}>
               Tutup
             </Button>
             <Button
-              variant="accent"
+              variant="primary"
               disabled={isClaimedToday || isClaiming || isLoading}
               onClick={handleClaim}
             >
               {isClaiming ? (
-                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
               ) : (
-                <Gift className="w-4 h-4 mr-1.5" />
+                <Gift className="w-3.5 h-3.5 mr-1.5" />
               )}
-              <span>{isClaimedToday ? 'Sudah Diklaim' : 'Klaim Hadiah Hari Ini'}</span>
+              <span>{isClaimedToday ? 'Sudah Diklaim' : 'Klaim Hadiah'}</span>
             </Button>
           </div>
         </div>

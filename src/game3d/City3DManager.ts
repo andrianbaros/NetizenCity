@@ -236,6 +236,18 @@ export class City3DManager {
   private pointerStart = { x: 0, y: 0 };
   private pointerDownPos = { x: 0, y: 0 };
   private targetPosition: THREE.Vector3 | null = null;
+  private activePointers = new Map<number, { x: number; y: number }>();
+  private pinchStartDistance = 0;
+  private pinchStartRadius = 0;
+  private pinchStartMidpoint = { x: 0, y: 0 };
+  private virtualMove: { x: number; y: number } | null = null;
+  private tuguLamps: Array<{
+    root: THREE.Group;
+    globeMat: THREE.MeshStandardMaterial;
+    light: THREE.PointLight | null;
+  }> = [];
+  private handleTimeOfDayEvent?: (e: any) => void;
+  private handleToggleDayNightEvent?: () => void;
 
   // Character movement state
   private playerPos = new THREE.Vector3(0, 0, 14);
@@ -771,7 +783,7 @@ export class City3DManager {
     return bench;
   }
 
-  private createParkLamp(): THREE.Group {
+  private createParkLamp(hasLight = false): THREE.Group {
     const lamp = new THREE.Group();
     const poleMat = new THREE.MeshStandardMaterial({ color: '#2C2B36', roughness: 0.6, metalness: 0.6 });
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.16, 3.8, 8), poleMat);
@@ -790,16 +802,21 @@ export class City3DManager {
     const glassMat = new THREE.MeshStandardMaterial({
       color: '#FFF8E7',
       emissive: '#FFDA8A',
-      emissiveIntensity: 1.8,
+      emissiveIntensity: 0.4,
       roughness: 0.3,
     });
-    const globe = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 12), glassMat);
+    const globe = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), glassMat);
     globe.position.y = 3.75;
     lamp.add(globe);
 
-    const bulbLight = new THREE.PointLight('#FFE29A', 1.2, 10, 1.8);
-    bulbLight.position.y = 3.75;
-    lamp.add(bulbLight);
+    let bulbLight: THREE.PointLight | null = null;
+    if (hasLight) {
+      bulbLight = new THREE.PointLight('#FFE29A', 0, 16, 1.6);
+      bulbLight.position.y = 3.75;
+      lamp.add(bulbLight);
+    }
+
+    this.tuguLamps.push({ root: lamp, globeMat: glassMat, light: bulbLight });
 
     return lamp;
   }
@@ -1001,9 +1018,10 @@ export class City3DManager {
       this.tuguWorldGroup.add(bench);
     }
 
+    this.tuguLamps = [];
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2;
-      const lamp = this.createParkLamp();
+      const lamp = this.createParkLamp(i % 2 === 0);
       lamp.position.set(Math.cos(a) * 15.5, 0.03, Math.sin(a) * 15.5);
       lamp.rotation.y = -a;
       this.tuguWorldGroup.add(lamp);
@@ -1164,6 +1182,9 @@ export class City3DManager {
     this.spherical.theta = this.playerFacing + Math.PI;
     this.updateCameraTransform();
 
+    // Re-apply time of day atmosphere to Tugu scene
+    this.applyTimeOfDay(this.timeOfDay);
+
     useGameStore.getState().setSelectedBuilding('monument');
     useGameStore.getState().setCurrentDistrict('Pusat Kota');
 
@@ -1193,6 +1214,9 @@ export class City3DManager {
     this.spherical.phi = Math.PI / 3.5;
     this.spherical.theta = Math.PI * 0.75;
     this.updateCameraTransform();
+
+    // Re-apply time of day atmosphere to main city
+    this.applyTimeOfDay(this.timeOfDay);
 
     useGameStore.getState().setSelectedBuilding(null);
     useGameStore.getState().setCurrentDistrict('town_square');
@@ -1352,6 +1376,22 @@ private setupAirplanes() {
     this.sunLight.color.copy(sunColor);
     this.moonLight.intensity = nightAmount * 1.4;
 
+    if (this.hemiLight) {
+      if (nightAmount > 0.5) {
+        this.hemiLight.intensity = 0.35;
+        this.hemiLight.color.set('#2E3E66');
+        this.hemiLight.groundColor.set('#111827');
+      } else if (nightAmount > 0.2) {
+        this.hemiLight.intensity = 0.75;
+        this.hemiLight.color.set('#E6C6A0');
+        this.hemiLight.groundColor.set('#B08D68');
+      } else {
+        this.hemiLight.intensity = 1.05;
+        this.hemiLight.color.set('#D3E8FF');
+        this.hemiLight.groundColor.set('#EAD6B4');
+      }
+    }
+
     if (this.skyUniforms) {
       this.skyUniforms.top.value.copy(skyTop);
       this.skyUniforms.hor.value.copy(skyHor);
@@ -1405,6 +1445,30 @@ private setupAirplanes() {
     if (this.tuguMpark) {
       this.tuguMpark.lampM.emissiveIntensity = 2.0 * nightAmount;
     }
+    if (this.tuguLamps) {
+      this.tuguLamps.forEach((lamp) => {
+        if (lamp.globeMat) {
+          lamp.globeMat.emissiveIntensity = nightAmount > 0.3 ? 3.5 : 0.4;
+        }
+        if (lamp.light) {
+          lamp.light.intensity = nightAmount > 0.3 ? 1.6 : 0.0;
+        }
+      });
+    }
+  }
+
+  public zoomIn(factor = 0.82) {
+    this.spherical.radius = THREE.MathUtils.clamp(this.spherical.radius * factor, 8, 300);
+    this.updateCameraTransform();
+  }
+
+  public zoomOut(factor = 1.22) {
+    this.spherical.radius = THREE.MathUtils.clamp(this.spherical.radius * factor, 8, 300);
+    this.updateCameraTransform();
+  }
+
+  public setVirtualMovement(move: { x: number; y: number } | null) {
+    this.virtualMove = move;
   }
 
   // ============================================================
@@ -1466,6 +1530,7 @@ private setupAirplanes() {
     el.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
+    window.addEventListener('pointercancel', this.onPointerUp);
     el.addEventListener('wheel', this.onWheel, { passive: false });
     el.addEventListener('click', this.onClick);
     this.handleEnterTuguEvent = () => this.enterTuguArea();
@@ -1477,6 +1542,21 @@ private setupAirplanes() {
       if (text) this.showPlayerSpeechBubble(text);
     };
     window.addEventListener('player-chat-sent', this.handlePlayerChat);
+
+    this.handleTimeOfDayEvent = (e: any) => {
+      const time = e.detail?.time;
+      if (time) this.applyTimeOfDay(time);
+    };
+    this.handleToggleDayNightEvent = () => {
+      const nextTime: TimeOfDay = this.timeOfDay === 'night' ? 'noon' : 'night';
+      this.applyTimeOfDay(nextTime);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('time-of-day-changed', { detail: { time: nextTime } }));
+      }
+    };
+    window.addEventListener('time-of-day-changed', this.handleTimeOfDayEvent);
+    window.addEventListener('toggle-day-night', this.handleToggleDayNightEvent);
+
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('resize', this.onResize);
@@ -1498,16 +1578,59 @@ private setupAirplanes() {
   };
 
   private onPointerDown = (e: PointerEvent) => {
-    this.isPointerDown = true;
-    this.isPanning = e.button === 2 || e.shiftKey;
-    this.pointerStart = { x: e.clientX, y: e.clientY };
-    this.pointerDownPos = { x: e.clientX, y: e.clientY };
+    this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (this.activePointers.size === 1) {
+      this.isPointerDown = true;
+      this.isPanning = e.button === 2 || e.shiftKey;
+      this.pointerStart = { x: e.clientX, y: e.clientY };
+      this.pointerDownPos = { x: e.clientX, y: e.clientY };
+    } else if (this.activePointers.size === 2) {
+      const [p1, p2] = Array.from(this.activePointers.values());
+      this.pinchStartDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+      this.pinchStartRadius = this.spherical.radius;
+      this.pinchStartMidpoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      this.isPanning = true;
+    }
   };
 
   private onPointerMove = (e: PointerEvent) => {
     const rect = this.container.getBoundingClientRect();
     this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    if (this.activePointers.has(e.pointerId)) {
+      this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+
+    // MULTI-TOUCH GESTURES: Pinch zoom & 2-finger pan for mobile
+    if (this.activePointers.size >= 2) {
+      const [p1, p2] = Array.from(this.activePointers.values());
+      const currentDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+      if (this.pinchStartDistance > 5 && currentDist > 5) {
+        const factor = this.pinchStartDistance / currentDist;
+        this.spherical.radius = THREE.MathUtils.clamp(this.pinchStartRadius * factor, 8, 300);
+      }
+
+      const curMid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      const mdx = curMid.x - this.pinchStartMidpoint.x;
+      const mdy = curMid.y - this.pinchStartMidpoint.y;
+      this.pinchStartMidpoint = curMid;
+
+      if (this.cameraMode !== 'follow') {
+        const forward = new THREE.Vector3();
+        this.camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
+        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+        const panSpeed = this.spherical.radius * 0.0018;
+
+        this.target.addScaledVector(right, -mdx * panSpeed);
+        this.target.addScaledVector(forward, mdy * panSpeed);
+      }
+      this.updateCameraTransform();
+      return;
+    }
 
     if (this.viewMode === 'city') {
       this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -1555,9 +1678,21 @@ private setupAirplanes() {
     this.updateCameraTransform();
   };
 
-  private onPointerUp = () => {
-    this.isPointerDown = false;
-    this.isPanning = false;
+  private onPointerUp = (e?: PointerEvent) => {
+    if (e && this.activePointers.has(e.pointerId)) {
+      this.activePointers.delete(e.pointerId);
+    } else if (!e) {
+      this.activePointers.clear();
+    }
+
+    if (this.activePointers.size === 0) {
+      this.isPointerDown = false;
+      this.isPanning = false;
+    } else if (this.activePointers.size === 1) {
+      const remaining = Array.from(this.activePointers.values())[0];
+      this.pointerStart = { x: remaining.x, y: remaining.y };
+      this.isPanning = false;
+    }
   };
 
   private onWheel = (e: WheelEvent) => {
@@ -1746,6 +1881,12 @@ private setupAirplanes() {
     const camRight = new THREE.Vector3().crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
 
     let moveVec = new THREE.Vector3();
+    if (this.virtualMove) {
+      if (this.virtualMove.y < 0) moveVec.add(camDir);
+      if (this.virtualMove.y > 0) moveVec.sub(camDir);
+      if (this.virtualMove.x > 0) moveVec.add(camRight);
+      if (this.virtualMove.x < 0) moveVec.sub(camRight);
+    }
     if (this.keysPressed['w'] || this.keysPressed['arrowup']) moveVec.add(camDir);
     if (this.keysPressed['s'] || this.keysPressed['arrowdown']) moveVec.sub(camDir);
     if (this.keysPressed['d'] || this.keysPressed['arrowright']) moveVec.add(camRight);
@@ -2074,24 +2215,26 @@ private setupAirplanes() {
       }
     }
 
-    // City animations
-    if (this.metro) {
-      this.metro.update(elapsed, elapsed, 1e9, elapsed + 40, 1e9, 1e9, 1e9, [], 1e9);
-    }
-    if (this.clouds) {
-      this.clouds.position.x = elapsed * 0.6;
-    }
-    if (this.river) {
-      this.river.build(1, elapsed);
-    }
-    if (this.lab) {
-      this.lab.update(elapsed);
-    }
-    if (this.tower) {
-      this.tower.env(1);
-    }
-    if (this.fireflies && (this.timeOfDay === 'night' || this.timeOfDay === 'sunset')) {
-      this.fireflies.update(elapsed, 1.0);
+    // City animations: ONLY execute in City mode to maximize performance in Tugu mode
+    if (this.viewMode === 'city') {
+      if (this.metro) {
+        this.metro.update(elapsed, elapsed, 1e9, elapsed + 40, 1e9, 1e9, 1e9, [], 1e9);
+      }
+      if (this.clouds) {
+        this.clouds.position.x = elapsed * 0.6;
+      }
+      if (this.river) {
+        this.river.build(1, elapsed);
+      }
+      if (this.lab) {
+        this.lab.update(elapsed);
+      }
+      if (this.tower) {
+        this.tower.env(1);
+      }
+      if (this.fireflies && (this.timeOfDay === 'night' || this.timeOfDay === 'sunset')) {
+        this.fireflies.update(elapsed, 1.0);
+      }
     }
 
     // Render 3D Scene
@@ -2110,13 +2253,17 @@ private setupAirplanes() {
     el.removeEventListener('pointerdown', this.onPointerDown);
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
+    window.removeEventListener('pointercancel', this.onPointerUp);
     el.removeEventListener('wheel', this.onWheel);
     el.removeEventListener('click', this.onClick);
     if (this.handleEnterTuguEvent) window.removeEventListener('enter-tugu-area', this.handleEnterTuguEvent);
     if (this.handleExitTuguEvent) window.removeEventListener('exit-tugu-area', this.handleExitTuguEvent);
+    if (this.handleTimeOfDayEvent) window.removeEventListener('time-of-day-changed', this.handleTimeOfDayEvent);
+    if (this.handleToggleDayNightEvent) window.removeEventListener('toggle-day-night', this.handleToggleDayNightEvent);
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('resize', this.onResize);
+    this.activePointers.clear();
     this.renderer?.domElement?.removeEventListener('webglcontextlost', this.onContextLost);
     this.renderer?.domElement?.removeEventListener('webglcontextrestored', this.onContextRestored);
 

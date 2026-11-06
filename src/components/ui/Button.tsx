@@ -1,5 +1,5 @@
 // ============================================================
-// NETIZENCITY - Button Component (Cozy 3D Game Aesthetic)
+// NETIZENCITY - Button Component (Cozy Simulation Game Buttons)
 // ============================================================
 
 import React, { forwardRef } from 'react'
@@ -34,33 +34,33 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-heading font-bold transition-all duration-150 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none active:translate-y-0.5 cursor-pointer'
+      'inline-flex items-center justify-center font-heading font-semibold transition-colors duration-150 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none active:translate-y-0.5 cursor-pointer rounded-xl'
 
     const sizeStyles = {
-      sm: 'px-3 py-1.5 text-xs rounded-xl gap-1.5 border-b-2',
-      md: 'px-4.5 py-2 text-sm rounded-2xl gap-2 border-b-3',
-      lg: 'px-6 py-2.5 text-base rounded-2xl gap-2.5 border-b-4',
+      sm: 'px-2.5 py-1.5 text-xs gap-1.5',
+      md: 'px-3.5 py-2 text-xs sm:text-sm gap-2',
+      lg: 'px-5 py-2.5 text-sm sm:text-base gap-2.5',
     }
 
     const variantStyles = {
       primary:
-        'bg-gradient-to-b from-[#BEDBF4] to-[#A9C8EC] text-[#20456E] border-2 border-[#86A8D2] border-b-[#668CB7] shadow-sm hover:from-[#CCE4F8] hover:to-[#B6D2F4]',
+        'bg-[#668B65] text-white hover:bg-[#557754] border border-[#557754] shadow-xs',
       secondary:
-        'bg-gradient-to-b from-[#FFFDF9] to-[#F5ECE0] text-[#3B3340] border-2 border-[#E2D2C2] border-b-[#CCA892] shadow-sm hover:bg-[#FFFDF9]',
+        'bg-[#EFE9D8] text-[#343B35] hover:bg-[#E2DACB] border border-[#D8CEBE] shadow-xs',
       accent:
-        'bg-gradient-to-b from-[#FFE896] to-[#F7D772] text-[#4A3A12] border-2 border-[#D9AF3A] border-b-[#B88E1C] shadow-sm hover:from-[#FFF0AD] hover:to-[#F8DE82]',
+        'bg-[#E6C66F] text-[#343B35] hover:bg-[#DBB858] border border-[#CCA745] shadow-xs',
       mint:
-        'bg-gradient-to-b from-[#C2EADE] to-[#A8DCC8] text-[#1B5745] border-2 border-[#86C4AD] border-b-[#60A28A] shadow-sm hover:from-[#D0F0E6] hover:to-[#B7E5D4]',
+        'bg-[#A5BE91] text-[#253224] hover:bg-[#93AE7F] border border-[#839F6F] shadow-xs',
       peach:
-        'bg-gradient-to-b from-[#F8BCA4] to-[#F4A98C] text-white border-2 border-[#D98868] border-b-[#B86241] shadow-sm hover:from-[#FAC7B3] hover:to-[#F6B49A]',
+        'bg-[#78634B] text-white hover:bg-[#64513B] border border-[#584632] shadow-xs',
       lavender:
-        'bg-gradient-to-b from-[#DFD2F7] to-[#C9B8E8] text-[#463167] border-2 border-[#A793CC] border-b-[#816AA8] shadow-sm hover:from-[#E9DFFC] hover:to-[#D4C5EE]',
+        'bg-[#A9C9D8] text-[#1E3947] hover:bg-[#95BDCE] border border-[#82ACC0] shadow-xs',
       danger:
-        'bg-gradient-to-b from-[#F7A6B5] to-[#F08096] text-white border-2 border-[#D9617A] border-b-[#B6435C] shadow-sm hover:from-[#F9B7C3] hover:to-[#F28C9F]',
+        'bg-[#C25E5E] text-white hover:bg-[#AD4D4D] border border-[#993E3E] shadow-xs',
       ghost:
-        'bg-white/40 hover:bg-white/80 text-[#3B3340] border border-[#E8DCCF] border-b-2 border-b-[#D8C7B8]',
+        'bg-transparent hover:bg-[#EFE9D8] text-[#343B35]',
       pixel:
-        'bg-[#A9C8EC] text-[#20456E] border-2 border-b-4 border-r-4 border-[#3B3340] active:border-b-2 active:border-r-2 uppercase tracking-wider',
+        'bg-[#668B65] text-white border-2 border-[#343B35] active:translate-y-0.5 uppercase tracking-wider',
     }
 
     return (
@@ -72,7 +72,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading && (
           <svg
-            className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
+            className="animate-spin -ml-1 mr-2 h-3.5 w-3.5 text-current"
             fill="none"
             viewBox="0 0 24 24"
           >

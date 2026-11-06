@@ -1,7 +1,7 @@
 // ============================================================
 // NETIZENCITY - Missions & Quests Modal
 // Daily & Weekly Citizen Tasks with Coin & XP Rewards
-// Stylized for Cozy Pastel Diorama Aesthetic
+// Stylized for Cozy Simulation Game Aesthetic
 // ============================================================
 
 'use client'
@@ -151,7 +151,7 @@ export default function MissionsModal() {
         updateBalance(cur + mission.reward_coins)
 
         addNotification({
-          title: 'Hadiah Misi Diklaim! 🎯',
+          title: 'Hadiah Misi Diklaim!',
           message: `+${mission.reward_coins} Koin & +${mission.reward_xp} XP berhasil diperoleh!`,
           type: 'success',
         })
@@ -165,7 +165,7 @@ export default function MissionsModal() {
         const cur = wallet?.balance ?? 500
         updateBalance(cur + mission.reward_coins)
         addNotification({
-          title: 'Hadiah Misi Diklaim! 🎯',
+          title: 'Hadiah Misi Diklaim!',
           message: `+${mission.reward_coins} Koin & +${mission.reward_xp} XP diperoleh!`,
           type: 'success',
         })
@@ -179,7 +179,7 @@ export default function MissionsModal() {
       const cur = wallet?.balance ?? 500
       updateBalance(cur + mission.reward_coins)
       addNotification({
-        title: 'Hadiah Misi Diklaim! 🎯',
+        title: 'Hadiah Misi Diklaim!',
         message: `+${mission.reward_coins} Koin diperoleh!`,
         type: 'success',
       })
@@ -189,32 +189,32 @@ export default function MissionsModal() {
   }
 
   const getMissionIcon = (id: string) => {
-    if (id === 'm-01') return <Compass className="w-5 h-5 text-[#2C6ECB]" />
-    if (id === 'm-02') return <Trash2 className="w-5 h-5 text-[#186D48]" />
-    if (id === 'm-03') return <Package className="w-5 h-5 text-[#8C6008]" />
-    return <Vote className="w-5 h-5 text-[#6A3F98]" />
+    if (id === 'm-01') return <Compass className="w-4 h-4 text-[#78634B]" />
+    if (id === 'm-02') return <Trash2 className="w-4 h-4 text-[#668B65]" />
+    if (id === 'm-03') return <Package className="w-4 h-4 text-[#78634B]" />
+    return <Vote className="w-4 h-4 text-[#668B65]" />
   }
 
   const displayList = missions.length > 0 ? missions : fallbackMissions
 
   return (
-    <Modal isOpen={isOpen} onClose={closeModal} title="MISI & PRESTASI WARGA" maxWidth="lg">
-      <div className="space-y-4">
-        <div className="p-3 bg-[#FFF9F1] rounded-2xl border-2 border-[#EADBCC] text-xs text-[#5C5265] leading-relaxed">
-          Selesaikan misi harian dan mingguan warga untuk mendapatkan Netizen Coins ekstra, menaikkan level, dan membangun peradaban kota bersama!
+    <Modal isOpen={isOpen} onClose={closeModal} title="Misi & Prestasi Warga" maxWidth="lg">
+      <div className="space-y-3.5">
+        <div className="p-2.5 bg-[#EFE9D8] rounded-xl border border-[#D8CEBE] text-xs text-[#78634B] leading-relaxed">
+          Selesaikan misi harian dan mingguan untuk mendapatkan Netizen Coins ekstra dan menaikkan level warga!
         </div>
 
         {!profile && (
-          <div className="p-3.5 rounded-2xl bg-[#FFF5EC] border-2 border-[#F4C8B4] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div className="flex items-center space-x-2.5">
-              <UserPlus className="w-4 h-4 text-[#D97858] flex-shrink-0" />
-              <span className="text-[#3B3340] font-medium">
-                Kamu sedang berkunjung sebagai Tamu. Masuk atau daftar warga agar progres misi dan hadiah koin tersimpan permanen.
+          <div className="p-3 rounded-xl bg-[#EFE9D8] border border-[#D8CEBE] flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center space-x-2">
+              <UserPlus className="w-4 h-4 text-[#78634B] flex-shrink-0" />
+              <span className="text-[#343B35]">
+                Kamu berkunjung sebagai Tamu. Masuk atau daftar warga agar progres misi tersimpan.
               </span>
             </div>
             <Link
               href="/welcome"
-              className="px-3.5 py-1.5 rounded-xl bg-[#F4A98C] text-white font-heading font-bold text-xs hover:bg-[#E88968] transition-colors whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg bg-[#668B65] text-white font-semibold text-xs hover:bg-[#557754] transition-colors whitespace-nowrap"
             >
               Daftar Warga
             </Link>
@@ -222,12 +222,12 @@ export default function MissionsModal() {
         )}
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-10 text-[#6F6675] text-xs">
-            <Loader2 className="w-5 h-5 animate-spin mr-2 text-[#76A9EA]" />
+          <div className="flex items-center justify-center py-8 text-[#78634B] text-xs">
+            <Loader2 className="w-4 h-4 animate-spin mr-2 text-[#668B65]" />
             <span>Memuat misi kota...</span>
           </div>
         ) : (
-          <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1 scrollbar-thin">
+          <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
             {displayList.map((m) => {
               const pct = Math.min(100, Math.round((m.progress / m.target) * 100))
               const canClaim = (m.progress >= m.target || m.isCompleted) && !m.isClaimed
@@ -235,43 +235,43 @@ export default function MissionsModal() {
               return (
                 <div
                   key={m.id}
-                  className={`p-4 rounded-2xl border-2 transition-all ${
+                  className={`p-3 rounded-xl border transition-all ${
                     m.isClaimed
-                      ? 'bg-[#F8F5F0] border-[#E6DDD3] opacity-75'
+                      ? 'bg-[#EFE9D8]/50 border-[#D8CEBE] opacity-60'
                       : canClaim
-                      ? 'bg-[#F0FDF4] border-[#A8DCC8] shadow-md ring-1 ring-[#A8DCC8]/40'
-                      : 'bg-[#FFFDF9] border-[#EADBCC] shadow-xs'
+                      ? 'bg-[#F7F4E9] border-2 border-[#668B65] shadow-xs'
+                      : 'bg-[#EFE9D8] border-[#D8CEBE]'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start space-x-3">
-                      <div className="p-2.5 rounded-2xl bg-[#FFF9F1] border border-[#EADBCC] flex-shrink-0 shadow-inner">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-start space-x-2.5">
+                      <div className="p-2 rounded-lg bg-[#F7F4E9] border border-[#D8CEBE] flex-shrink-0">
                         {getMissionIcon(m.id)}
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <h5 className="font-extrabold text-[#3B3340] text-xs">{m.name}</h5>
-                          <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#F4ECE0] text-[#5C5265] border border-[#D9C8B5]">
+                          <h5 className="font-bold text-[#343B35] text-xs">{m.name}</h5>
+                          <span className="text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded bg-[#F7F4E9] text-[#78634B] border border-[#D8CEBE]">
                             {m.type === 'daily' ? 'Harian' : 'Mingguan'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-[#6F6675] mt-0.5">
+                        <p className="text-[11px] text-[#78634B] mt-0.5">
                           {m.description}
                         </p>
                       </div>
                     </div>
 
                     {/* Reward Badge */}
-                    <div className="flex items-center space-x-2 flex-shrink-0">
-                      <div className="flex items-center space-x-1 bg-[#FFF8DF] px-2 py-1 rounded-xl border border-[#F7D772] text-xs">
-                        <Coins className="w-3.5 h-3.5 text-[#D4980B]" />
-                        <span className="font-black text-[#8C6008] font-mono">
+                    <div className="flex items-center space-x-1.5 flex-shrink-0">
+                      <div className="flex items-center space-x-1 bg-[#F7F4E9] px-2 py-0.5 rounded-lg border border-[#D8CEBE] text-xs">
+                        <Coins className="w-3 h-3 text-[#E6C66F]" />
+                        <span className="font-bold text-[#343B35]">
                           +{m.reward_coins}
                         </span>
                       </div>
-                      <div className="flex items-center space-x-1 bg-[#F3EEFA] px-2 py-1 rounded-xl border border-[#C9B8E8] text-xs">
-                        <Award className="w-3.5 h-3.5 text-[#6A3F98]" />
-                        <span className="font-black text-[#6A3F98] font-mono">
+                      <div className="flex items-center space-x-1 bg-[#F7F4E9] px-2 py-0.5 rounded-lg border border-[#D8CEBE] text-xs">
+                        <Award className="w-3 h-3 text-[#668B65]" />
+                        <span className="font-bold text-[#668B65]">
                           +{m.reward_xp} XP
                         </span>
                       </div>
@@ -279,21 +279,17 @@ export default function MissionsModal() {
                   </div>
 
                   {/* Progress Bar & Claim Button */}
-                  <div className="mt-3 pt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-3">
+                  <div className="mt-2.5 pt-2.5 border-t border-[#D8CEBE] flex items-center justify-between gap-3">
                     <div className="flex-1">
-                      <div className="flex justify-between text-[10px] text-[#6F6675] font-mono mb-1 font-semibold">
-                        <span>Progress Misi</span>
+                      <div className="flex justify-between text-[10px] text-[#78634B] mb-1 font-medium">
+                        <span>Progress</span>
                         <span>
                           {m.progress} / {m.target} ({pct}%)
                         </span>
                       </div>
-                      <div className="w-full h-2 rounded-full bg-[#F0EAE1] overflow-hidden border border-[#EADBCC]/60">
+                      <div className="w-full h-1.5 rounded-full bg-[#D8CEBE] overflow-hidden">
                         <div
-                          className={`h-full transition-all duration-500 rounded-full ${
-                            canClaim || m.isClaimed
-                              ? 'bg-[#4EBA88]'
-                              : 'bg-[#76A9EA]'
-                          }`}
+                          className="h-full bg-[#668B65] transition-all duration-300 rounded-full"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -301,27 +297,27 @@ export default function MissionsModal() {
 
                     <div className="flex-shrink-0">
                       {m.isClaimed ? (
-                        <span className="text-[11px] font-black text-[#186D48] flex items-center px-2.5 py-1 rounded-xl bg-[#E8F8F0] border border-[#A8DCC8]">
-                          <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-[#186D48]" />
+                        <span className="text-[10px] font-semibold text-[#668B65] flex items-center px-2 py-0.5 rounded-lg bg-[#F7F4E9] border border-[#D8CEBE]">
+                          <CheckCircle2 className="w-3 h-3 mr-1 text-[#668B65]" />
                           Selesai
                         </span>
                       ) : canClaim ? (
-                        <button
-                          type="button"
+                        <Button
+                          size="sm"
+                          variant="primary"
                           disabled={claimingId === m.id}
                           onClick={() => handleClaimReward(m)}
-                          className="px-3.5 py-1.5 rounded-xl bg-[#4EBA88] hover:bg-[#3FA675] text-white font-bold text-xs shadow-sm border-b-3 border-[#2E7F59] active:border-b-0 active:translate-y-0.5 transition-transform flex items-center space-x-1 cursor-pointer"
                         >
                           {claimingId === m.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                            <Loader2 className="w-3 h-3 animate-spin mr-1" />
                           ) : (
-                            <Award className="w-3.5 h-3.5 mr-1" />
+                            <Award className="w-3 h-3 mr-1" />
                           )}
-                          <span>Klaim Hadiah</span>
-                        </button>
+                          <span>Klaim</span>
+                        </Button>
                       ) : (
-                        <span className="text-[11px] text-[#6F6675] font-semibold px-2 py-1">
-                          Sedang Berjalan
+                        <span className="text-[10px] text-[#78634B] font-medium px-1.5 py-0.5">
+                          Berjalan
                         </span>
                       )}
                     </div>
@@ -332,8 +328,8 @@ export default function MissionsModal() {
           </div>
         )}
 
-        <div className="flex justify-end pt-3 border-t border-[#EADBCC]">
-          <Button variant="ghost" onClick={closeModal}>
+        <div className="flex justify-end pt-2 border-t border-[#D8CEBE]">
+          <Button variant="secondary" onClick={closeModal}>
             Tutup
           </Button>
         </div>
