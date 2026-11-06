@@ -13,10 +13,22 @@ import {
   Plane,
   Vote,
   CheckCircle2,
-  Sparkles,
   Users,
   Send,
   Loader2,
+  HeartPulse,
+  Shield,
+  Flame,
+  Train,
+  Landmark,
+  BookOpen,
+  Trophy,
+  Atom,
+  Dog,
+  GraduationCap,
+  Mountain,
+  Sun,
+  Church,
 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -88,7 +100,7 @@ export default function BuildingModal() {
     id: 'vote-01',
     title: 'Fasilitas Publik Baru NETIZENCITY',
     description:
-      'Pilih fasilitas umum berikutnya yang akan diprioritaskan dibangun oleh Pemerintah Kota.',
+      'Pilih fasilitas umum berikutnya yang akan diprioritaskan dibangun oleh Mayor.',
     options: [
       { id: 0, title: 'Stadion Olahraga & Mini-Game Sepakbola Kota', votes: 1984 },
       { id: 1, title: 'Museum Seni Pixel & Bioskop Terbuka Komunitas', votes: 923 },
@@ -145,9 +157,129 @@ export default function BuildingModal() {
     airport_terminal: {
       title: 'BANDARA INTERNASIONAL NETIZEN',
       icon: <Plane className="w-6 h-6 text-sky-400" />,
-      district: 'Bandara & Kedatangan',
-      desc: 'Pintu gerbang masuk wisatawan dan warga baru dari komunitas Instagram @netizencity.id. Semua warga baru mendarat di sini sebelum menuju pusat kota.',
+      district: 'Bandara & Kedatangan (Day 7)',
+      desc: 'Pintu gerbang masuk wisatawan dan warga baru dari komunitas Instagram @netizencity.id dengan landasan pacu megah dan menara ATC modern.',
       actionName: 'Tutup Info Bandara',
+      actionType: 'inspect',
+    },
+    monument: {
+      title: 'MONUMEN NETIZEN CITY & TAMAN AIR MANCUR',
+      icon: <Landmark className="w-6 h-6 text-yellow-400" />,
+      district: 'Pusat Kota',
+      desc: 'Monumen kebanggaan kota dengan obelisk megah, hati kristal bercahaya, prasasti nama investor, dan pertunjukan air mancur jet di taman kota.',
+      actionName: 'Kagumi Monumen',
+      actionType: 'inspect',
+    },
+    investor_tower: {
+      title: 'MENARA INVESTOR (103 INVESTOR KOTA)',
+      icon: <Building2 className="w-6 h-6 text-purple-400" />,
+      district: 'Distrik Investor (Day 8)',
+      desc: 'Menara spiral 11 lantai berlapis opal dengan 100 jendela menyala untuk para investor, 3 Crown Windows emas di puncak, cincin halo terapung, dan sign neon "TERIMA KASIH, INVESTOR KOTA".',
+      actionName: 'Lihat Daftar Investor',
+      actionType: 'inspect',
+    },
+    hospital: {
+      title: 'RSUD NETIZEN CITY',
+      icon: <HeartPulse className="w-6 h-6 text-rose-400" />,
+      district: 'Fasilitas Publik',
+      desc: 'Rumah sakit pusat dengan ambulans siaga 24 jam dan pelayanan kesehatan lengkap bagi seluruh warga Netizen City.',
+      actionName: 'Periksa Kesehatan',
+      actionType: 'inspect',
+    },
+    police: {
+      title: 'KANTOR POLISI NETIZEN CITY',
+      icon: <Shield className="w-6 h-6 text-blue-400" />,
+      district: 'Fasilitas Publik',
+      desc: 'Pusat komando keamanan dan ketertiban kota menjaga perdamaian di seluruh distrik.',
+      actionName: 'Lapor Keamanan',
+      actionType: 'inspect',
+    },
+    fire_station: {
+      title: 'POS DAMKAR NETIZEN CITY',
+      icon: <Flame className="w-6 h-6 text-orange-400" />,
+      district: 'Fasilitas Publik',
+      desc: 'Pos pemadam kebakaran sigap dengan armada mobil pemadam modern siap menghadapi situasi darurat.',
+      actionName: 'Cek Kesiapsiagaan',
+      actionType: 'inspect',
+    },
+    train_station: {
+      title: 'STASIUN KERETA NETIZEN EXPRESS',
+      icon: <Train className="w-6 h-6 text-cyan-400" />,
+      district: 'Transportasi',
+      desc: 'Stasiun kereta api komuter modern yang menghubungkan distrik selatan melewati rel kereta kota.',
+      actionName: 'Jadwal Kereta',
+      actionType: 'inspect',
+    },
+    worship_place: {
+      title: 'KAWASAN KERUKUNAN (MASJID & GEREJA)',
+      icon: <Church className="w-6 h-6 text-teal-400" />,
+      district: 'Kawasan Kerukunan',
+      desc: 'Simbol toleransi dan harmoni kota, tempat ibadah berdampingan dengan damai di sebelah barat kota.',
+      actionName: 'Kunjungi Rumah Ibadah',
+      actionType: 'inspect',
+    },
+    library: {
+      title: 'PERPUSTAKAAN PUBLIK JI HANN',
+      icon: <BookOpen className="w-6 h-6 text-indigo-400" />,
+      district: 'Fasilitas Publik (Day 7)',
+      desc: 'Perpustakaan kota usulan warga @ji_hann09 dengan ribuan koleksi buku digital, arsip sejarah kota, dan ruang baca nyaman di tepi trotoar.',
+      actionName: 'Baca Buku',
+      actionType: 'inspect',
+    },
+    sports_stadium: {
+      title: 'STADION & KOMPLEKS OLAHRAGA',
+      icon: <Trophy className="w-6 h-6 text-emerald-400" />,
+      district: 'Olahraga & Hiburan (Day 7)',
+      desc: 'Kompleks olahraga megah usulan @rznn8619 dengan stadion atletik, lintasan lari tartan, GOR serbaguna, dan lapangan basket terbuka.',
+      actionName: 'Mulai Latihan',
+      actionType: 'inspect',
+    },
+    science_lab: {
+      title: 'LABORATORIUM RISET & OBSERVATORIUM',
+      icon: <Atom className="w-6 h-6 text-violet-400" />,
+      district: 'Distrik Riset (Day 8)',
+      desc: 'Laboratorium sains usulan @sidddiq_s dengan kubah teleskop antariksa lavender, tabung cairan mint, roket festival raksasa, dan sang Profesor!',
+      actionName: 'Eksperimen Sains',
+      actionType: 'inspect',
+    },
+    zoo: {
+      title: 'KEBUN BINATANG NETIZEN CITY',
+      icon: <Dog className="w-6 h-6 text-amber-400" />,
+      district: 'Kawasan Wisata & Edukasi (Day 9)',
+      desc: 'Kebun binatang asri usulan @aftone_moon di tepi hutan: kandang gajah, jerapah tinggi, flamingo anggun, komodo eksotis, singa gagah, dan penguin lucu!',
+      actionName: 'Beri Makan Satwa',
+      actionType: 'inspect',
+    },
+    vet_hospital: {
+      title: 'RS HEWAN & SUDUT ADOPSI PELIHARAAN',
+      icon: <HeartPulse className="w-6 h-6 text-pink-400" />,
+      district: 'Fasilitas Publik (Day 9)',
+      desc: 'Pusat perawatan satwa usulan @muh_adnan_11: dokter hewan berpengalaman, meja pemeriksaan terbuka, dan rumah adopsi kucing & anjing!',
+      actionName: 'Adopsi Peliharaan',
+      actionType: 'inspect',
+    },
+    university: {
+      title: 'UNIVERSITAS NETIZEN CITY',
+      icon: <GraduationCap className="w-6 h-6 text-purple-400" />,
+      district: 'Distrik Riset & Kampus (Day 9)',
+      desc: 'Kampus universitas megah usulan @z_hr.da dengan menara jam rektorat, fakultas warna pastel, aula wisuda beratap lengkung, dan Rektor Profesor!',
+      actionName: 'Daftar Kuliah',
+      actionType: 'inspect',
+    },
+    nature_mountain: {
+      title: 'GUNUNG NETIZEN & AIR TERJUN ALAMI',
+      icon: <Mountain className="w-6 h-6 text-emerald-400" />,
+      district: 'Kawasan Alam (Day 5)',
+      desc: 'Gunung hijau megah usulan @bilalzharkasi dengan jalur pendakian zig-zag, air terjun jernih, dan kolam alami yang mengalirkan sungai ke samudra.',
+      actionName: 'Mendaki Gunung',
+      actionType: 'inspect',
+    },
+    netizen_beach: {
+      title: 'PANTAI NETIZEN BEACH',
+      icon: <Sun className="w-6 h-6 text-yellow-400" />,
+      district: 'Kawasan Alam & Wisata (Day 5)',
+      desc: 'Pantai tropis eksotis usulan @njemaa_28: pasir krem halus, ombak pastel, deretan payung santai, menara penjaga pantai, dan gapura berpita pink.',
+      actionName: 'Bersantai di Pantai',
       actionType: 'inspect',
     },
   }
@@ -253,20 +385,20 @@ export default function BuildingModal() {
 
   return (
     <Modal isOpen={isOpen} onClose={closeModal} title={current.title} maxWidth="md">
-      <div className="space-y-5">
+      <div className="space-y-5 font-sans">
         {/* Top Info Banner */}
         <div className="flex items-start space-x-4">
-          <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex-shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-[#FFF2EB] border-2 border-[#F4C8B4] flex items-center justify-center text-[#D97858] flex-shrink-0 shadow-xs">
             {current.icon}
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">
+            <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-[#245282] bg-[#EAF3FD] border border-[#BED8F6] px-2.5 py-0.5 rounded-full inline-block">
               {current.district}
             </span>
-            <h4 className="text-base font-extrabold text-white mt-0.5">
-              Fasilitas Publik Resmi
+            <h4 className="font-heading font-extrabold text-base text-[#3B3340] mt-1">
+              Fasilitas Publik Resmi Netizen City
             </h4>
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+            <p className="text-xs text-[#5C4F62] mt-1 leading-relaxed">
               {current.desc}
             </p>
           </div>
@@ -274,16 +406,16 @@ export default function BuildingModal() {
 
         {/* POLLING KEBIJAKAN KOTA (BALAI KOTA) */}
         {current.actionType === 'vote' && (
-          <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-3 text-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <span className="font-bold text-white flex items-center">
-                <Vote className="w-4 h-4 mr-1.5 text-blue-400" />
+          <div className="p-4 bg-[#FFF9F1] border-2 border-[#EADBCC] rounded-3xl space-y-3 text-xs">
+            <div className="flex items-center justify-between pb-2 border-b-2 border-[#F0E4D5]">
+              <span className="font-heading font-bold text-[#3B3340] flex items-center text-sm">
+                <Vote className="w-4 h-4 mr-1.5 text-[#245282]" />
                 {currentPoll.title}
               </span>
-              <span className="text-[10px] text-slate-400 font-mono">
+              <span className="text-[11px] text-[#7A6E7E] font-heading font-bold">
                 {isLoadingVotes ? (
                   <span className="flex items-center">
-                    <Loader2 className="w-3 h-3 animate-spin mr-1 text-blue-400" />
+                    <Loader2 className="w-3 h-3 animate-spin mr-1 text-[#245282]" />
                     Memuat...
                   </span>
                 ) : (
@@ -292,7 +424,7 @@ export default function BuildingModal() {
               </span>
             </div>
 
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-[#6A5E6E] leading-relaxed">
               {currentPoll.description}
             </p>
 
@@ -310,16 +442,16 @@ export default function BuildingModal() {
                     onClick={() => {
                       if (!hasVoted) setSelectedPollOption(opt.id)
                     }}
-                    className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer relative overflow-hidden block ${
+                    className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden block ${
                       isSelected
-                        ? 'bg-blue-950/70 border-blue-500 shadow-md ring-1 ring-blue-500/40 text-white'
-                        : 'bg-slate-900/90 border-slate-800 hover:border-slate-700 text-slate-300'
+                        ? 'bg-[#FFF2EB] border-[#F4A98C] shadow-sm text-[#3B3340]'
+                        : 'bg-[#FFFDF9] border-[#EADBCC] hover:border-[#D5C2B0] text-[#3B3340]'
                     } ${hasVoted ? 'cursor-default' : ''}`}
                   >
                     {/* Live percentage fill bar when voted */}
                     {hasVoted && (
                       <div
-                        className="absolute inset-y-0 left-0 bg-blue-600/25 pointer-events-none transition-all duration-500"
+                        className="absolute inset-y-0 left-0 bg-[#F4A98C]/25 pointer-events-none transition-all duration-500"
                         style={{ width: `${percentage}%` }}
                       />
                     )}
@@ -327,25 +459,25 @@ export default function BuildingModal() {
                     <div className="flex items-center justify-between relative z-10">
                       <div className="flex items-center space-x-2.5">
                         <div
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                             isSelected
-                              ? 'border-blue-400 bg-blue-600'
-                              : 'border-slate-600 bg-slate-800'
+                              ? 'border-[#D97858] bg-[#F4A98C]'
+                              : 'border-[#C8B8A8] bg-white'
                           }`}
                         >
                           {isSelected && (
                             <div className="w-1.5 h-1.5 rounded-full bg-white" />
                           )}
                         </div>
-                        <span className="font-semibold text-xs">{opt.title}</span>
+                        <span className="font-heading font-bold text-xs">{opt.title}</span>
                       </div>
 
                       {hasVoted && (
                         <div className="text-right pl-2">
-                          <span className="font-bold font-mono text-blue-300">
+                          <span className="font-heading font-bold text-[#D97858] text-sm">
                             {percentage}%
                           </span>
-                          <span className="text-[10px] text-slate-400 block font-mono">
+                          <span className="text-[10px] text-[#8C7D91] block">
                             {opt.votes} warga
                           </span>
                         </div>
@@ -357,10 +489,10 @@ export default function BuildingModal() {
             </div>
 
             {hasVoted && (
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              <div className="p-3 rounded-2xl bg-[#EBF8F3] border-2 border-[#B7E7D5] text-[#1E5D46] text-xs font-heading font-bold flex items-center space-x-2 shadow-xs">
+                <CheckCircle2 className="w-4 h-4 text-[#2F9474] flex-shrink-0" />
                 <span>
-                  Suaramu telah terverifikasi dan disimpan di arsip Balai Kota! (+25 Koin)
+                  Suaramu telah terverifikasi dan tersimpan di arsip Balai Kota! (+25 Koin)
                 </span>
               </div>
             )}
@@ -368,14 +500,14 @@ export default function BuildingModal() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+        <div className="flex items-center justify-end space-x-3 pt-3 border-t-2 border-[#F0E4D5]">
           <Button variant="ghost" onClick={closeModal}>
             Tutup
           </Button>
 
           {current.actionType === 'vote' ? (
             <Button
-              variant="primary"
+              variant="peach"
               onClick={handleAction}
               disabled={hasVoted || isSubmitting}
             >
@@ -393,7 +525,7 @@ export default function BuildingModal() {
               </span>
             </Button>
           ) : (
-            <Button variant="primary" onClick={handleAction}>
+            <Button variant="mint" onClick={handleAction}>
               {current.actionName}
             </Button>
           )}

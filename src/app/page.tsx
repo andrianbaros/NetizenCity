@@ -6,7 +6,7 @@ import {
   Users,
   Compass,
   Building2,
-  Sparkles,
+  Trophy,
   ShieldCheck,
   ArrowRight,
   Gamepad2,
@@ -24,61 +24,66 @@ export default function LandingPage() {
   })
 
   useEffect(() => {
-    // Fetch live stats from API if available
-    fetch('/api/population')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data) {
-          setStats({
-            officialPopulation: data.official_population ?? 25800,
-            registeredCitizens: data.registered_citizens ?? 3420,
-            onlineNow: data.online_now ?? 128,
-          })
-        }
-      })
-      .catch(() => {})
+    const fetchStats = () => {
+      fetch('/api/population')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) {
+            setStats({
+              officialPopulation: data.official_population ?? 53400,
+              registeredCitizens: data.registered_citizens ?? 3420,
+              onlineNow: data.online_now ?? 1,
+            })
+          }
+        })
+        .catch(() => {})
+    }
+
+    fetchStats()
+    const interval = setInterval(fetchStats, 15000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#F8F4EE] text-[#3B3340] flex flex-col selection:bg-[#F4A98C] selection:text-white">
       {/* Top Bar / Navigation */}
-      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
+      <header className="border-b-2 border-[#EADBCC] bg-[#FFFDF9]/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 p-0.5 shadow-lg shadow-blue-500/20">
-              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-black tracking-wider text-blue-400 text-sm">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#F4A98C] via-[#F2C1D6] to-[#C9B8E8] p-0.5 shadow-md">
+              <div className="w-full h-full bg-[#FFFDF9] rounded-[14px] flex items-center justify-center font-black tracking-wider text-[#F4A98C] text-sm">
                 NC
               </div>
             </div>
             <div>
-              <span className="font-extrabold tracking-wider text-lg bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">
+              <span className="font-extrabold tracking-wider text-lg bg-gradient-to-r from-[#F4A98C] via-[#E2829F] to-[#76A9EA] bg-clip-text text-transparent">
                 NETIZENCITY
               </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                Virtual World
+              <span className="hidden sm:inline-block ml-2 text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#E8F8F0] text-[#1E7250] border border-[#A8DCC8]">
+                Diorama 3D
               </span>
             </div>
           </div>
 
-          <nav className="flex items-center space-x-4">
+          <nav className="flex items-center space-x-3">
             <a
               href="https://www.instagram.com/netizencity.id/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-1.5 text-xs font-medium text-slate-300 hover:text-white transition-colors py-2 px-3 rounded-lg hover:bg-slate-800"
+              className="flex items-center space-x-1.5 text-xs font-bold text-[#5C5265] hover:text-[#3B3340] transition-colors py-2 px-3 rounded-xl hover:bg-[#F8F4EE]"
             >
-              <InstagramIcon className="w-4 h-4 text-pink-400" />
+              <InstagramIcon className="w-4 h-4 text-[#F282A8]" />
               <span className="hidden sm:inline">@netizencity.id</span>
             </a>
             <Link
               href="/login"
-              className="text-xs font-semibold text-slate-200 hover:text-white py-2 px-3.5 rounded-lg hover:bg-slate-800 transition-colors"
+              className="text-xs font-bold text-[#5C5265] hover:text-[#3B3340] py-2 px-3.5 rounded-xl hover:bg-[#F8F4EE] transition-colors"
             >
               Masuk
             </Link>
             <Link
               href="/register"
-              className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 py-2 px-4 rounded-lg shadow-md shadow-blue-900/30 border border-blue-400/30 transition-all active:scale-95"
+              className="text-xs font-bold text-white bg-[#F4A98C] hover:bg-[#E89578] py-2 px-4 rounded-xl shadow-xs border-b-3 border-[#B85838] active:border-b-0 active:translate-y-0.5 transition-all"
             >
               Daftar KTN
             </Link>
@@ -88,39 +93,36 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="relative overflow-hidden py-16 sm:py-24 border-b border-slate-800/60">
-          {/* Pixel-style grid background */}
-          <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
-
-          {/* Ambient Glows */}
-          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-1/2 right-10 w-72 h-72 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
+        <section className="relative overflow-hidden py-16 sm:py-24 border-b-2 border-[#EADBCC] bg-gradient-to-b from-[#FFFDF9] via-[#FBF7F0] to-[#F8F4EE]">
+          {/* Ambient Warm Pastel Glows */}
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#FFE8CC]/40 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 right-10 w-72 h-72 bg-[#E6F3FF]/50 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative max-w-5xl mx-auto px-4 sm:px-6 text-center">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 mb-6 shadow-inner">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-medium text-slate-300">
-                Dunia Virtual Komunitas Netizen City Indonesia
+            <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#FFFDF9] border-2 border-[#EADBCC] mb-6 shadow-xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#4EBA88] animate-pulse" />
+              <span className="text-xs font-bold text-[#5C5265]">
+                Dunia Virtual Diorama Komunitas Netizen City Indonesia
               </span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white mb-6 uppercase leading-tight">
+            <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-[#3B3340] mb-6 leading-tight">
               Your Community.{' '}
-              <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-teal-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#F4A98C] via-[#E2829F] to-[#76A9EA] bg-clip-text text-transparent">
                 Your City.
               </span>{' '}
               Your World.
             </h1>
 
-            <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-300 mb-10 leading-relaxed font-normal">
-              Selamat datang di <strong className="text-white font-semibold">NETIZENCITY</strong>. Kota virtual 2D persisten di mana followers @netizencity.id menjadi warga nyata: berjelajah, memiliki hunian, bekerja, berbelanja, dan membangun peradaban kota bersama.
+            <p className="max-w-2xl mx-auto text-base sm:text-lg text-[#6F6675] mb-10 leading-relaxed font-medium">
+              Selamat datang di <strong className="text-[#3B3340] font-extrabold">NETIZENCITY</strong>. Kota virtual 3D diorama hangat di mana followers @netizencity.id menjadi warga nyata: berjelajah, memiliki hunian, berbelanja di mall, dan membangun peradaban kota bersama.
             </p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
               <Link
                 href="/city"
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base shadow-xl shadow-blue-900/30 border border-blue-400/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-8 py-4 rounded-2xl bg-[#76A9EA] hover:bg-[#6297DC] text-white font-extrabold text-base border-b-4 border-[#4A7BB8] active:border-b-2 active:translate-y-0.5 shadow-md transition-all hover:scale-[1.01]"
               >
                 <Gamepad2 className="w-5 h-5" />
                 <span>Masuk ke Kota Sekarang</span>
@@ -129,60 +131,57 @@ export default function LandingPage() {
 
               <Link
                 href="/register"
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-base border border-slate-700 transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-4 rounded-2xl bg-[#FFFDF9] hover:bg-[#FFF9F1] text-[#3B3340] font-extrabold text-base border-2 border-[#EADBCC] border-b-4 border-b-[#D6C2AC] active:border-b-2 active:translate-y-0.5 shadow-xs transition-colors"
               >
-                <ShieldCheck className="w-5 h-5 text-amber-400" />
+                <ShieldCheck className="w-5 h-5 text-[#D4980B]" />
                 <span>Buat KTN (Kartu Tanda Netizen)</span>
               </Link>
             </div>
 
             {/* Critical Live Statistics: 3 Distinct Counters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
-              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-colors">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/5 rounded-full blur-xl pointer-events-none" />
-                <div className="flex items-center justify-center space-x-2 text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                  <InstagramIcon className="w-4 h-4 text-pink-400" />
+              <div className="bg-[#FFFDF9] border-2 border-[#EADBCC] rounded-3xl p-5 shadow-xs hover:border-[#D6C2AC] transition-colors relative overflow-hidden group">
+                <div className="flex items-center justify-center space-x-2 text-[#6F6675] text-xs font-bold uppercase tracking-wider mb-2">
+                  <InstagramIcon className="w-4 h-4 text-[#F282A8]" />
                   <span>Populasi Resmi Kota</span>
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <div className="text-3xl sm:text-4xl font-black text-[#3B3340] tracking-tight">
                   {formatNumber(stats.officialPopulation)}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1 font-medium flex items-center justify-center space-x-2">
+                <div className="text-[11px] text-[#6F6675] mt-1 font-semibold flex items-center justify-center space-x-2">
                   <span>Follower @netizencity.id</span>
                   <span>&bull;</span>
                   <Link
                     href="/admin/instagram"
-                    className="text-pink-400 hover:text-pink-300 font-semibold underline underline-offset-2"
+                    className="text-[#D84978] hover:text-[#B5345F] font-bold underline underline-offset-2"
                   >
                     Sync / Kelola
                   </Link>
                 </div>
               </div>
 
-              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-colors">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-xl pointer-events-none" />
-                <div className="flex items-center justify-center space-x-2 text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                  <Users className="w-4 h-4 text-blue-400" />
+              <div className="bg-[#FFFDF9] border-2 border-[#EADBCC] rounded-3xl p-5 shadow-xs hover:border-[#D6C2AC] transition-colors relative overflow-hidden group">
+                <div className="flex items-center justify-center space-x-2 text-[#6F6675] text-xs font-bold uppercase tracking-wider mb-2">
+                  <Users className="w-4 h-4 text-[#2C6ECB]" />
                   <span>Warga Terdaftar</span>
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <div className="text-3xl sm:text-4xl font-black text-[#3B3340] tracking-tight">
                   {formatNumber(stats.registeredCitizens)}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1 font-medium">
-                  Pemilik Akun & KTN
+                <div className="text-[11px] text-[#6F6675] mt-1 font-semibold">
+                  Pemilik Akun &amp; KTN
                 </div>
               </div>
 
-              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-colors">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
-                <div className="flex items-center justify-center space-x-2 text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+              <div className="bg-[#FFFDF9] border-2 border-[#EADBCC] rounded-3xl p-5 shadow-xs hover:border-[#D6C2AC] transition-colors relative overflow-hidden group">
+                <div className="flex items-center justify-center space-x-2 text-[#6F6675] text-xs font-bold uppercase tracking-wider mb-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#4EBA88] animate-ping inline-block" />
                   <span>Online di Kota</span>
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold text-emerald-400 tracking-tight">
+                <div className="text-3xl sm:text-4xl font-black text-[#186D48] tracking-tight">
                   {formatNumber(stats.onlineNow)}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1 font-medium">
+                <div className="text-[11px] text-[#6F6675] mt-1 font-semibold">
                   Warga Aktif Saat Ini
                 </div>
               </div>
@@ -193,72 +192,72 @@ export default function LandingPage() {
         {/* City Districts & Features */}
         <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">
-              Distrik & Fasilitas Kota
+            <h2 className="text-xs font-extrabold uppercase tracking-widest text-[#F4A98C] mb-3">
+              Distrik &amp; Fasilitas Kota
             </h2>
-            <p className="text-2xl sm:text-3xl font-extrabold text-white">
-              Eksplorasi 6 Wilayah Utama NETIZENCITY
+            <p className="text-2xl sm:text-3xl font-black text-[#3B3340]">
+              Eksplorasi Wilayah Utama NETIZENCITY
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-blue-500/40 rounded-2xl p-6 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-4">
+            <div className="bg-[#FFFDF9] border-2 border-[#EADBCC] hover:border-[#76A9EA] rounded-3xl p-6 transition-all shadow-xs hover:shadow-md">
+              <div className="w-12 h-12 rounded-2xl bg-[#EBF4FD] text-[#2C6ECB] border border-[#A9C8EC] flex items-center justify-center mb-4">
                 <Building2 className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">1. Downtown (Pusat Kota)</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
+              <h3 className="text-lg font-extrabold text-[#3B3340] mb-2">1. Downtown (Pusat Kota)</h3>
+              <p className="text-[#6F6675] text-xs leading-relaxed font-medium">
                 Balai Kota (City Hall), Kantor Walikota, Alun-Alun Utama, dan Pusat Pelayanan Publik. Tempat warga berkumpul untuk pengambilan kebijakan kota.
               </p>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-6 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4">
+            <div className="bg-[#FFFDF9] border-2 border-[#EADBCC] hover:border-[#4EBA88] rounded-3xl p-6 transition-all shadow-xs hover:shadow-md">
+              <div className="w-12 h-12 rounded-2xl bg-[#E8F8F0] text-[#186D48] border border-[#A8DCC8] flex items-center justify-center mb-4">
                 <MapPin className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">2. Distrik Perumahan</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Rumah sederhana, rusunawa, dan apartemen warga. Setiap warga baru berhak mendapatkan penempatan tempat tinggal saat menyelesaikan registrasi.
+              <h3 className="text-lg font-extrabold text-[#3B3340] mb-2">2. Distrik Perumahan</h3>
+              <p className="text-[#6F6675] text-xs leading-relaxed font-medium">
+                Kampung Angkatan 1, rusunawa, dan rumah tapak warga. Setiap warga baru berhak mendapatkan penempatan tempat tinggal saat menyelesaikan registrasi.
               </p>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 rounded-2xl p-6 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4">
+            <div className="bg-[#FFFDF9] border-2 border-[#EADBCC] hover:border-[#F7D772] rounded-3xl p-6 transition-all shadow-xs hover:shadow-md">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFF8DF] text-[#8C6008] border border-[#F7D772] flex items-center justify-center mb-4">
                 <Coins className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">3. Distrik Komersial</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Mall belanja, kafe, minimarket, dan toko busana. Belanja outfit kustomisasi avatar dengan Netizen Coin yang didapat dari pekerjaan.
+              <h3 className="text-lg font-extrabold text-[#3B3340] mb-2">3. Distrik Komersial &amp; Mall</h3>
+              <p className="text-[#6F6675] text-xs leading-relaxed font-medium">
+                Netizen Mall, kafe, minimarket, dan ruko busana. Belanja outfit kustomisasi avatar dengan Netizen Coins yang didapat dari pekerjaan kota.
               </p>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-purple-500/40 rounded-2xl p-6 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-4">
+            <div className="bg-[#FFFDF9] border-2 border-[#EADBCC] hover:border-[#D9C8B5] rounded-3xl p-6 transition-all shadow-xs hover:shadow-md">
+              <div className="w-12 h-12 rounded-2xl bg-[#F0ECE7] text-[#5C5265] border border-[#D9C8B5] flex items-center justify-center mb-4">
                 <Gamepad2 className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">4. Kawasan Industri</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Pusat pekerjaan mini-game: Pabrik, logistik kurir pengiriman barang, area tambang, dan kebun kota untuk menghasilkan Netizen Coin.
+              <h3 className="text-lg font-extrabold text-[#3B3340] mb-2">4. Kawasan Industri</h3>
+              <p className="text-[#6F6675] text-xs leading-relaxed font-medium">
+                Pabrik, logistik kurir pengiriman barang, area tambang, dan kebun kota untuk menghasilkan Netizen Coins dan XP warga.
               </p>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-pink-500/40 rounded-2xl p-6 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6" />
+            <div className="bg-[#FFFDF9] border-2 border-[#EADBCC] hover:border-[#F2A0B4] rounded-3xl p-6 transition-all shadow-xs hover:shadow-md">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFF0F4] text-[#D84978] border border-[#F8B4C8] flex items-center justify-center mb-4">
+                <Trophy className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">5. Hiburan & Festival</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Taman kota, panggung festival, dan area turnamen game komunitas. Ikuti event berkala dan rayakan pencapaian bersama warga lainnya.
+              <h3 className="text-lg font-extrabold text-[#3B3340] mb-2">5. Hiburan &amp; Olahraga</h3>
+              <p className="text-[#6F6675] text-xs leading-relaxed font-medium">
+                Stadion sepak bola megah, kebun binatang safari, pantai Netizen Beach, dan taman kota untuk bersantai bersama warga lainnya.
               </p>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-sky-500/40 rounded-2xl p-6 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center mb-4">
+            <div className="bg-[#FFFDF9] border-2 border-[#EADBCC] hover:border-[#C9B8E8] rounded-3xl p-6 transition-all shadow-xs hover:shadow-md">
+              <div className="w-12 h-12 rounded-2xl bg-[#F3EEFA] text-[#6A3F98] border border-[#C9B8E8] flex items-center justify-center mb-4">
                 <Compass className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">6. Bandara Netizen</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Gerbang kedatangan warga baru saat pertama kali landing di kota. Di sinilah onboarding warga dimulai sebelum mendapatkan KTN resmi.
+              <h3 className="text-lg font-extrabold text-[#3B3340] mb-2">6. Bandara Netizen</h3>
+              <p className="text-[#6F6675] text-xs leading-relaxed font-medium">
+                Gerbang kedatangan warga baru saat pertama kali landing di kota lengkap dengan runway pesawat dan penerbangan terjadwal.
               </p>
             </div>
           </div>
@@ -266,15 +265,15 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+      <footer className="border-t-2 border-[#EADBCC] bg-[#FFFDF9] py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#6F6675]">
           <div className="flex items-center space-x-2">
-            <span className="font-bold text-slate-300">NETIZENCITY</span>
+            <span className="font-extrabold text-[#3B3340]">NETIZENCITY</span>
             <span>&bull;</span>
             <span>Komunitas Instagram @netizencity.id</span>
           </div>
-          <div>
-            Powered by Next.js, Phaser 3 &amp; Supabase Realtime
+          <div className="font-semibold">
+            Diorama 3D WebGL &bull; Powered by Next.js &amp; Three.js
           </div>
         </div>
       </footer>

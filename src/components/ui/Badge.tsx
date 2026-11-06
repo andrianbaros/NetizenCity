@@ -1,11 +1,11 @@
 // ============================================================
-// NETIZENCITY - Badge Component
+// NETIZENCITY - Badge Component (Playful Pill Chips)
 // ============================================================
 
 import React from 'react'
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'primary' | 'success' | 'warning' | 'danger' | 'neutral' | 'gold'
+  variant?: 'primary' | 'success' | 'warning' | 'danger' | 'neutral' | 'gold' | 'lavender'
   size?: 'sm' | 'md'
 }
 
@@ -17,22 +17,23 @@ export const Badge: React.FC<BadgeProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    primary: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-    success: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    warning: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    danger: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
-    neutral: 'bg-slate-700/40 text-slate-300 border-slate-600/30',
-    gold: 'bg-amber-400/20 text-amber-200 border-amber-400/40 font-semibold',
+    primary: 'bg-[#EAF3FD] text-[#245282] border-[#BFD8F6]',
+    success: 'bg-[#EBF8F3] text-[#1E5D46] border-[#B7E7D5]',
+    warning: 'bg-[#FFF9E6] text-[#785E0E] border-[#FCE69C]',
+    danger: 'bg-[#FDEEF1] text-[#9A2D45] border-[#F9CAD3]',
+    lavender: 'bg-[#F5F0FD] text-[#55387E] border-[#DACBF6]',
+    neutral: 'bg-[#F5EDE1] text-[#524658] border-[#E3D4C2]',
+    gold: 'bg-gradient-to-r from-[#FFF5D0] to-[#FFE896] text-[#6A4D07] border-[#ECC956] font-bold shadow-xs',
   }
 
   const sizeStyles = {
-    sm: 'px-2 py-0.5 text-[10px]',
-    md: 'px-2.5 py-1 text-xs',
+    sm: 'px-2 py-0.5 text-[10px] gap-1',
+    md: 'px-3 py-1 text-xs gap-1.5',
   }
 
   return (
     <span
-      className={`inline-flex items-center font-medium rounded-full border ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center font-heading font-bold rounded-full border ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       {...props}
     >
       {children}

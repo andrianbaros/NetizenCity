@@ -1,6 +1,7 @@
 // ============================================================
 // NETIZENCITY - Daily Login Reward Modal
 // 7-day Login Streak with Local Database Persistence
+// Stylized for Cozy Pastel Diorama Aesthetic
 // ============================================================
 
 'use client'
@@ -10,7 +11,6 @@ import {
   Coins,
   CheckCircle,
   Gift,
-  Sparkles,
   Loader2,
   CalendarCheck,
 } from 'lucide-react'
@@ -130,12 +130,12 @@ export default function DailyRewardModal() {
     >
       <div className="space-y-6">
         <div className="text-center">
-          <p className="text-xs text-slate-300">
+          <p className="text-xs text-[#6F6675] leading-relaxed">
             Masuk ke kota setiap hari untuk mempertahankan streak dan dapatkan bonus koin serta item eksklusif pada hari ke-7!
           </p>
-          <div className="flex items-center justify-center space-x-2 mt-2">
-            <span className="text-[10px] text-blue-400 font-mono bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20 flex items-center">
-              <CalendarCheck className="w-3 h-3 mr-1" />
+          <div className="flex items-center justify-center space-x-2 mt-2.5">
+            <span className="text-[11px] text-[#6A3F98] font-bold bg-[#F3EEFA] px-3 py-1 rounded-full border border-[#C9B8E8] flex items-center">
+              <CalendarCheck className="w-3.5 h-3.5 mr-1 text-[#6A3F98]" />
               Streak Saat Ini: {currentStreak} Hari
             </span>
           </div>
@@ -150,42 +150,52 @@ export default function DailyRewardModal() {
             return (
               <div
                 key={r.day}
-                className={`p-3.5 rounded-2xl border flex flex-col items-center text-center relative transition-all ${
+                className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center relative transition-all ${
                   isClaimed
-                    ? 'bg-slate-950/60 border-slate-800 opacity-60'
+                    ? 'bg-[#F8F5F0] border-[#E6DDD3] opacity-75'
                     : isToday
-                    ? 'bg-gradient-to-b from-blue-900/60 to-slate-900 border-blue-500 shadow-xl shadow-blue-500/20 ring-2 ring-blue-500/40'
-                    : 'bg-slate-950/80 border-slate-800'
+                    ? 'bg-gradient-to-b from-[#FFF5DE] to-[#FFF0D4] border-[#F4A98C] shadow-md ring-2 ring-[#F4A98C]/40'
+                    : r.day === 7
+                    ? 'bg-gradient-to-b from-[#FFF9E6] to-[#FFE8A3] border-[#E5B537] shadow-sm'
+                    : 'bg-[#FFFDF9] border-[#EADBCC] shadow-xs'
                 } ${r.day === 7 ? 'col-span-2 sm:col-span-1' : ''}`}
               >
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <span className="text-[10px] font-black text-[#5C5265] uppercase tracking-wider mb-2">
                   Hari ke-{r.day}
                 </span>
 
-                <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 mb-2">
+                <div
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-2 shadow-xs ${
+                    r.day === 7
+                      ? 'bg-[#FFE8A3] text-[#8C6008] border border-[#E5B537]'
+                      : isToday
+                      ? 'bg-[#FFF8DF] text-[#D4980B] border border-[#F7D772]'
+                      : 'bg-[#F8F4EE] text-[#D4980B] border border-[#EADBCC]'
+                  }`}
+                >
                   {r.item ? (
-                    <Gift className="w-5 h-5 text-purple-400" />
+                    <Gift className="w-5 h-5 text-[#8C6008] animate-bounce" />
                   ) : (
                     <Coins className="w-5 h-5" />
                   )}
                 </div>
 
-                <div className="font-extrabold text-sm text-white font-mono">
+                <div className="font-black text-sm text-[#3B3340] font-mono">
                   +{r.coins}
                 </div>
-                <span className="text-[10px] text-amber-300">Netizen Coins</span>
+                <span className="text-[10px] font-bold text-[#8C6008]">Netizen Coins</span>
 
                 {r.item && (
-                  <span className="text-[9px] text-purple-300 mt-1 font-semibold leading-tight">
+                  <span className="text-[9px] text-[#6A3F98] mt-1 font-bold leading-tight bg-[#F3EEFA] px-1.5 py-0.5 rounded-md border border-[#C9B8E8]">
                     + {r.item}
                   </span>
                 )}
 
                 {isClaimed && (
-                  <div className="absolute inset-0 bg-slate-950/80 rounded-2xl flex items-center justify-center backdrop-blur-[1px]">
-                    <span className="text-[11px] font-bold text-emerald-400 flex items-center">
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Klaim
+                  <div className="absolute inset-0 bg-[#FFFDF9]/85 rounded-2xl flex items-center justify-center backdrop-blur-[1px] border-2 border-[#A8DCC8]">
+                    <span className="text-[11px] font-black text-[#186D48] flex items-center bg-[#E8F8F0] px-2.5 py-1 rounded-xl border border-[#A8DCC8]">
+                      <CheckCircle className="w-3.5 h-3.5 mr-1 text-[#186D48]" />
+                      Sudah Diklaim
                     </span>
                   </div>
                 )}
@@ -195,15 +205,17 @@ export default function DailyRewardModal() {
         </div>
 
         {/* Claim Action */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800">
-          <div className="text-xs text-slate-400">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#EADBCC]">
+          <div className="text-xs text-[#6F6675]">
             {isClaimedToday ? (
-              <span className="text-emerald-400 font-semibold flex items-center">
+              <span className="text-[#186D48] font-bold flex items-center">
                 <CheckCircle className="w-4 h-4 mr-1.5" />
-                Kamu sudah mengklaim hadiah hari ini. Kembali besok!
+                Kamu sudah mengklaim hadiah hari ini. Kembali lagi besok!
               </span>
             ) : (
-              <span>Hadiah hari ini siap untuk diklaim!</span>
+              <span className="text-[#3B3340] font-semibold">
+                ✨ Hadiah hari ini siap untuk kamu klaim!
+              </span>
             )}
           </div>
 
@@ -212,14 +224,14 @@ export default function DailyRewardModal() {
               Tutup
             </Button>
             <Button
-              variant="primary"
+              variant="accent"
               disabled={isClaimedToday || isClaiming || isLoading}
               onClick={handleClaim}
             >
               {isClaiming ? (
                 <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
               ) : (
-                <Sparkles className="w-4 h-4 mr-1.5" />
+                <Gift className="w-4 h-4 mr-1.5" />
               )}
               <span>{isClaimedToday ? 'Sudah Diklaim' : 'Klaim Hadiah Hari Ini'}</span>
             </Button>

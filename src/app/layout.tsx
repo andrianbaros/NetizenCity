@@ -1,10 +1,23 @@
 import type { Metadata } from "next";
+import { Fredoka, Quicksand } from "next/font/google";
 import "./globals.css";
 
+const fredoka = Fredoka({
+  subsets: ["latin"],
+  variable: "--font-fredoka",
+  weight: ["400", "500", "600", "700"],
+});
+
+const quicksand = Quicksand({
+  subsets: ["latin"],
+  variable: "--font-quicksand",
+  weight: ["500", "600", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "NETIZENCITY — The Social Community Virtual World",
+  title: "NETIZENCITY — Kota Virtual Komunitas Netizen",
   description:
-    "Your Community. Your City. Your World. Explore a persistent 2D multiplayer social city for the Netizen City Instagram community.",
+    "Kota Virtual 3D Sosial Interaktif untuk Komunitas Instagram Netizen City.",
   icons: {
     icon: "/favicon.ico",
   },
@@ -16,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className="h-full antialiased dark">
-      <body className="min-h-full bg-slate-950 text-slate-100 flex flex-col">
+    <html lang="id" className={`h-full antialiased ${fredoka.variable} ${quicksand.variable}`}>
+      <body className="min-h-full font-sans bg-[#FBF7F0] text-[#3B3340] flex flex-col antialiased selection:bg-[#F4A98C]/30 selection:text-[#3B3340]">
         {children}
       </body>
     </html>

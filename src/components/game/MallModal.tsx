@@ -1,6 +1,7 @@
 // ============================================================
 // NETIZENCITY - Mall Modal (Full Persistence & Real-Time Equipping)
 // Connects to /api/mall, updates localDb & Avatar renderer live
+// Stylized for Cozy Pastel Diorama Aesthetic
 // ============================================================
 
 'use client'
@@ -10,7 +11,7 @@ import {
   ShoppingBag,
   Coins,
   Check,
-  Sparkles,
+  Palette,
   Loader2,
   Shirt,
   Layers,
@@ -296,7 +297,7 @@ export default function MallModal() {
     // 1. Update Zustand client store
     updateAvatar(updatedAvatar)
 
-    // 2. Dispatch custom event to Phaser CityScene so player sprite immediately changes appearance
+    // 2. Dispatch custom event to 3D diorama so player character immediately changes appearance
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('avatar-updated', { detail: updatedAvatar })
@@ -364,20 +365,20 @@ export default function MallModal() {
 
   const categories = [
     { id: 'all', label: '🌟 Semua' },
-    { id: 'tops', label: '👕 Atasan & Baju' },
+    { id: 'tops', label: '👕 Atasan' },
     { id: 'accessories', label: '👑 Aksesoris' },
-    { id: 'bottoms', label: '👖 Bawahan & Sarung' },
-    { id: 'shoes', label: '👟 Sepatu & Sandal' },
-    { id: 'hairstyles', label: '💇 Gaya Rambut' },
+    { id: 'bottoms', label: '👖 Bawahan' },
+    { id: 'shoes', label: '👟 Sepatu' },
+    { id: 'hairstyles', label: '💇 Rambut' },
     { id: 'back', label: '🪽 Sayap & Ransel' },
   ]
 
   const rarityColor = {
-    common: 'text-slate-300 border-slate-700 bg-slate-800/80',
-    uncommon: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/20',
-    rare: 'text-sky-300 border-sky-500/40 bg-sky-500/20',
-    epic: 'text-purple-300 border-purple-500/40 bg-purple-500/20',
-    legendary: 'text-amber-300 border-amber-500/50 bg-amber-500/20 shadow-sm shadow-amber-500/20',
+    common: 'text-[#5C5265] border-[#D9C8B5] bg-[#F4ECE0]',
+    uncommon: 'text-[#186D48] border-[#A8DCC8] bg-[#E8F8F0]',
+    rare: 'text-[#1D60A6] border-[#A9C8EC] bg-[#EBF4FD]',
+    epic: 'text-[#6A3F98] border-[#C9B8E8] bg-[#F3EEFA]',
+    legendary: 'text-[#8C6008] border-[#F7D772] bg-[#FFF8DF] ring-1 ring-[#F7D772]',
   }
 
   const getCategoryIcon = (cat: string) => {
@@ -391,7 +392,7 @@ export default function MallModal() {
       case 'accessories':
         return <Crown className="w-5 h-5 text-white drop-shadow" />
       case 'hairstyles':
-        return <Sparkles className="w-5 h-5 text-white drop-shadow" />
+        return <Palette className="w-5 h-5 text-white drop-shadow" />
       case 'back':
         return <Feather className="w-5 h-5 text-white drop-shadow" />
       default:
@@ -405,27 +406,27 @@ export default function MallModal() {
       case 'jersey':
         return '🛡️ Lambang Garuda #10'
       case 'ojol':
-        return '🛵 Rompi Strip Reflektif'
+        return '🛵 Rompi Reflektif Ojol'
       case 'cyber':
         return '⚡ Kerah Neon Cyberpunk'
       case 'batik':
-        return '🏵️ Motif Parang Sutra'
+        return '🏵️ Motif Batik Parang'
       case 'armor':
-        return '🛡️ Pelat Baja & Safir'
+        return '🛡️ Pelat Pelindung Safir'
       case 'tuxedo':
         return '👔 Dasi Kupu-Kupu Emas'
       case 'sarung':
         return '🏮 Sarung Ronda Tradisional'
       case 'skirt':
-        return '🎀 Rok Lipat Harajuku'
+        return '🎀 Rok Lipat Pastel'
       case 'swallow':
         return '🩴 Sandal Jepit Karet'
       case 'roller':
         return '🛼 Roda Seluncur Neon'
       case 'cat_ears':
-        return '🐱 Telinga Kucing RGB'
+        return '🐱 Telinga Kucing Gemas'
       case 'crown':
-        return '👑 Mahkota Emas & Rubi'
+        return '👑 Mahkota Emas & Permata'
       case 'glasses':
         return '🕶️ Kacamata Pixel 8-Bit'
       case 'straw_hat':
@@ -447,7 +448,7 @@ export default function MallModal() {
       case 'long':
         return '✨ Rambut Sutra Mengalir'
       default:
-        return `Pola Khusus: ${pattern}`
+        return `Pola: ${pattern}`
     }
   }
 
@@ -455,49 +456,49 @@ export default function MallModal() {
     <Modal isOpen={isOpen} onClose={closeModal} title="MALL BUSANA & AKSESORIS NETIZENCITY" maxWidth="2xl">
       <div className="space-y-4">
         {/* Header & Wallet Banner with Real 2D Pixel-Art Character Preview */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 shadow-lg">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-[#FFFDF9] via-[#FFF9F1] to-[#FCEEE3] border-2 border-[#EADBCC] shadow-sm">
           {/* Live Mini Avatar Preview Canvas */}
-          <div className="flex items-center space-x-4">
-            <div className="relative w-16 h-18 rounded-2xl bg-slate-950 border border-slate-700/80 p-1 flex items-center justify-center shadow-inner overflow-hidden ring-2 ring-blue-500/20">
+          <div className="flex items-center space-x-3.5">
+            <div className="relative w-16 h-18 rounded-2xl bg-[#FFF9F1] border-2 border-[#EADBCC] p-1 flex items-center justify-center shadow-inner overflow-hidden ring-2 ring-[#F4A98C]/30">
               <canvas
                 ref={previewCanvasRef}
                 width={64}
                 height={72}
-                className="w-full h-full object-contain [image-rendering:pixelated]"
+                className="w-full h-full object-contain [image-rendering:auto]"
               />
-              <span className="absolute bottom-0.5 right-1 text-[8px] font-black text-emerald-400 bg-slate-950/80 px-1 rounded">
+              <span className="absolute bottom-0.5 right-1 text-[8px] font-black text-[#1E7250] bg-[#D2F0E3] px-1 rounded-full shadow-xs">
                 LIVE
               </span>
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-black text-white tracking-wide">
+                <span className="text-sm font-extrabold text-[#3B3340] tracking-wide">
                   {profile?.displayName || 'Warga Netizen'}
                 </span>
-                <span className="text-[10px] text-blue-400 font-bold bg-blue-950/80 border border-blue-800/60 px-1.5 py-0.2 rounded-full">
-                  Kamu
+                <span className="text-[10px] text-[#2C6ECB] font-bold bg-[#EBF3FB] border border-[#A9C8EC] px-2 py-0.5 rounded-full">
+                  Avatar Kamu
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
-                Pratinjau karakter pixel-art 2D live. Semua item yang dipakai langsung bergerak di kota!
+              <p className="text-[11px] text-[#6F6675] mt-0.5 leading-snug">
+                Pakaian yang kamu pakai langsung muncul pada karakter di dalam kota!
               </p>
-              <div className="flex items-center space-x-2 mt-1.5 text-[10px] text-slate-300">
-                <span className="inline-flex items-center text-emerald-400">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                  {ownedIds.length} Item Dimiliki
+              <div className="flex items-center space-x-2 mt-1 text-[11px] text-[#5C5265]">
+                <span className="inline-flex items-center text-[#186D48] font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                  {ownedIds.length} Koleksi Dimiliki
                 </span>
               </div>
             </div>
           </div>
 
           {/* User Wallet Balance */}
-          <div className="flex items-center space-x-2.5 bg-slate-900/90 px-4 py-2.5 rounded-xl border border-amber-500/30 shadow-inner self-stretch sm:self-auto justify-center">
-            <Coins className="w-5 h-5 text-amber-400 animate-pulse" />
+          <div className="flex items-center space-x-2.5 bg-[#FFF8DF] px-4 py-2.5 rounded-2xl border-2 border-[#F7D772] shadow-xs self-stretch sm:self-auto justify-center">
+            <Coins className="w-5 h-5 text-[#D4980B] animate-pulse" />
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">
+              <span className="text-[10px] uppercase font-bold text-[#8C6008] block leading-none">
                 Saldo Koin
               </span>
-              <span className="text-sm font-extrabold text-amber-300 font-mono">
+              <span className="text-sm font-extrabold text-[#8C6008] font-mono">
                 {formatCoins(currentCoins)}
               </span>
             </div>
@@ -505,16 +506,16 @@ export default function MallModal() {
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-none border-b border-slate-800/80">
+        <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-thin">
           {categories.map((c) => (
             <button
               key={c.id}
               type="button"
               onClick={() => setActiveCategory(c.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeCategory === c.id
-                  ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20 ring-1 ring-blue-400/50'
-                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                  ? 'bg-[#F4A98C] text-white shadow-sm border-b-2 border-[#B85838]'
+                  : 'bg-[#FFFDF9] hover:bg-[#F8F4EE] text-[#5C5265] border border-[#EADBCC]'
               }`}
             >
               {c.label}
@@ -524,8 +525,8 @@ export default function MallModal() {
 
         {/* Loading Indicator */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12 text-slate-400 text-xs">
-            <Loader2 className="w-5 h-5 animate-spin mr-2 text-blue-400" />
+          <div className="flex items-center justify-center py-12 text-[#6F6675] text-xs">
+            <Loader2 className="w-5 h-5 animate-spin mr-2 text-[#76A9EA]" />
             <span>Memuat katalog busana kota...</span>
           </div>
         )}
@@ -542,28 +543,28 @@ export default function MallModal() {
               return (
                 <div
                   key={item.id}
-                  className={`p-3.5 rounded-2xl border flex flex-col justify-between transition-all ${
+                  className={`p-3.5 rounded-2xl border-2 flex flex-col justify-between transition-all ${
                     isEquipped
-                      ? 'bg-blue-950/40 border-blue-500 shadow-lg shadow-blue-500/10 ring-1 ring-blue-500/50'
+                      ? 'bg-[#F0F7FF] border-[#76A9EA] shadow-md ring-2 ring-[#A9C8EC]/40'
                       : isOwned
-                      ? 'bg-slate-950/80 border-emerald-500/30'
-                      : 'bg-slate-950/50 border-slate-800/90 hover:border-slate-700'
+                      ? 'bg-[#FFFDF9] border-[#A8DCC8] shadow-sm'
+                      : 'bg-[#FFFDF9] border-[#EADBCC] shadow-sm hover:border-[#D6C2AC] hover:shadow-md'
                   }`}
                 >
                   <div>
                     {/* Item Preview Color & Icon Badge */}
                     <div className="flex items-start justify-between mb-2.5">
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center border shadow-inner relative"
+                        className="w-12 h-12 rounded-xl flex items-center justify-center border-2 shadow-inner relative"
                         style={{
                           backgroundColor: item.color,
-                          borderColor: 'rgba(255,255,255,0.25)',
+                          borderColor: 'rgba(255,255,255,0.6)',
                         }}
                       >
                         {getCategoryIcon(item.category)}
                         {item.price === 0 && (
-                          <span className="absolute -top-1.5 -left-1.5 bg-emerald-500 text-[8px] font-black text-slate-950 px-1 rounded-full uppercase shadow">
-                            Free
+                          <span className="absolute -top-1.5 -left-1.5 bg-[#4EBA88] text-[8px] font-black text-white px-1.5 py-0.2 rounded-full uppercase shadow">
+                            Gratis
                           </span>
                         )}
                       </div>
@@ -577,43 +578,43 @@ export default function MallModal() {
                           {item.rarity}
                         </span>
                         {isOwned && (
-                          <span className="text-[9px] font-bold text-emerald-400 flex items-center">
-                            <Check className="w-2.5 h-2.5 mr-0.5" /> Milikmu
+                          <span className="text-[10px] font-bold text-[#186D48] flex items-center">
+                            <Check className="w-3 h-3 mr-0.5" /> Milikmu
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <h5 className="font-bold text-white text-xs leading-snug">
+                    <h5 className="font-extrabold text-[#3B3340] text-xs leading-snug">
                       {item.name}
                     </h5>
 
                     {/* Special Trait Badge */}
                     {trait && (
                       <div className="mt-1">
-                        <span className="inline-block text-[10px] font-bold text-amber-300 bg-amber-950/60 border border-amber-800/60 px-1.5 py-0.5 rounded-md">
+                        <span className="inline-block text-[10px] font-bold text-[#8C6008] bg-[#FFF8DF] border border-[#F7D772] px-2 py-0.5 rounded-md">
                           {trait}
                         </span>
                       </div>
                     )}
 
-                    <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] text-[#6F6675] mt-1 line-clamp-2 leading-relaxed">
                       {item.description || 'Pakaian eksklusif warga Netizen City.'}
                     </p>
                   </div>
 
                   {/* Actions / Price */}
-                  <div className="mt-3.5 pt-3 border-t border-slate-900 flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <Coins className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="text-xs font-bold text-white font-mono">
+                  <div className="mt-3.5 pt-3 border-t border-[#F0EAE1] flex items-center justify-between">
+                    <div className="flex items-center space-x-1.5 bg-[#FFF9F1] px-2.5 py-1 rounded-xl border border-[#EADBCC]">
+                      <Coins className="w-3.5 h-3.5 text-[#D4980B]" />
+                      <span className="text-xs font-black text-[#8C6008] font-mono">
                         {item.price === 0 ? 'Gratis' : item.price}
                       </span>
                     </div>
 
                     {isEquipped ? (
                       <div className="flex items-center space-x-1.5">
-                        <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/40 flex items-center space-x-1">
+                        <span className="px-3 py-1 rounded-xl bg-[#E8F8F0] text-[#186D48] text-[11px] font-black border border-[#A8DCC8] flex items-center space-x-1">
                           <Check className="w-3.5 h-3.5" />
                           <span>Terpakai</span>
                         </span>
@@ -623,7 +624,7 @@ export default function MallModal() {
                             type="button"
                             onClick={() => handleUnequip(item)}
                             title="Lepas item ini"
-                            className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            className="p-1 rounded-lg bg-[#F8F4EE] hover:bg-[#EFE6D8] text-[#5C5265] border border-[#EADBCC] transition-colors cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -633,9 +634,9 @@ export default function MallModal() {
                       <button
                         type="button"
                         onClick={() => handleEquip(item)}
-                        className="px-3.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold shadow-md transition-transform active:scale-95 flex items-center space-x-1 cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-xl bg-[#76A9EA] hover:bg-[#6297DC] text-white text-[11px] font-bold border-b-3 border-[#4A7BB8] active:border-b-0 active:translate-y-0.5 shadow-sm transition-transform flex items-center space-x-1 cursor-pointer"
                       >
-                        <Sparkles className="w-3.5 h-3.5" />
+                        <Check className="w-3.5 h-3.5" />
                         <span>Pakai</span>
                       </button>
                     ) : (
@@ -643,10 +644,10 @@ export default function MallModal() {
                         type="button"
                         disabled={!canAfford || isPurchasing}
                         onClick={() => handlePurchase(item)}
-                        className={`px-3.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-md ${
+                        className={`px-3.5 py-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm ${
                           canAfford
-                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white active:scale-95'
-                            : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                            ? 'bg-[#4EBA88] hover:bg-[#3FA675] text-white border-b-3 border-[#2E7F59] active:border-b-0 active:translate-y-0.5'
+                            : 'bg-[#F0EAE1] text-[#A89E92] border border-[#E0D5C7] cursor-not-allowed'
                         }`}
                       >
                         <ShoppingBag className="w-3 h-3 mr-0.5" />
@@ -661,10 +662,10 @@ export default function MallModal() {
         )}
 
         {/* Footer info & button */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs text-slate-400">
+        <div className="flex items-center justify-between pt-3 border-t border-[#EADBCC] text-xs text-[#6F6675]">
           <div className="flex items-center space-x-1 text-[11px]">
-            <Zap className="w-3.5 h-3.5 text-blue-400" />
-            <span>Koleksi 34 item unik khas budaya & komunitas Netizen City.</span>
+            <Zap className="w-3.5 h-3.5 text-[#F4A98C]" />
+            <span>Koleksi 34 item unik busana khas warga Netizen City.</span>
           </div>
           <Button variant="ghost" onClick={closeModal} className="text-xs">
             Tutup Mall

@@ -5,10 +5,10 @@ import dynamic from 'next/dynamic'
 import GameHUD from '@/components/game/GameHUD'
 import { LoadingScreen } from '@/components/ui/Loading'
 
-// Dynamically import GameCanvas with SSR disabled because Phaser requires browser window/canvas
+// Dynamically import GameCanvas with SSR disabled because WebGL/Three.js requires browser window/canvas
 const GameCanvas = dynamic(() => import('@/components/game/GameCanvas'), {
   ssr: false,
-  loading: () => <LoadingScreen message="Memuat mesin kota 2D..." />,
+  loading: () => <LoadingScreen message="Memuat dunia 3D NETIZENCITY (Day 1-9)..." />,
 })
 
 export default function CityPage() {
@@ -23,8 +23,8 @@ export default function CityPage() {
   }
 
   return (
-    <main className="relative w-full h-full overflow-hidden bg-slate-950">
-      {/* 2D Isometric Phaser Game Canvas */}
+    <main className="relative w-full h-full overflow-hidden bg-[#CDE7F0]">
+      {/* 3D Diorama Three.js Game Canvas */}
       <GameCanvas />
 
       {/* Modern Overlay Game HUD */}

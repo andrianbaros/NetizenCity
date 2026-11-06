@@ -671,9 +671,9 @@ function getInitialSeedData(): LocalDBSchema {
       {
         id: 'msg-01',
         citizen_id: 'system',
-        sender_name: 'Pemerintah Kota',
+        sender_name: 'Mayor',
         channel: 'global',
-        content: 'Selamat datang di NETIZENCITY! Kota virtual komunitas Instagram @netizencity.id',
+        content: 'Selamat datang di NETIZENCITY! Jelajahi kota, kunjungi Alun-Alun Tugu, dan jadilah warga aktif.',
         created_at: new Date().toISOString(),
       },
       {
@@ -681,7 +681,7 @@ function getInitialSeedData(): LocalDBSchema {
         citizen_id: 'c-admin',
         sender_name: 'Admin Kota',
         channel: 'global',
-        content: 'Ambil pekerjaan kurir di kawasan pabrik selatan untuk menghasilkan koin cepat!',
+        content: 'Selamat datang di Alun-Alun Tugu! Kunjungi Monumen, berinteraksi, dan saling mengobrol bersama seluruh warga Netizen City!',
         created_at: new Date().toISOString(),
       },
     ],

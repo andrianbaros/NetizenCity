@@ -45,17 +45,17 @@
         "skinTone": "#f5d0b0",
         "hairStyle": "short",
         "hairColor": "#06b6d4",
-        "shirtColor": "#2563eb",
+        "shirtColor": "#64748b",
         "pantsColor": "#0284c7",
         "shoesColor": "#f1f5f9",
         "expression": "happy",
         "outfit": {
-          "top": "#2563eb",
+          "top": "#64748b",
           "bottom": "#0284c7",
           "shoes": "#f1f5f9",
           "accessory": null
         },
-        "outfitPattern": "plain",
+        "outfitPattern": "armor",
         "accessory": null,
         "backpack": null
       },
@@ -70,7 +70,118 @@
       "role": "citizen",
       "onboarding_completed": true,
       "joined_at": "2026-11-03T15:44:33.670Z",
-      "updated_at": "2026-11-04T03:45:30.973Z"
+      "updated_at": "2026-11-06T10:54:40.989Z"
+    },
+    {
+      "id": "c-jy3hvn1",
+      "user_id": "u-a17g25o",
+      "email": "a@a.a",
+      "password_hash": "aaaaaa",
+      "username": "baros",
+      "display_name": "baros",
+      "ktn_number": "KTN-20261106-4FAV4",
+      "avatar_config": {
+        "skinTone": "#e0ac69",
+        "hairStyle": "short",
+        "hairColor": "#d97706",
+        "shirtColor": "#16a34a",
+        "pantsColor": "#475569",
+        "shoesColor": "#f1f5f9",
+        "expression": "happy",
+        "outfit": {
+          "top": "#16a34a",
+          "bottom": "#475569",
+          "shoes": "#f1f5f9",
+          "accessory": null
+        }
+      },
+      "level": 1,
+      "xp": 0,
+      "job": "Warga Baru",
+      "housing_id": "house-apt-03",
+      "housing_name": "Menara Netizen City View - Lantai 12 #12B",
+      "district": "Perumahan Utara",
+      "biography": "Warga resmi baru NETIZENCITY.",
+      "is_online": true,
+      "role": "citizen",
+      "onboarding_completed": true,
+      "joined_at": "2026-11-06T11:20:57.351Z",
+      "updated_at": "2026-11-06T11:21:11.408Z"
+    },
+    {
+      "id": "c-ykgo578",
+      "user_id": "u-zqpthd1",
+      "email": "b@a.a",
+      "password_hash": "aaaaaa",
+      "username": "bambang",
+      "display_name": "bambang",
+      "ktn_number": "KTN-20261106-BTN78",
+      "avatar_config": {
+        "skinTone": "#f5d0b0",
+        "hairStyle": "short",
+        "hairColor": "#1e293b",
+        "shirtColor": "#2563eb",
+        "pantsColor": "#1e293b",
+        "shoesColor": "#f1f5f9",
+        "expression": "happy",
+        "outfit": {
+          "top": "#2563eb",
+          "bottom": "#1e293b",
+          "shoes": "#f1f5f9",
+          "accessory": null
+        }
+      },
+      "level": 1,
+      "xp": 0,
+      "job": "Warga Baru",
+      "housing_id": "house-melati-01",
+      "housing_name": "Perumahan Asri Jalan Melati - No. 12",
+      "district": "Perumahan Utara",
+      "biography": "Warga resmi baru NETIZENCITY.",
+      "is_online": true,
+      "role": "citizen",
+      "onboarding_completed": true,
+      "joined_at": "2026-11-06T12:06:47.112Z",
+      "updated_at": "2026-11-06T12:06:51.358Z"
+    },
+    {
+      "id": "c-120jskg",
+      "user_id": "u-9tmyfsg",
+      "email": "c@a.a",
+      "password_hash": "aaaaaa",
+      "username": "ali",
+      "display_name": "ali",
+      "ktn_number": "KTN-20261106-5AC6X",
+      "avatar_config": {
+        "skinTone": "#e0ac69",
+        "hairStyle": "spiky",
+        "hairColor": "#64748b",
+        "shirtColor": "#dc2626",
+        "pantsColor": "#334155",
+        "shoesColor": "#f1f5f9",
+        "expression": "happy",
+        "accessory": "glasses",
+        "outfit": {
+          "top": "#dc2626",
+          "bottom": "#334155",
+          "shoes": "#f1f5f9",
+          "accessory": "glasses"
+        },
+        "outfitPattern": "jersey",
+        "backpack": null
+      },
+      "level": 1,
+      "xp": 0,
+      "job": "Warga Baru",
+      "housing_id": "house-mawar-01",
+      "housing_name": "Perumahan Hijau Jalan Mawar - No. 8",
+      "district": "Perumahan Utara",
+      "biography": "Warga resmi baru NETIZENCITY.",
+      "is_online": true,
+      "role": "citizen",
+      "onboarding_completed": true,
+      "joined_at": "2026-11-06T12:30:01.083Z",
+      "updated_at": "2026-11-06T12:37:01.750Z"
     }
   ],
   "wallets": [
@@ -85,13 +196,217 @@
     {
       "id": "w-c-rewlc5s",
       "citizen_id": "c-rewlc5s",
-      "balance": 99999,
-      "total_earned": 99999,
-      "total_spent": 620,
-      "updated_at": "2026-11-04T03:50:03.278Z"
+      "balance": 98239,
+      "total_earned": 100169,
+      "total_spent": 2550,
+      "updated_at": "2026-11-06T10:54:40.185Z"
+    },
+    {
+      "id": "w-c-jy3hvn1",
+      "citizen_id": "c-jy3hvn1",
+      "balance": 500,
+      "total_earned": 500,
+      "total_spent": 0,
+      "updated_at": "2026-11-06T11:20:57.351Z"
+    },
+    {
+      "id": "w-c-ykgo578",
+      "citizen_id": "c-ykgo578",
+      "balance": 500,
+      "total_earned": 500,
+      "total_spent": 0,
+      "updated_at": "2026-11-06T12:06:47.112Z"
+    },
+    {
+      "id": "w-c-120jskg",
+      "citizen_id": "c-120jskg",
+      "balance": 300,
+      "total_earned": 550,
+      "total_spent": 250,
+      "updated_at": "2026-11-06T12:37:00.903Z"
     }
   ],
   "transactions": [
+    {
+      "id": "tx-0rvvstp",
+      "citizen_id": "c-120jskg",
+      "type": "spend",
+      "amount": 250,
+      "previous_balance": 550,
+      "new_balance": 300,
+      "description": "Membeli item: Jersey Timnas Garuda Netizen",
+      "reference_type": "item",
+      "reference_id": "top_jersey_garuda",
+      "created_at": "2026-11-06T12:37:00.903Z"
+    },
+    {
+      "id": "tx-gyjdvtz",
+      "citizen_id": "c-120jskg",
+      "type": "reward",
+      "amount": 50,
+      "previous_balance": 500,
+      "new_balance": 550,
+      "description": "Hadiah Login Harian Hari ke-1",
+      "reference_type": "daily_reward",
+      "reference_id": null,
+      "created_at": "2026-11-06T12:36:52.979Z"
+    },
+    {
+      "id": "tx-fcqwgvq",
+      "citizen_id": "c-rewlc5s",
+      "type": "spend",
+      "amount": 850,
+      "previous_balance": 99089,
+      "new_balance": 98239,
+      "description": "Membeli item: Baju Zirah Ksatria Pixel",
+      "reference_type": "item",
+      "reference_id": "top_armor_ksatria",
+      "created_at": "2026-11-06T10:54:40.185Z"
+    },
+    {
+      "id": "tx-4hiyjiu",
+      "citizen_id": "c-rewlc5s",
+      "type": "spend",
+      "amount": 650,
+      "previous_balance": 99739,
+      "new_balance": 99089,
+      "description": "Membeli item: Batik Keraton Sutra Emas",
+      "reference_type": "item",
+      "reference_id": "top_batik_keraton",
+      "created_at": "2026-11-06T10:54:28.436Z"
+    },
+    {
+      "id": "tx-8sfqz1b",
+      "citizen_id": "c-rewlc5s",
+      "type": "spend",
+      "amount": 180,
+      "previous_balance": 99919,
+      "new_balance": 99739,
+      "description": "Membeli item: Jaket Bomber Ojol Hijau Neon",
+      "reference_type": "item",
+      "reference_id": "top_bomber_ojol",
+      "created_at": "2026-11-06T10:53:44.108Z"
+    },
+    {
+      "id": "tx-fdp5qa6",
+      "citizen_id": "c-rewlc5s",
+      "type": "earn",
+      "amount": 15,
+      "previous_balance": 99904,
+      "new_balance": 99919,
+      "description": "Membersihkan sampah trotoar kota",
+      "reference_type": null,
+      "reference_id": null,
+      "created_at": "2026-11-06T09:57:24.230Z"
+    },
+    {
+      "id": "tx-16fwflg",
+      "citizen_id": "c-rewlc5s",
+      "type": "earn",
+      "amount": 15,
+      "previous_balance": 99889,
+      "new_balance": 99904,
+      "description": "Membersihkan sampah trotoar kota",
+      "reference_type": null,
+      "reference_id": null,
+      "created_at": "2026-11-06T09:57:23.658Z"
+    },
+    {
+      "id": "tx-pwasjqv",
+      "citizen_id": "c-rewlc5s",
+      "type": "earn",
+      "amount": 15,
+      "previous_balance": 99874,
+      "new_balance": 99889,
+      "description": "Membersihkan sampah trotoar kota",
+      "reference_type": null,
+      "reference_id": null,
+      "created_at": "2026-11-06T09:57:22.584Z"
+    },
+    {
+      "id": "tx-2pwh680",
+      "citizen_id": "c-rewlc5s",
+      "type": "earn",
+      "amount": 15,
+      "previous_balance": 99859,
+      "new_balance": 99874,
+      "description": "Membersihkan sampah trotoar kota",
+      "reference_type": null,
+      "reference_id": null,
+      "created_at": "2026-11-06T09:57:21.683Z"
+    },
+    {
+      "id": "tx-3ix3qqr",
+      "citizen_id": "c-rewlc5s",
+      "type": "reward",
+      "amount": 50,
+      "previous_balance": 99809,
+      "new_balance": 99859,
+      "description": "Hadiah Login Harian Hari ke-1",
+      "reference_type": "daily_reward",
+      "reference_id": null,
+      "created_at": "2026-11-06T09:56:39.039Z"
+    },
+    {
+      "id": "tx-5eu5vfj",
+      "citizen_id": "c-rewlc5s",
+      "type": "earn",
+      "amount": 15,
+      "previous_balance": 99794,
+      "new_balance": 99809,
+      "description": "Membersihkan sampah trotoar kota",
+      "reference_type": null,
+      "reference_id": null,
+      "created_at": "2026-11-06T09:49:39.336Z"
+    },
+    {
+      "id": "tx-cbbnxbv",
+      "citizen_id": "c-rewlc5s",
+      "type": "earn",
+      "amount": 15,
+      "previous_balance": 99779,
+      "new_balance": 99794,
+      "description": "Membersihkan sampah trotoar kota",
+      "reference_type": null,
+      "reference_id": null,
+      "created_at": "2026-11-06T09:49:37.590Z"
+    },
+    {
+      "id": "tx-68xdudt",
+      "citizen_id": "c-rewlc5s",
+      "type": "earn",
+      "amount": 15,
+      "previous_balance": 99764,
+      "new_balance": 99779,
+      "description": "Membersihkan sampah trotoar kota",
+      "reference_type": null,
+      "reference_id": null,
+      "created_at": "2026-11-06T09:49:36.348Z"
+    },
+    {
+      "id": "tx-y9ec8eo",
+      "citizen_id": "c-rewlc5s",
+      "type": "earn",
+      "amount": 15,
+      "previous_balance": 99749,
+      "new_balance": 99764,
+      "description": "Membersihkan sampah trotoar kota",
+      "reference_type": null,
+      "reference_id": null,
+      "created_at": "2026-11-06T09:49:34.088Z"
+    },
+    {
+      "id": "tx-0w8fq5w",
+      "citizen_id": "c-rewlc5s",
+      "type": "spend",
+      "amount": 250,
+      "previous_balance": 99999,
+      "new_balance": 99749,
+      "description": "Membeli item: Jersey Timnas Garuda Netizen",
+      "reference_type": "item",
+      "reference_id": "top_jersey_garuda",
+      "created_at": "2026-11-06T09:48:52.236Z"
+    },
     {
       "id": "tx-gqf7plm",
       "citizen_id": "c-rewlc5s",
@@ -331,6 +646,42 @@
       "reference_type": "onboarding",
       "reference_id": null,
       "created_at": "2026-11-03T15:44:33.670Z"
+    },
+    {
+      "id": "tx-bq9ag1c",
+      "citizen_id": "c-jy3hvn1",
+      "type": "reward",
+      "amount": 500,
+      "previous_balance": 0,
+      "new_balance": 500,
+      "description": "Bonus Selamat Datang Balai Kota",
+      "reference_type": "onboarding",
+      "reference_id": null,
+      "created_at": "2026-11-06T11:20:57.351Z"
+    },
+    {
+      "id": "tx-u6tkzzt",
+      "citizen_id": "c-ykgo578",
+      "type": "reward",
+      "amount": 500,
+      "previous_balance": 0,
+      "new_balance": 500,
+      "description": "Bonus Selamat Datang Balai Kota",
+      "reference_type": "onboarding",
+      "reference_id": null,
+      "created_at": "2026-11-06T12:06:47.112Z"
+    },
+    {
+      "id": "tx-eov3a4c",
+      "citizen_id": "c-120jskg",
+      "type": "reward",
+      "amount": 500,
+      "previous_balance": 0,
+      "new_balance": 500,
+      "description": "Bonus Selamat Datang Balai Kota",
+      "reference_type": "onboarding",
+      "reference_id": null,
+      "created_at": "2026-11-06T12:30:01.083Z"
     }
   ],
   "housing_units": [
@@ -356,7 +707,7 @@
       "type": "apartment",
       "district": "Perumahan Utara",
       "unit_number": "Lantai 12 #12B",
-      "status": "available"
+      "status": "occupied"
     },
     {
       "id": "house-melati-01",
@@ -364,7 +715,7 @@
       "type": "small_house",
       "district": "Perumahan Utara",
       "unit_number": "No. 12",
-      "status": "available"
+      "status": "occupied"
     },
     {
       "id": "house-mawar-01",
@@ -372,7 +723,7 @@
       "type": "standard_house",
       "district": "Perumahan Utara",
       "unit_number": "No. 8",
-      "status": "available"
+      "status": "occupied"
     },
     {
       "id": "house-downtown-01",
@@ -851,6 +1202,41 @@
       "item_id": "hair_punk_cyan",
       "is_equipped": true,
       "acquired_at": "2026-11-04T03:36:22.179Z"
+    },
+    {
+      "id": "inv-00yyatw",
+      "citizen_id": "c-rewlc5s",
+      "item_id": "top_jersey_garuda",
+      "is_equipped": false,
+      "acquired_at": "2026-11-06T09:48:52.236Z"
+    },
+    {
+      "id": "inv-1hx8mud",
+      "citizen_id": "c-rewlc5s",
+      "item_id": "top_bomber_ojol",
+      "is_equipped": false,
+      "acquired_at": "2026-11-06T10:53:44.108Z"
+    },
+    {
+      "id": "inv-xymvjfg",
+      "citizen_id": "c-rewlc5s",
+      "item_id": "top_batik_keraton",
+      "is_equipped": false,
+      "acquired_at": "2026-11-06T10:54:28.436Z"
+    },
+    {
+      "id": "inv-ke2wfqi",
+      "citizen_id": "c-rewlc5s",
+      "item_id": "top_armor_ksatria",
+      "is_equipped": true,
+      "acquired_at": "2026-11-06T10:54:40.185Z"
+    },
+    {
+      "id": "inv-demraxx",
+      "citizen_id": "c-120jskg",
+      "item_id": "top_jersey_garuda",
+      "is_equipped": true,
+      "acquired_at": "2026-11-06T12:37:00.903Z"
     }
   ],
   "daily_login_rewards": [
@@ -871,6 +1257,24 @@
       "streak_count": 1,
       "claimed_date": "2026-11-04",
       "claimed_at": "2026-11-04T03:06:58.067Z"
+    },
+    {
+      "id": "dlr-dezf2f5",
+      "citizen_id": "c-rewlc5s",
+      "day_number": 1,
+      "reward_coins": 50,
+      "streak_count": 1,
+      "claimed_date": "2026-11-06",
+      "claimed_at": "2026-11-06T09:56:39.039Z"
+    },
+    {
+      "id": "dlr-b5x7qfd",
+      "citizen_id": "c-120jskg",
+      "day_number": 1,
+      "reward_coins": 50,
+      "streak_count": 1,
+      "claimed_date": "2026-11-06",
+      "claimed_at": "2026-11-06T12:36:52.979Z"
     }
   ],
   "missions": [
@@ -990,9 +1394,9 @@
     {
       "id": "msg-01",
       "citizen_id": "system",
-      "sender_name": "Pemerintah Kota",
+      "sender_name": "Mayor",
       "channel": "global",
-      "content": "Selamat datang di NETIZENCITY! Kota virtual komunitas Instagram @netizencity.id",
+      "content": "Selamat datang di NETIZENCITY! Jelajahi kota, kunjungi Alun-Alun Tugu, dan jadilah warga aktif.",
       "created_at": "2026-11-03T15:37:43.878Z"
     },
     {
@@ -1000,7 +1404,7 @@
       "citizen_id": "c-admin",
       "sender_name": "Admin Kota",
       "channel": "global",
-      "content": "Ambil pekerjaan kurir di kawasan pabrik selatan untuk menghasilkan koin cepat!",
+      "content": "Selamat datang di Alun-Alun Tugu! Kunjungi Monumen, berinteraksi, dan saling mengobrol bersama seluruh warga Netizen City!",
       "created_at": "2026-11-03T15:37:43.878Z"
     },
     {
@@ -1014,7 +1418,7 @@
     {
       "id": "msg-onhfbrw",
       "citizen_id": "c-rewlc5s",
-      "sender_name": "budi_netizen (Kamu)",
+      "sender_name": "budi_netizen",
       "channel": "global",
       "content": "hi",
       "created_at": "2026-11-04T03:47:38.632Z"
@@ -1022,10 +1426,66 @@
     {
       "id": "msg-zfnsrdb",
       "citizen_id": "c-netizen-01",
-      "sender_name": "warga_netizen (Kamu)",
+      "sender_name": "warga_netizen",
       "channel": "global",
       "content": "Halo teman-teman Netizen City! Karakter saya keren sekali sekarang.",
       "created_at": "2026-11-04T03:48:41.891Z"
+    },
+    {
+      "id": "msg-4v2lwea",
+      "citizen_id": "c-jy3hvn1",
+      "sender_name": "baros",
+      "channel": "global",
+      "content": "hi",
+      "created_at": "2026-11-06T12:06:10.207Z"
+    },
+    {
+      "id": "msg-v0tqjpa",
+      "citizen_id": "c-jy3hvn1",
+      "sender_name": "baros",
+      "channel": "global",
+      "content": "halo",
+      "created_at": "2026-11-06T12:06:11.847Z"
+    },
+    {
+      "id": "msg-agphzi3",
+      "citizen_id": "c-jy3hvn1",
+      "sender_name": "baros",
+      "channel": "global",
+      "content": "tes",
+      "created_at": "2026-11-06T12:06:13.089Z"
+    },
+    {
+      "id": "msg-068xlx4",
+      "citizen_id": "c-120jskg",
+      "sender_name": "ali",
+      "channel": "global",
+      "content": "halo",
+      "created_at": "2026-11-06T12:36:44.896Z"
+    },
+    {
+      "id": "msg-vzjvsv1",
+      "citizen_id": "c-120jskg",
+      "sender_name": "ali",
+      "channel": "global",
+      "content": "revi galing",
+      "created_at": "2026-11-06T12:37:23.054Z"
+    },
+    {
+      "id": "msg-tw3zv3h",
+      "citizen_id": "c-120jskg",
+      "sender_name": "ali",
+      "channel": "global",
+      "content": "revi galing bgt",
+      "created_at": "2026-11-06T12:37:41.012Z"
+    },
+    {
+      "id": "msg-nzqegsr",
+      "citizen_id": "c-120jskg",
+      "sender_name": "ali",
+      "channel": "global",
+      "content": "revi galing bgt",
+      "created_at": "2026-11-06T12:37:57.320Z"
     }
   ],
   "announcements": [

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const citizen = getActiveCitizen(citizenIdCookie)
     const citizenId = citizen ? citizen.id : 'anon'
     const username = citizen ? citizen.username : 'warga'
-    const senderName = `${username} (Kamu)`
+    const senderName = username
 
     const message = addChatMessage(citizenId, senderName, content.trim())
     return NextResponse.json({ success: true, message })

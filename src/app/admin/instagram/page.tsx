@@ -11,7 +11,6 @@ import {
   Key,
   ArrowLeft,
   ExternalLink,
-  ShieldAlert,
   Info,
 } from 'lucide-react'
 import { InstagramIcon } from '@/components/ui/InstagramIcon'
@@ -173,37 +172,37 @@ export default function AdminInstagramPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-8 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#F8F4EE] text-[#3B3340] p-4 sm:p-8 selection:bg-[#F4A98C] selection:text-white">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Navigation & Header */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <Link
               href="/"
-              className="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+              className="inline-flex items-center text-xs font-bold text-[#6F6675] hover:text-[#3B3340] transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-1.5" /> Kembali ke Beranda
             </Link>
             <Link
               href="/city"
-              className="inline-flex items-center text-xs font-semibold text-blue-400 hover:text-blue-300"
+              className="inline-flex items-center text-xs font-bold text-[#2C6ECB] hover:text-[#1D60A6]"
             >
               Lihat di Dalam Kota &rarr;
             </Link>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-[#FFFDF9] border-2 border-[#EADBCC] rounded-3xl shadow-sm">
             <div className="flex items-center space-x-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 p-0.5 flex items-center justify-center shadow-lg shadow-pink-500/20">
-                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                  <InstagramIcon className="w-6 h-6 text-pink-400" />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#F4A98C] via-[#F2C1D6] to-[#C9B8E8] p-0.5 flex items-center justify-center shadow-md">
+                <div className="w-full h-full bg-[#FFFDF9] rounded-[14px] flex items-center justify-center">
+                  <InstagramIcon className="w-6 h-6 text-[#F282A8]" />
                 </div>
               </div>
               <div>
-                <h1 className="text-xl font-black text-white tracking-wide">
+                <h1 className="text-xl font-black text-[#3B3340] tracking-wide">
                   Integrasi Instagram @netizencity.id
                 </h1>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[#6F6675] mt-0.5 font-medium">
                   Pengaturan Sumber Resmi Populasi Virtual NETIZENCITY
                 </p>
               </div>
@@ -213,11 +212,11 @@ export default function AdminInstagramPage() {
               href="https://www.instagram.com/netizencity.id/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors self-start sm:self-auto"
+              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#F8F4EE] hover:bg-[#EFE6D8] border border-[#EADBCC] text-xs font-bold text-[#3B3340] transition-colors self-start sm:self-auto shadow-xs"
             >
-              <InstagramIcon className="w-4 h-4 text-pink-400" />
+              <InstagramIcon className="w-4 h-4 text-[#F282A8]" />
               <span>Buka Profil Instagram</span>
-              <ExternalLink className="w-3.5 h-3.5 ml-1 text-slate-400" />
+              <ExternalLink className="w-3.5 h-3.5 ml-1 text-[#6F6675]" />
             </a>
           </div>
         </div>
@@ -225,12 +224,12 @@ export default function AdminInstagramPage() {
         {/* Message Alert Banner */}
         {message && (
           <div
-            className={`p-4 rounded-xl border flex items-start space-x-3 text-xs font-medium ${
+            className={`p-4 rounded-2xl border-2 flex items-start space-x-3 text-xs font-bold ${
               message.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                ? 'bg-[#E8F8F0] border-[#A8DCC8] text-[#186D48]'
                 : message.type === 'error'
-                ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                : 'bg-blue-500/10 border-blue-500/30 text-blue-300'
+                ? 'bg-[#FFF0F0] border-[#FFC4C4] text-[#C53030]'
+                : 'bg-[#EBF4FD] border-[#A9C8EC] text-[#1D60A6]'
             }`}
           >
             {message.type === 'success' ? (
@@ -244,11 +243,11 @@ export default function AdminInstagramPage() {
 
         {/* Status Metrics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          <div className="p-5 rounded-3xl bg-[#FFFDF9] border-2 border-[#EADBCC] shadow-xs">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#6F6675] block mb-1">
               Populasi Resmi Saat Ini
             </span>
-            <div className="text-3xl font-black text-white font-mono">
+            <div className="text-3xl font-black text-[#3B3340] font-mono">
               {formatNumber(status?.currentFollowers ?? 25800)}
             </div>
             <div className="mt-2 flex items-center space-x-2">
@@ -258,54 +257,54 @@ export default function AdminInstagramPage() {
               >
                 {status?.source === 'instagram_api' ? 'Meta Graph API' : 'Input Manual'}
               </Badge>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-[#6F6675] font-semibold">
                 Warga Kota
               </span>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          <div className="p-5 rounded-3xl bg-[#FFFDF9] border-2 border-[#EADBCC] shadow-xs">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#6F6675] block mb-1">
               Status Koneksi Meta Graph API
             </span>
             <div className="flex items-center space-x-2 mt-1">
               <span
                 className={`w-3 h-3 rounded-full ${
-                  status?.isConfigured ? 'bg-emerald-400' : 'bg-amber-400'
+                  status?.isConfigured ? 'bg-[#4EBA88]' : 'bg-[#D4980B]'
                 }`}
               />
-              <span className="text-base font-bold text-white">
+              <span className="text-base font-extrabold text-[#3B3340]">
                 {status?.isConfigured ? 'Terhubung (API Siap)' : 'Mode Manual'}
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
-              Akun: <strong className="text-white">@netizencity.id</strong>
+            <p className="text-[11px] text-[#6F6675] mt-2 font-medium">
+              Akun: <strong className="text-[#3B3340]">@netizencity.id</strong>
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          <div className="p-5 rounded-3xl bg-[#FFFDF9] border-2 border-[#EADBCC] shadow-xs">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#6F6675] block mb-1">
               Sinkronisasi Terakhir
             </span>
-            <div className="text-sm font-semibold text-white mt-1">
+            <div className="text-sm font-extrabold text-[#3B3340] mt-1">
               {status?.lastSyncAt ? formatDate(status.lastSyncAt) : 'Belum pernah'}
             </div>
-            <p className="text-[11px] text-slate-500 mt-2">
+            <p className="text-[11px] text-[#6F6675] mt-2 font-medium">
               Tercatat otomatis di database city_population
             </p>
           </div>
         </div>
 
         {/* Section: Manual Correction (Recommended & Immediate) */}
-        <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-2xl space-y-4 shadow-xl">
-          <div className="flex items-center space-x-2 pb-3 border-b border-slate-800">
-            <Edit3 className="w-5 h-5 text-amber-400" />
+        <div className="p-6 bg-[#FFFDF9] border-2 border-[#EADBCC] rounded-3xl space-y-4 shadow-sm">
+          <div className="flex items-center space-x-2 pb-3 border-b-2 border-[#EADBCC]">
+            <Edit3 className="w-5 h-5 text-[#D4980B]" />
             <div>
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-extrabold text-[#3B3340]">
                 Pembaruan / Koreksi Manual Populasi Kota
               </h2>
-              <p className="text-xs text-slate-400">
-                Sesuai dokumen Master Project: Jika API resmi belum terhubung, admin dapat memasukkan jumlah follower asli @netizencity.id secara langsung
+              <p className="text-xs text-[#6F6675] font-medium">
+                Jika API resmi belum terhubung, admin dapat memasukkan jumlah follower asli @netizencity.id secara langsung
               </p>
             </div>
           </div>
@@ -356,14 +355,14 @@ export default function AdminInstagramPage() {
         </div>
 
         {/* Section: Official Meta Graph API Direct Sync */}
-        <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-2xl space-y-4 shadow-xl">
-          <div className="flex items-center space-x-2 pb-3 border-b border-slate-800">
-            <Key className="w-5 h-5 text-blue-400" />
+        <div className="p-6 bg-[#FFFDF9] border-2 border-[#EADBCC] rounded-3xl space-y-4 shadow-sm">
+          <div className="flex items-center space-x-2 pb-3 border-b-2 border-[#EADBCC]">
+            <Key className="w-5 h-5 text-[#2C6ECB]" />
             <div>
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-extrabold text-[#3B3340]">
                 Koneksi Meta Graph API (Sinkronisasi Otomatis)
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#6F6675] font-medium">
                 Ambil followers_count langsung dari endpoint resmi Meta Graph API v19.0
               </p>
             </div>
@@ -389,10 +388,10 @@ export default function AdminInstagramPage() {
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center space-x-1.5 text-xs text-slate-400">
-                <Info className="w-4 h-4 text-blue-400" />
+              <div className="flex items-center space-x-1.5 text-xs text-[#6F6675] font-medium">
+                <Info className="w-4 h-4 text-[#2C6ECB]" />
                 <span>
-                  Tidak melakukan web scraping. Hanya menggunakan endpoint resmi Meta Graph API.
+                  Hanya menggunakan endpoint resmi Meta Graph API tanpa scraping.
                 </span>
               </div>
 
@@ -410,22 +409,22 @@ export default function AdminInstagramPage() {
         </div>
 
         {/* Section: Sync & Correction History Table */}
-        <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-2xl space-y-4 shadow-xl">
-          <div className="flex items-center space-x-2 pb-3 border-b border-slate-800">
-            <History className="w-5 h-5 text-purple-400" />
+        <div className="p-6 bg-[#FFFDF9] border-2 border-[#EADBCC] rounded-3xl space-y-4 shadow-sm">
+          <div className="flex items-center space-x-2 pb-3 border-b-2 border-[#EADBCC]">
+            <History className="w-5 h-5 text-[#6A3F98]" />
             <div>
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-extrabold text-[#3B3340]">
                 Riwayat Sinkronisasi &amp; Pembaruan Populasi
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#6F6675] font-medium">
                 Catatan historis pertumbuhan warga resmi @netizencity.id
               </p>
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="text-[10px] text-slate-400 uppercase bg-slate-950/60 border-b border-slate-800">
+            <table className="w-full text-left text-xs text-[#5C5265]">
+              <thead className="text-[10px] text-[#6F6675] font-black uppercase bg-[#F8F4EE] border-b-2 border-[#EADBCC]">
                 <tr>
                   <th className="py-2.5 px-3">Waktu Rekam</th>
                   <th className="py-2.5 px-3">Metode</th>
@@ -435,10 +434,10 @@ export default function AdminInstagramPage() {
                   <th className="py-2.5 px-3">Oleh</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y-2 divide-[#F0EAE1]">
                 {status?.history?.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-slate-800/40">
-                    <td className="py-2.5 px-3 font-mono text-slate-400">
+                  <tr key={entry.id} className="hover:bg-[#F8F4EE]/60 transition-colors">
+                    <td className="py-2.5 px-3 font-mono text-[#6F6675]">
                       {formatDate(entry.recordedAt)}
                     </td>
                     <td className="py-2.5 px-3">
@@ -451,16 +450,16 @@ export default function AdminInstagramPage() {
                         {entry.source === 'instagram_api' ? 'API' : 'Manual'}
                       </Badge>
                     </td>
-                    <td className="py-2.5 px-3 font-extrabold text-white font-mono">
+                    <td className="py-2.5 px-3 font-black text-[#3B3340] font-mono">
                       {formatNumber(entry.followerCount)}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-500 font-mono">
+                    <td className="py-2.5 px-3 text-[#A89E92] font-mono">
                       {entry.oldValue ? formatNumber(entry.oldValue) : '-'}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-300">
+                    <td className="py-2.5 px-3 text-[#3B3340] font-medium">
                       {entry.reason}
                     </td>
-                    <td className="py-2.5 px-3 text-blue-300 font-medium">
+                    <td className="py-2.5 px-3 text-[#2C6ECB] font-bold">
                       {entry.updatedBy}
                     </td>
                   </tr>

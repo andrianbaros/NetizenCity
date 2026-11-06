@@ -1,5 +1,5 @@
 // ============================================================
-// NETIZENCITY - Modal Component (React Portal with Top Z-Index)
+// NETIZENCITY - Modal Component (Cozy Diorama Popup)
 // ============================================================
 
 'use client'
@@ -58,35 +58,38 @@ export const Modal: React.FC<ModalProps> = ({
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-auto select-auto"
       style={{ pointerEvents: 'auto' }}
     >
-      {/* Backdrop */}
+      {/* Warm Backdrop with soft blur */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity cursor-pointer"
+        className="fixed inset-0 bg-[#2C2430]/60 backdrop-blur-sm transition-opacity cursor-pointer animate-fade-in"
         onClick={onClose}
         style={{ pointerEvents: 'auto' }}
       />
 
       {/* Modal Dialog */}
       <div
-        className={`relative z-10 w-full ${widthStyles[maxWidth]} bg-slate-900 border border-slate-700/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]`}
+        className={`relative z-10 w-full ${widthStyles[maxWidth]} bg-[#FFFDF9] text-[#3B3340] border-2 border-[#EADBCC] rounded-3xl shadow-[0_20px_60px_-15px_rgba(70,50,60,0.3)] overflow-hidden flex flex-col max-h-[90vh] transition-all transform duration-150`}
         style={{ pointerEvents: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/80">
-          <h3 className="text-base font-bold text-white tracking-wide">
-            {title || 'NETIZENCITY'}
-          </h3>
+        {/* Header: Warm cream with signature pastel badge & tactile close button */}
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[#F0E4D5] bg-gradient-to-r from-[#FFF9F1] to-[#FFF3E3]">
+          <div className="flex items-center space-x-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#F4A98C]" />
+            <h3 className="font-heading text-lg font-bold text-[#3B3340] tracking-tight">
+              {title || 'NETIZENCITY'}
+            </h3>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-[#FFF0E6] text-[#D97858] hover:bg-[#F4A98C] hover:text-white transition-colors flex items-center justify-center cursor-pointer border border-[#F2C9B6] shadow-sm"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto pointer-events-auto">{children}</div>
+        <div className="p-6 overflow-y-auto pointer-events-auto leading-relaxed">{children}</div>
       </div>
     </div>
   )

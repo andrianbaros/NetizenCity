@@ -6,7 +6,7 @@ export default function GameLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="w-screen h-screen overflow-hidden bg-slate-950 relative selection:bg-blue-600 selection:text-white">
+    <div className="w-screen h-screen overflow-hidden bg-[#CDE7F0] relative selection:bg-[#F4A98C] selection:text-white">
       {children}
     </div>
   )

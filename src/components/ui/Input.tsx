@@ -1,5 +1,5 @@
 // ============================================================
-// NETIZENCITY - Input Component
+// NETIZENCITY - Input Component (Warm Rounded Input)
 // ============================================================
 
 import React, { forwardRef, useId } from 'react'
@@ -35,39 +35,39 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider"
+            className="block text-xs font-heading font-bold text-[#5A4F5E] mb-1.5 uppercase tracking-wider"
           >
             {label}
           </label>
         )}
         <div className="relative flex items-center">
           {leftIcon && (
-            <div className="absolute left-3 text-slate-400 pointer-events-none flex items-center">
+            <div className="absolute left-3.5 text-[#8A7D8F] pointer-events-none flex items-center">
               {leftIcon}
             </div>
           )}
           <input
             id={inputId}
             ref={ref}
-            className={`w-full bg-slate-900/90 text-white placeholder-slate-500 border rounded-lg px-3.5 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              leftIcon ? 'pl-10' : ''
-            } ${rightIcon ? 'pr-10' : ''} ${
+            className={`w-full bg-[#FFFDF9] text-[#3B3340] placeholder-[#A499A8] border-2 rounded-2xl px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-3 focus:ring-[#F4A98C]/30 shadow-xs ${
+              leftIcon ? 'pl-11' : ''
+            } ${rightIcon ? 'pr-11' : ''} ${
               error
-                ? 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/20'
-                : 'border-slate-700/80 hover:border-slate-600 focus:border-blue-500'
+                ? 'border-[#F08096] focus:border-[#F08096] text-[#A6263E]'
+                : 'border-[#EADBCC] hover:border-[#D5C2B0] focus:border-[#F4A98C]'
             } ${className}`}
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3 text-slate-400 flex items-center">
+            <div className="absolute right-3.5 text-[#8A7D8F] flex items-center">
               {rightIcon}
             </div>
           )}
         </div>
         {error ? (
-          <p className="mt-1.5 text-xs text-rose-400 font-medium">{error}</p>
+          <p className="mt-1.5 text-xs text-[#C43852] font-semibold">{error}</p>
         ) : helperText ? (
-          <p className="mt-1.5 text-xs text-slate-400">{helperText}</p>
+          <p className="mt-1.5 text-xs text-[#7A6E7E]">{helperText}</p>
         ) : null}
       </div>
     )

@@ -75,16 +75,16 @@ function LoginForm() {
   return (
     <div>
       <div className="mb-6 text-center">
-        <h2 className="text-xl font-bold text-white tracking-wide">
+        <h2 className="text-xl font-black text-[#3B3340] tracking-wide">
           Masuk ke Netizen City
         </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Lanjutkan petualangan virtualmu di kota
+        <p className="text-xs text-[#6F6675] mt-1 font-medium">
+          Lanjutkan petualangan virtualmu di dalam kota
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium">
+        <div className="mb-4 p-3 rounded-xl bg-[#FFF0F0] border-2 border-[#FFC4C4] text-[#C53030] text-xs font-bold">
           {error}
         </div>
       )}
@@ -97,7 +97,7 @@ function LoginForm() {
           placeholder="nama@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          leftIcon={<Mail className="w-4 h-4" />}
+          leftIcon={<Mail className="w-4 h-4 text-[#A89E92]" />}
         />
 
         <Input
@@ -107,20 +107,20 @@ function LoginForm() {
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          leftIcon={<Lock className="w-4 h-4" />}
+          leftIcon={<Lock className="w-4 h-4 text-[#A89E92]" />}
         />
 
         <div className="flex items-center justify-between text-xs">
-          <label className="flex items-center text-slate-400 hover:text-slate-300 cursor-pointer">
+          <label className="flex items-center text-[#6F6675] hover:text-[#3B3340] cursor-pointer font-semibold">
             <input
               type="checkbox"
-              className="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0 mr-2"
+              className="rounded bg-[#FFFDF9] border-[#EADBCC] text-[#F4A98C] focus:ring-0 mr-2"
             />
             Ingat saya
           </label>
           <Link
             href="/forgot-password"
-            className="text-blue-400 hover:text-blue-300 font-medium"
+            className="text-[#2C6ECB] hover:text-[#1D60A6] font-bold"
           >
             Lupa kata sandi?
           </Link>
@@ -128,7 +128,7 @@ function LoginForm() {
 
         <Button
           type="submit"
-          variant="primary"
+          variant="peach"
           size="lg"
           isLoading={loading}
           className="w-full mt-2"
@@ -138,12 +138,12 @@ function LoginForm() {
         </Button>
       </form>
 
-      <div className="mt-6 pt-6 border-t border-slate-800 text-center">
-        <p className="text-xs text-slate-400">
+      <div className="mt-6 pt-6 border-t-2 border-[#EADBCC] text-center">
+        <p className="text-xs text-[#6F6675] font-medium">
           Belum punya identitas warga?{' '}
           <Link
             href="/register"
-            className="text-blue-400 hover:text-blue-300 font-semibold inline-flex items-center ml-1"
+            className="text-[#2C6ECB] hover:text-[#1D60A6] font-black inline-flex items-center ml-1"
           >
             Daftar KTN <ArrowRight className="w-3 h-3 ml-0.5" />
           </Link>
@@ -155,7 +155,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="text-slate-400 text-xs text-center py-8">Memuat form login...</div>}>
+    <Suspense fallback={<div className="text-[#6F6675] text-xs text-center py-8">Memuat form login...</div>}>
       <LoginForm />
     </Suspense>
   )

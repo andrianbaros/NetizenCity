@@ -1,6 +1,6 @@
 // ============================================================
 // NETIZENCITY - Primary Game Heads-Up Display (GameHUD)
-// Complete Navigation, Population Counters, Quick Actions, & Modals
+// Cozy Pastel Diorama Aesthetic Aligned with 3D Art Style
 // ============================================================
 
 'use client'
@@ -14,7 +14,6 @@ import {
   ShoppingBag,
   Gift,
   Building2,
-  Sparkles,
   LogOut,
   MapPin,
   Moon,
@@ -27,7 +26,6 @@ import { useGameStore } from '@/lib/stores/useGameStore'
 import { useUIStore } from '@/lib/stores/useUIStore'
 import { useCitizenStore } from '@/lib/stores/useCitizenStore'
 import { formatCoins, formatNumber } from '@/lib/utils/formatting'
-import MiniMap from './MiniMap'
 import ChatPanel from './ChatPanel'
 import KTNCardModal from './KTNCardModal'
 import MallModal from './MallModal'
@@ -81,7 +79,6 @@ export default function GameHUD() {
             updatedAt: citData.citizen.updated_at || citData.citizen.joined_at,
           })
 
-          // Notify Phaser to re-render character with fetched avatar config
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('avatar-updated'))
           }
@@ -106,29 +103,43 @@ export default function GameHUD() {
       if (popRes.ok) {
         const popData = await popRes.json()
         setCityStats({
-          officialPopulation: popData.officialPopulation || 26150,
-          registeredCitizens: popData.registeredCitizens || 3420,
-          onlineNow: popData.onlineNow || 142,
-          lastUpdated: popData.lastUpdated || new Date().toISOString(),
-          isApiConnected: popData.isApiConnected ?? false,
+          officialPopulation: popData.officialPopulation ?? 53000,
+          registeredCitizens: popData.registeredCitizens ?? 103,
+          onlineNow: popData.onlineNow ?? 18,
         })
       }
     } catch {
-      // ignore
+      // Fallback
     }
   }, [setProfile, setWallet, setInventory, setCityStats])
 
   useEffect(() => {
     initGameData()
+    const interval = setInterval(initGameData, 15000)
+    return () => clearInterval(interval)
   }, [initGameData])
 
   const districtNames: Record<string, string> = {
-    town_square: 'Downtown (Alun-Alun Pusat)',
-    residential: 'Distrik Perumahan Utara',
-    commercial: 'Distrik Komersial & Mall',
-    industrial: 'Kawasan Industri Selatan',
-    airport: 'Bandara Internasional Netizen',
-    entertainment: 'Taman Kota & Hiburan Barat',
+    town_square: 'Alun-Alun Pusat',
+    residential: 'Perumahan Utara',
+    commercial: 'Komersial & Mall',
+    industrial: 'Kawasan Industri',
+    airport: 'Bandara Internasional',
+    entertainment: 'Taman & Hiburan',
+    'Downtown (Pusat Kota)': 'Pusat Pemerintahan',
+    'Komersial & Mall': 'Mall & Ruko',
+    'Pusat Kota': 'Monumen Netizen City',
+    'Distrik Investor': 'Menara Investor',
+    'Fasilitas Publik': 'Fasilitas Publik',
+    Transportasi: 'Stasiun Kereta',
+    'Kawasan Kerukunan': 'Kawasan Kerukunan',
+    'Bandara & Kedatangan': 'Bandara Internasional',
+    'Olahraga & Hiburan': 'Stadion Netizen City',
+    'Distrik Riset': 'Laboratorium Riset',
+    'Kawasan Wisata & Edukasi': 'Kebun Binatang',
+    'Distrik Riset & Pendidikan': 'Universitas',
+    'Kawasan Alam': 'Gunung & Air Terjun',
+    'Kawasan Alam & Wisata': 'Pantai Netizen Beach',
   }
 
   const currentCoins = wallet?.balance ?? 500
@@ -139,86 +150,92 @@ export default function GameHUD() {
   }
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between p-3 sm:p-5 select-none">
+    <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between p-3 sm:p-5 select-none font-sans">
       {/* ============================================================ */}
       {/* TOP BAR / NAVIGATION                                         */}
       {/* ============================================================ */}
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pointer-events-auto">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pointer-events-none">
         {/* Left: Citizen Profile Badge & District */}
-        <div className="flex items-center space-x-2.5 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-1.5 pr-4 shadow-2xl backdrop-blur-md">
+        <div className="flex items-center space-x-3 bg-[#FFFDF9]/95 border-2 border-[#EADBCC] rounded-2xl p-1.5 pr-4 shadow-[0_8px_24px_rgba(70,50,60,0.1)] backdrop-blur-md pointer-events-auto">
           <button
             type="button"
             onClick={() => openModal('ktn_card')}
             title="Klik untuk melihat Kartu Tanda Netizen"
-            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 flex items-center justify-center text-white font-bold text-xs shadow-md hover:scale-105 transition-transform cursor-pointer"
+            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#F4A98C] via-[#F2C1D6] to-[#C9B8E8] p-0.5 flex items-center justify-center text-white font-heading font-black text-xs shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
           >
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-blue-400">
+            <div className="w-full h-full bg-[#FFFDF9] rounded-[10px] flex items-center justify-center text-[#F4A98C] font-extrabold text-xs">
               NC
             </div>
           </button>
           <div>
             <div className="flex items-center space-x-1.5">
-              <span className="text-xs font-bold text-white">
+              <span className="text-xs font-heading font-bold text-[#3B3340]">
                 {profile?.displayName || 'Warga Netizen'}
               </span>
-              <span className="text-[10px] text-emerald-400 font-mono">
-                @{profile?.username || 'warga'} (Kamu)
+              <span className="text-[10px] text-[#2F9474] font-heading font-bold bg-[#E8F8F2] px-1.5 py-0.2 rounded-full border border-[#BDE8D8]">
+                @{profile?.username || 'warga'}
               </span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30">
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-gradient-to-r from-[#FFF5D0] to-[#FFE896] text-[#6A4D07] font-heading font-bold border border-[#ECC956]">
                 Lvl {profile?.level || 1}
               </span>
             </div>
-            <div className="flex items-center space-x-1 text-[10px] text-slate-400 font-medium">
-              <MapPin className="w-3 h-3 text-emerald-400" />
+            <div className="flex items-center space-x-1 text-[11px] text-[#7A6E7E] font-medium mt-0.5">
+              <MapPin className="w-3 h-3 text-[#F4A98C]" />
               <span>{districtNames[currentDistrict] || 'Netizen City'}</span>
             </div>
           </div>
         </div>
 
         {/* Center: 3 Separate Population Counters */}
-        <div className="hidden lg:flex items-center space-x-4 bg-slate-900/90 border border-slate-700/80 rounded-2xl px-4 py-2 shadow-2xl backdrop-blur-md text-xs">
+        <div className="hidden lg:flex items-center space-x-4 bg-[#FFFDF9]/95 border-2 border-[#EADBCC] rounded-2xl px-4 py-2 shadow-[0_8px_24px_rgba(70,50,60,0.1)] backdrop-blur-md text-xs pointer-events-auto">
           {/* 1. Official Instagram Population */}
           <Link
             href="/admin/instagram"
             title="Kelola Integrasi Instagram @netizencity.id"
             className="flex items-center space-x-2 group hover:opacity-80 transition-opacity"
           >
-            <InstagramIcon className="w-4 h-4 text-pink-400 flex-shrink-0 group-hover:scale-110 transition-transform" />
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-0.5 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+              <InstagramIcon className="w-4 h-4 text-white" />
+            </div>
             <div>
-              <span className="text-[10px] text-slate-400 block uppercase font-semibold leading-none group-hover:text-pink-300">
+              <span className="text-[10px] text-[#8C7D91] block uppercase font-heading font-bold leading-none group-hover:text-[#DD2A7B]">
                 Populasi Resmi
               </span>
-              <span className="font-extrabold text-white text-xs font-mono">
+              <span className="font-heading font-extrabold text-[#3B3340] text-sm">
                 {formatNumber(cityStats.officialPopulation)}
               </span>
             </div>
           </Link>
 
-          <div className="w-px h-6 bg-slate-800" />
+          <div className="w-0.5 h-6 bg-[#EADBCC]" />
 
           {/* 2. Registered Citizens */}
           <div className="flex items-center space-x-2">
-            <Users className="w-4 h-4 text-blue-400 flex-shrink-0" />
+            <div className="w-7 h-7 rounded-lg bg-[#EAF3FD] border border-[#BFD8F6] flex items-center justify-center text-[#245282] shadow-xs">
+              <Users className="w-4 h-4" />
+            </div>
             <div>
-              <span className="text-[10px] text-slate-400 block uppercase font-semibold leading-none">
+              <span className="text-[10px] text-[#8C7D91] block uppercase font-heading font-bold leading-none">
                 Warga Terdaftar
               </span>
-              <span className="font-extrabold text-white text-xs font-mono">
+              <span className="font-heading font-extrabold text-[#3B3340] text-sm">
                 {formatNumber(cityStats.registeredCitizens)}
               </span>
             </div>
           </div>
 
-          <div className="w-px h-6 bg-slate-800" />
+          <div className="w-0.5 h-6 bg-[#EADBCC]" />
 
           {/* 3. Online Citizens */}
           <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+            <div className="w-7 h-7 rounded-lg bg-[#EBF8F3] border border-[#B7E7D5] flex items-center justify-center text-[#1E5D46] shadow-xs relative">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#2F9474] animate-pulse" />
+            </div>
             <div>
-              <span className="text-[10px] text-slate-400 block uppercase font-semibold leading-none">
+              <span className="text-[10px] text-[#8C7D91] block uppercase font-heading font-bold leading-none">
                 Online Sekarang
               </span>
-              <span className="font-extrabold text-emerald-400 text-xs font-mono">
+              <span className="font-heading font-extrabold text-[#2F9474] text-sm">
                 {formatNumber(cityStats.onlineNow)}
               </span>
             </div>
@@ -226,11 +243,11 @@ export default function GameHUD() {
         </div>
 
         {/* Right: Netizen Coins & Quick Action Icons */}
-        <div className="flex items-center space-x-2 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-1.5 px-3 shadow-2xl backdrop-blur-md">
+        <div className="flex items-center space-x-1.5 bg-[#FFFDF9]/95 border-2 border-[#EADBCC] rounded-2xl p-1.5 px-3 shadow-[0_8px_24px_rgba(70,50,60,0.1)] backdrop-blur-md pointer-events-auto">
           {/* Coin Wallet */}
-          <div className="flex items-center space-x-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-            <Coins className="w-4 h-4 text-amber-400" />
-            <span className="font-extrabold text-xs text-amber-300 font-mono">
+          <div className="flex items-center space-x-1.5 bg-gradient-to-r from-[#FFF5D0] to-[#FFE896] px-3 py-1.5 rounded-xl border border-[#ECC956] shadow-xs">
+            <Coins className="w-4 h-4 text-[#8A6814]" />
+            <span className="font-heading font-extrabold text-xs text-[#523F0C]">
               {formatCoins(currentCoins)}
             </span>
           </div>
@@ -240,7 +257,7 @@ export default function GameHUD() {
             type="button"
             onClick={() => openModal('ktn_card')}
             title="Buka Kartu Tanda Netizen (KTN)"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE5D6] text-[#D97858] border border-[#F4C8B4] border-b-2 border-b-[#E2A68C] transition-all active:translate-y-0.5 cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4" />
           </button>
@@ -250,7 +267,7 @@ export default function GameHUD() {
             type="button"
             onClick={handleOpenCityHall}
             title="Balai Kota & Poling Kebijakan (+25 Koin)"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-[#EAF3FD] hover:bg-[#D9EBFD] text-[#245282] border border-[#BED8F6] border-b-2 border-b-[#9EC4EE] transition-all active:translate-y-0.5 cursor-pointer"
           >
             <Vote className="w-4 h-4" />
           </button>
@@ -260,7 +277,7 @@ export default function GameHUD() {
             type="button"
             onClick={() => openModal('missions')}
             title="Misi & Prestasi Warga (+Koin & XP)"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-[#EBF8F3] hover:bg-[#D9F3E8] text-[#1E5D46] border border-[#B7E7D5] border-b-2 border-b-[#98D6BE] transition-all active:translate-y-0.5 cursor-pointer"
           >
             <Award className="w-4 h-4" />
           </button>
@@ -274,7 +291,7 @@ export default function GameHUD() {
               }
             }}
             title="Mulai Misi Kurir Pengantar Paket (+100 Koin)"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 hover:text-amber-200 transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-[#FFF9E6] hover:bg-[#FFF2CC] text-[#7A5E0E] border border-[#FCE69C] border-b-2 border-b-[#E5C972] transition-all active:translate-y-0.5 cursor-pointer"
           >
             <Package className="w-4 h-4" />
           </button>
@@ -284,7 +301,7 @@ export default function GameHUD() {
             type="button"
             onClick={() => openModal('mall')}
             title="Buka Mall Busana"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-pink-400 hover:text-pink-300 transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-[#FDEEF1] hover:bg-[#FCDCE2] text-[#A62F47] border border-[#F9CAD3] border-b-2 border-b-[#EAA8B6] transition-all active:translate-y-0.5 cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4" />
           </button>
@@ -298,7 +315,7 @@ export default function GameHUD() {
               }
             }}
             title="Ubah Suasana Siang / Malam"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-300 hover:text-sky-200 transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-[#F5F0FD] hover:bg-[#EBDEFC] text-[#55387E] border border-[#DACBF6] border-b-2 border-b-[#BFAAE8] transition-all active:translate-y-0.5 cursor-pointer"
           >
             <Moon className="w-4 h-4" />
           </button>
@@ -308,18 +325,18 @@ export default function GameHUD() {
             type="button"
             onClick={() => openModal('daily_rewards')}
             title="Hadiah Login Harian"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-purple-400 hover:text-purple-300 transition-colors relative cursor-pointer"
+            className="p-2 rounded-xl bg-[#FFF0F4] hover:bg-[#FEE0E9] text-[#C03958] border border-[#F9C3D2] border-b-2 border-b-[#E59EB1] transition-all active:translate-y-0.5 relative cursor-pointer"
           >
             <Gift className="w-4 h-4" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#F4A98C] animate-ping" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#F4A98C] border-2 border-white" />
           </button>
 
           {/* Exit / Home */}
           <Link
             href="/"
             title="Keluar ke Beranda"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 transition-colors"
+            className="p-2 rounded-xl bg-[#F5EDE1] hover:bg-[#EDE1D1] text-[#786A7C] hover:text-[#9A2D45] border border-[#E3D4C2] border-b-2 border-b-[#CEBDBA] transition-all active:translate-y-0.5"
           >
             <LogOut className="w-4 h-4" />
           </Link>
@@ -334,12 +351,14 @@ export default function GameHUD() {
           <div
             key={n.id}
             onClick={() => removeNotification(n.id)}
-            className="p-3.5 rounded-2xl bg-slate-900/95 border border-slate-700 shadow-2xl backdrop-blur-md cursor-pointer transition-all hover:opacity-80 flex items-start space-x-3 text-xs"
+            className="p-3.5 rounded-2xl bg-[#FFFDF9]/95 border-2 border-[#EADBCC] shadow-[0_12px_32px_rgba(70,50,60,0.15)] backdrop-blur-md cursor-pointer transition-all hover:scale-102 flex items-start space-x-3 text-xs"
           >
-            <Sparkles className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+            <div className="w-7 h-7 rounded-xl bg-[#FFF4DC] border border-[#F7DA8A] flex items-center justify-center text-[#B38318] flex-shrink-0 mt-0.5">
+              <Award className="w-4 h-4" />
+            </div>
             <div>
-              <h5 className="font-bold text-white">{n.title}</h5>
-              <p className="text-slate-300 text-[11px] mt-0.5 leading-tight">
+              <h5 className="font-heading font-bold text-[#3B3340] text-sm">{n.title}</h5>
+              <p className="text-[#6D5F72] text-xs mt-0.5 leading-snug">
                 {n.message}
               </p>
             </div>
@@ -348,42 +367,10 @@ export default function GameHUD() {
       </div>
 
       {/* ============================================================ */}
-      {/* CONTEXTUAL BUILDING PROXIMITY BANNER                         */}
+      {/* BOTTOM AREA: CHAT OVERLAY (Elevated & Centered)              */}
       {/* ============================================================ */}
-      {selectedBuilding && (
-        <div className="self-center pointer-events-auto mb-2 animate-bounce">
-          <button
-            type="button"
-            onClick={() => openModal('building_details')}
-            className="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-xl shadow-blue-900/50 border border-blue-400/40 flex items-center space-x-2 transition-transform active:scale-95 cursor-pointer"
-          >
-            <Building2 className="w-4 h-4" />
-            <span>Klik Untuk Berinteraksi dengan Gedung</span>
-          </button>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* BOTTOM AREA: CHAT & MINIMAP                                  */}
-      {/* ============================================================ */}
-      <footer className="flex items-end justify-between pointer-events-auto w-full">
-        {/* Left: Chat Overlay */}
-        <div>
-          <ChatPanel />
-        </div>
-
-        {/* Right: Controls Guide & MiniMap */}
-        <div className="flex flex-col items-end space-y-2">
-          {/* Controls helper tooltip */}
-          <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-slate-900/90 border border-slate-800 rounded-lg text-[10px] text-slate-400 shadow-md">
-            <span className="font-mono bg-slate-800 px-1 py-0.5 rounded text-white font-bold">
-              WASD / Klik Tanah
-            </span>
-            <span>Jalan &bull; Tabrak Sampah (+15 Koin) &bull; Klik NPC untuk Ngobrol</span>
-          </div>
-
-          <MiniMap />
-        </div>
+      <footer className="flex items-center justify-center pointer-events-auto w-full pb-3 sm:pb-5">
+        <ChatPanel />
       </footer>
 
       {/* MODALS RENDERED VIA PORTAL TO DOCUMENT BODY */}

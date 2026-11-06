@@ -134,16 +134,16 @@ export default function RegisterPage() {
   return (
     <div>
       <div className="mb-6 text-center">
-        <h2 className="text-xl font-bold text-white tracking-wide">
+        <h2 className="text-xl font-black text-[#3B3340] tracking-wide">
           Daftar Menjadi Warga
         </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Dapatkan KTN resmi dan mulai hidup virtualmu
+        <p className="text-xs text-[#6F6675] mt-1 font-medium">
+          Dapatkan KTN resmi dan mulai hidup virtualmu di Netizen City
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium">
+        <div className="mb-4 p-3 rounded-xl bg-[#FFF0F0] border-2 border-[#FFC4C4] text-[#C53030] text-xs font-bold">
           {error}
         </div>
       )}
@@ -156,7 +156,7 @@ export default function RegisterPage() {
           placeholder="contoh: budi_netizen"
           value={formData.username}
           onChange={handleChange}
-          leftIcon={<User className="w-4 h-4" />}
+          leftIcon={<User className="w-4 h-4 text-[#A89E92]" />}
           helperText="Huruf kecil, angka, dan underscore (tanpa spasi)"
         />
 
@@ -167,7 +167,7 @@ export default function RegisterPage() {
           placeholder="Budi Santoso"
           value={formData.displayName}
           onChange={handleChange}
-          leftIcon={<User className="w-4 h-4" />}
+          leftIcon={<User className="w-4 h-4 text-[#A89E92]" />}
         />
 
         <Input
@@ -178,7 +178,7 @@ export default function RegisterPage() {
           placeholder="nama@email.com"
           value={formData.email}
           onChange={handleChange}
-          leftIcon={<Mail className="w-4 h-4" />}
+          leftIcon={<Mail className="w-4 h-4 text-[#A89E92]" />}
         />
 
         <Input
@@ -189,7 +189,7 @@ export default function RegisterPage() {
           placeholder="Minimal 6 karakter"
           value={formData.password}
           onChange={handleChange}
-          leftIcon={<Lock className="w-4 h-4" />}
+          leftIcon={<Lock className="w-4 h-4 text-[#A89E92]" />}
         />
 
         <Input
@@ -200,13 +200,13 @@ export default function RegisterPage() {
           placeholder="Ulangi kata sandi"
           value={formData.confirmPassword}
           onChange={handleChange}
-          leftIcon={<Lock className="w-4 h-4" />}
+          leftIcon={<Lock className="w-4 h-4 text-[#A89E92]" />}
         />
 
         <div className="pt-2">
           <Button
             type="submit"
-            variant="primary"
+            variant="peach"
             size="lg"
             isLoading={loading}
             className="w-full"
@@ -217,12 +217,12 @@ export default function RegisterPage() {
         </div>
       </form>
 
-      <div className="mt-6 pt-5 border-t border-slate-800 text-center">
-        <p className="text-xs text-slate-400">
+      <div className="mt-6 pt-5 border-t-2 border-[#EADBCC] text-center">
+        <p className="text-xs text-[#6F6675] font-medium">
           Sudah punya akun warga?{' '}
           <Link
             href="/login"
-            className="text-blue-400 hover:text-blue-300 font-semibold inline-flex items-center ml-1"
+            className="text-[#2C6ECB] hover:text-[#1D60A6] font-black inline-flex items-center ml-1"
           >
             Masuk <ArrowRight className="w-3 h-3 ml-0.5" />
           </Link>

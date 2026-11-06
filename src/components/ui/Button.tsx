@@ -1,12 +1,21 @@
 // ============================================================
-// NETIZENCITY - Button Component
+// NETIZENCITY - Button Component (Cozy 3D Game Aesthetic)
 // ============================================================
 
 import React, { forwardRef } from 'react'
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'accent' | 'danger' | 'ghost' | 'pixel'
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'accent'
+    | 'mint'
+    | 'peach'
+    | 'lavender'
+    | 'danger'
+    | 'ghost'
+    | 'pixel'
   size?: 'sm' | 'md' | 'lg'
   isLoading?: boolean
 }
@@ -25,27 +34,33 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]'
+      'inline-flex items-center justify-center font-heading font-bold transition-all duration-150 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none active:translate-y-0.5 cursor-pointer'
 
     const sizeStyles = {
-      sm: 'px-3 py-1.5 text-xs rounded-md gap-1.5',
-      md: 'px-4 py-2 text-sm rounded-lg gap-2',
-      lg: 'px-6 py-3 text-base rounded-xl gap-2.5 font-semibold',
+      sm: 'px-3 py-1.5 text-xs rounded-xl gap-1.5 border-b-2',
+      md: 'px-4.5 py-2 text-sm rounded-2xl gap-2 border-b-3',
+      lg: 'px-6 py-2.5 text-base rounded-2xl gap-2.5 border-b-4',
     }
 
     const variantStyles = {
       primary:
-        'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-900/30 border border-blue-400/30 focus:ring-blue-400',
+        'bg-gradient-to-b from-[#BEDBF4] to-[#A9C8EC] text-[#20456E] border-2 border-[#86A8D2] border-b-[#668CB7] shadow-sm hover:from-[#CCE4F8] hover:to-[#B6D2F4]',
       secondary:
-        'bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 focus:ring-slate-400',
+        'bg-gradient-to-b from-[#FFFDF9] to-[#F5ECE0] text-[#3B3340] border-2 border-[#E2D2C2] border-b-[#CCA892] shadow-sm hover:bg-[#FFFDF9]',
       accent:
-        'bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md shadow-amber-900/30 focus:ring-amber-400',
+        'bg-gradient-to-b from-[#FFE896] to-[#F7D772] text-[#4A3A12] border-2 border-[#D9AF3A] border-b-[#B88E1C] shadow-sm hover:from-[#FFF0AD] hover:to-[#F8DE82]',
+      mint:
+        'bg-gradient-to-b from-[#C2EADE] to-[#A8DCC8] text-[#1B5745] border-2 border-[#86C4AD] border-b-[#60A28A] shadow-sm hover:from-[#D0F0E6] hover:to-[#B7E5D4]',
+      peach:
+        'bg-gradient-to-b from-[#F8BCA4] to-[#F4A98C] text-white border-2 border-[#D98868] border-b-[#B86241] shadow-sm hover:from-[#FAC7B3] hover:to-[#F6B49A]',
+      lavender:
+        'bg-gradient-to-b from-[#DFD2F7] to-[#C9B8E8] text-[#463167] border-2 border-[#A793CC] border-b-[#816AA8] shadow-sm hover:from-[#E9DFFC] hover:to-[#D4C5EE]',
       danger:
-        'bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-900/30 focus:ring-rose-400',
+        'bg-gradient-to-b from-[#F7A6B5] to-[#F08096] text-white border-2 border-[#D9617A] border-b-[#B6435C] shadow-sm hover:from-[#F9B7C3] hover:to-[#F28C9F]',
       ghost:
-        'bg-transparent hover:bg-slate-800/60 text-slate-300 hover:text-white focus:ring-slate-500',
+        'bg-white/40 hover:bg-white/80 text-[#3B3340] border border-[#E8DCCF] border-b-2 border-b-[#D8C7B8]',
       pixel:
-        'bg-blue-600 hover:bg-blue-500 text-white border-2 border-b-4 border-r-4 border-slate-950 active:border-b-2 active:border-r-2 uppercase tracking-wider font-mono',
+        'bg-[#A9C8EC] text-[#20456E] border-2 border-b-4 border-r-4 border-[#3B3340] active:border-b-2 active:border-r-2 uppercase tracking-wider',
     }
 
     return (
