@@ -352,19 +352,41 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 }
 
 // ============================================================
-// PAK MAYOR NPC CREATOR (Balai Kota / Kantor Mayor)
 // ============================================================
-export function createPakMayorNPC(scene: THREE.Scene | THREE.Group, position: THREE.Vector3) {
+// PAK MAYOR NPC CREATOR (Balai Kota / Alun-Alun Tugu)
+// ============================================================
+export interface PakMayorNPCInstance {
+  root: THREE.Group;
+  body: THREE.Group;
+  head: THREE.Group;
+  leftArm: THREE.Group;
+  rightArm: THREE.Group;
+  leftLeg: THREE.Group;
+  rightLeg: THREE.Group;
+  pose: (isMoving: boolean, elapsed: number, speedMultiplier?: number) => void;
+  update: (elapsed: number) => void;
+}
+
+export function createPakMayorNPC(scene: THREE.Scene | THREE.Group, position: THREE.Vector3): PakMayorNPCInstance {
   const root = new THREE.Group();
   const body = new THREE.Group();
   root.add(body);
 
+  // 1. Mayoral Blue Suit Coat
   const bm = mat(PAL.mayor, { roughness: 0.45, flatShading: false });
-  const cap = new THREE.Mesh(new THREE.CapsuleGeometry(0.27, 0.5, 8, 20), bm);
+  const cap = new THREE.Mesh(new THREE.CapsuleGeometry(0.27, 0.48, 8, 20), bm);
   cap.position.y = 0.52;
   cap.castShadow = false;
   body.add(cap);
 
+  // White inner shirt & gold collar
+  const shirtInner = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.22, 0.05).translate(0, 0.65, 0.25),
+    mat('#FFFFFF', { roughness: 0.7 })
+  );
+  body.add(shirtInner);
+
+  // Ceremonial Sash
   const sash = new THREE.Mesh(
     new THREE.TorusGeometry(0.275, 0.035, 6, 28),
     mat('#F5E3B8', { flatShading: false })
@@ -373,6 +395,7 @@ export function createPakMayorNPC(scene: THREE.Scene | THREE.Group, position: TH
   sash.rotation.set(Math.PI / 2 + 0.55, 0, 0);
   body.add(sash);
 
+  // Golden Medal Badge
   const badge = new THREE.Mesh(
     new THREE.CylinderGeometry(0.05, 0.05, 0.02, 12),
     mat(PAL.gold, { metalness: 0.7, roughness: 0.3, flatShading: false })
@@ -381,6 +404,69 @@ export function createPakMayorNPC(scene: THREE.Scene | THREE.Group, position: TH
   badge.position.set(0.1, 0.56, 0.262);
   body.add(badge);
 
+  // 2. Arms & Sleeves
+  const leftArm = new THREE.Group();
+  leftArm.position.set(-0.25, 0.64, 0);
+  body.add(leftArm);
+
+  const rightArm = new THREE.Group();
+  rightArm.position.set(0.25, 0.64, 0);
+  body.add(rightArm);
+
+  const skinMat = mat('#F5D0B0');
+  const whiteMat = mat('#FFFFFF');
+
+  [leftArm, rightArm].forEach((arm) => {
+    // Suit sleeve
+    const sleeve = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.065, 0.06, 0.18, 8).translate(0, -0.09, 0),
+      bm
+    );
+    sleeve.castShadow = false;
+    arm.add(sleeve);
+
+    // White cuff
+    const cuff = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.055, 0.055, 0.04, 8).translate(0, -0.19, 0),
+      whiteMat
+    );
+    arm.add(cuff);
+
+    // Hand
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), skinMat);
+    hand.position.y = -0.24;
+    arm.add(hand);
+  });
+
+  // 3. Legs & Polished Shoes
+  const leftLeg = new THREE.Group();
+  leftLeg.position.set(-0.11, 0.36, 0);
+  body.add(leftLeg);
+
+  const rightLeg = new THREE.Group();
+  rightLeg.position.set(0.11, 0.36, 0);
+  body.add(rightLeg);
+
+  const pantsMat = mat('#1E293B');
+  const shoeMat = mat('#0F172A', { roughness: 0.4, metalness: 0.2 });
+
+  [leftLeg, rightLeg].forEach((leg) => {
+    const pantMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.075, 0.07, 0.28, 8).translate(0, -0.14, 0),
+      pantsMat
+    );
+    pantMesh.castShadow = false;
+    leg.add(pantMesh);
+
+    const shoe = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.09, 0.2).translate(0, -0.32, 0.03),
+      shoeMat
+    );
+    shoe.castShadow = false;
+    leg.add(shoe);
+  });
+
+  // 4. Head, Spectacles & Hat
   const head = new THREE.Group();
   head.position.y = 0.82;
   body.add(head);
@@ -434,14 +520,48 @@ export function createPakMayorNPC(scene: THREE.Scene | THREE.Group, position: TH
   root.position.copy(position);
   scene.add(root);
 
+  const pose = (isMoving: boolean, elapsed: number, speedMultiplier = 4.2) => {
+    if (isMoving) {
+      const walkCycle = Math.sin(elapsed * speedMultiplier);
+      const hop = Math.abs(Math.sin(elapsed * speedMultiplier)) * 0.035;
+      const lean = Math.sin(elapsed * speedMultiplier) * 0.025;
+
+      body.position.y = hop;
+      body.rotation.z = lean;
+
+      // Arms & legs swing in opposition naturally
+      leftArm.rotation.x = -walkCycle * 0.38;
+      rightArm.rotation.x = walkCycle * 0.38;
+
+      leftLeg.rotation.x = walkCycle * 0.44;
+      rightLeg.rotation.x = -walkCycle * 0.44;
+
+      head.rotation.y = Math.sin(elapsed * speedMultiplier * 0.5) * 0.04;
+    } else {
+      // Dignified breathing and occasional greeting head nod
+      const breath = Math.sin(elapsed * 2.0) * 0.012;
+      body.position.y = breath;
+      body.rotation.z = 0;
+
+      leftArm.rotation.x = THREE.MathUtils.lerp(leftArm.rotation.x, 0, 0.15);
+      rightArm.rotation.x = THREE.MathUtils.lerp(rightArm.rotation.x, 0, 0.15);
+      leftLeg.rotation.x = THREE.MathUtils.lerp(leftLeg.rotation.x, 0, 0.15);
+      rightLeg.rotation.x = THREE.MathUtils.lerp(rightLeg.rotation.x, 0, 0.15);
+      head.rotation.y = Math.sin(elapsed * 0.8) * 0.15;
+    }
+  };
+
   return {
     root,
     body,
     head,
+    leftArm,
+    rightArm,
+    leftLeg,
+    rightLeg,
+    pose,
     update: (elapsed: number) => {
-      // Proud mayor breathing and welcoming nod
-      body.position.y = Math.sin(elapsed * 2.0) * 0.02;
-      head.rotation.y = Math.sin(elapsed * 0.8) * 0.15;
+      pose(false, elapsed);
     },
   };
 }

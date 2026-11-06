@@ -14,7 +14,7 @@ import { makeLibrary, makeAirport, makePort, makeSports, makePrasasti, makePlane
 import { makeLab, LAB } from './day8.js';
 import { makeTower, TOWER } from './menara.js';
 import { makeCat, makePet, makeZoo, makeVet, makeUni, ZOO, VET, UNI } from './day9.js';
-import { makeCitizen3D, createPakMayorNPC, Citizen3DInstance, CitizenAvatarColors } from './citizen3d';
+import { makeCitizen3D, createPakMayorNPC, Citizen3DInstance, CitizenAvatarColors, PakMayorNPCInstance } from './citizen3d';
 import { resolveAvatarColors } from '@/game/utils/characterRenderer';
 import { useGameStore } from '@/lib/stores/useGameStore';
 import { useUIStore } from '@/lib/stores/useUIStore';
@@ -237,12 +237,30 @@ export class City3DManager {
   // Characters & NPCs
   private playerCitizen: Citizen3DInstance | null = null;
   private mayorPlayer: any = null;
-  private mayorNPC: any = null;
+  private mayorNPC: PakMayorNPCInstance | null = null;
   private isPlayerAdmin = false;
   private cat: any = null;
   private petDogs: any[] = [];
   private bigCrowd: any = null;
   private walkingCitizens: WalkingCitizen[] = [];
+
+  // Pak Mayor NPC Walking & Dialogue AI in Alun-Alun Tugu
+  private mayorWaypoints: THREE.Vector3[] = [
+    new THREE.Vector3(0, 0, 11.2),     // South entrance (welcoming arrivals)
+    new THREE.Vector3(7.5, 0, 7.5),    // Southeast walkway
+    new THREE.Vector3(10.6, 0, 0),     // East plaza
+    new THREE.Vector3(7.5, 0, -7.5),   // Northeast garden path
+    new THREE.Vector3(0, 0, -10.6),    // North view
+    new THREE.Vector3(-7.5, 0, -7.5),  // Northwest garden path
+    new THREE.Vector3(-10.6, 0, 0),    // West plaza
+    new THREE.Vector3(-7.5, 0, 7.5),   // Southwest walkway
+  ];
+  private mayorWaypointIndex = 0;
+  private mayorPauseTimer = 3.0;
+  private mayorIsMoving = false;
+  private mayorSpeechTimer = 8.0;
+  private mayorSpeechBubble: THREE.Sprite | null = null;
+  private mayorBubbleTimer = 0;
 
   // Airplanes
   private landingPlane: any = null;
@@ -1163,7 +1181,10 @@ export class City3DManager {
       this.playerCitizen.root.position.set(0, 0, 13);
       this.tuguWorldGroup.add(this.playerCitizen.root);
 
-      this.mayorNPC = createPakMayorNPC(this.tuguWorldGroup, new THREE.Vector3(3.2, 0, 3.5));
+      this.mayorNPC = createPakMayorNPC(this.tuguWorldGroup, new THREE.Vector3(0, 0, 11.2));
+      const mayorTag = makeNameTagSprite('✦ Pak Mayor (Walikota) ✦', false, false);
+      mayorTag.position.set(0, 1.7, 0);
+      this.mayorNPC.root.add(mayorTag);
     }
 
     // Attach local player nametag
@@ -1327,8 +1348,8 @@ export class City3DManager {
         const dt = Math.max(0.15, (now - (existing.lastServerTime || now - 400)) / 1000);
         existing.lastServerTime = now;
 
-        // If distance is huge (e.g. initial spawn or teleport > 18 units), snap immediately
-        if (dist > 18) {
+        // If distance is large (e.g. initial spawn or teleport > 8 units), snap immediately
+        if (dist > 8.0) {
           existing.root.position.copy(targetV);
           existing.targetPos.copy(targetV);
           existing.root.rotation.y = p.facing;
@@ -1337,9 +1358,10 @@ export class City3DManager {
         } else {
           existing.targetPos.copy(targetV);
           existing.targetFacing = p.facing;
-          // Calculate natural walking speed (local player moves at 12 u/s)
-          // Clamped between 8 and 14 u/s to smoothly cover distance without sudden dashes
-          existing.moveSpeed = Math.min(14.5, Math.max(8.0, dist / dt));
+          // Calculate natural walking speed based on distance and polling window (~0.45s)
+          // Clamped closely around natural player walking speed [2.8, 6.8] to ensure continuous smooth walking without dash/stop
+          const idealSpeed = dist / 0.45;
+          existing.moveSpeed = THREE.MathUtils.clamp(idealSpeed, 2.8, 6.8);
         }
 
         // Check if there is new chat to display
@@ -1379,7 +1401,7 @@ export class City3DManager {
           nameTag,
           lastChatTime: p.lastChat?.time || 0,
           lastServerTime: now,
-          moveSpeed: 11.5,
+          moveSpeed: 5.8,
         });
       }
     }
@@ -1406,9 +1428,9 @@ export class City3DManager {
       const target = remote.targetPos;
       const dist = cur.distanceTo(target);
 
-      if (dist > 0.06) {
-        // Linear smooth movement at natural walking speed (prevents instant exponential lerp dashing)
-        const speed = remote.moveSpeed || 11.5;
+      if (dist > 0.04) {
+        // Linear smooth continuous movement at natural walking pace (prevents jerky dash & stop)
+        const speed = remote.moveSpeed || 5.8;
         const step = Math.min(dist, speed * delta);
         const dir = target.clone().sub(cur).normalize();
         cur.addScaledVector(dir, step);
@@ -1418,16 +1440,16 @@ export class City3DManager {
         let diff = (moveAngle - remote.root.rotation.y) % (Math.PI * 2);
         if (diff > Math.PI) diff -= Math.PI * 2;
         if (diff < -Math.PI) diff += Math.PI * 2;
-        remote.root.rotation.y += diff * Math.min(1, delta * 12);
+        remote.root.rotation.y += diff * Math.min(1, delta * 8.0);
 
-        // Animate citizen legs and arms walking
-        remote.citizen.pose(true, elapsed, 5.0);
+        // Animate citizen legs and arms walking in sync with current speed
+        remote.citizen.pose(true, elapsed, 4.5);
       } else {
         // Reached destination: stand still and face the player's last reported orientation
         let diff = (remote.targetFacing - remote.root.rotation.y) % (Math.PI * 2);
         if (diff > Math.PI) diff -= Math.PI * 2;
         if (diff < -Math.PI) diff += Math.PI * 2;
-        remote.root.rotation.y += diff * Math.min(1, delta * 8);
+        remote.root.rotation.y += diff * Math.min(1, delta * 6.0);
 
         remote.citizen.pose(false, elapsed);
       }
@@ -2052,6 +2074,20 @@ private setupAirplanes() {
       this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
       this.raycaster.setFromCamera(this.mouse, this.camera);
+
+      // Check if clicking on Pak Mayor to interact & chat
+      if (this.mayorNPC?.root && this.mayorNPC.root.visible) {
+        const hits = this.raycaster.intersectObject(this.mayorNPC.root, true);
+        if (hits.length > 0) {
+          const dir = this.playerPos.clone().sub(this.mayorNPC.root.position);
+          if (dir.lengthSq() > 0.01) {
+            this.mayorNPC.root.rotation.y = Math.atan2(dir.x, dir.z);
+          }
+          this.triggerMayorSpeech('Senang sekali bertemu denganmu di sini, warga tercinta!');
+          return;
+        }
+      }
+
       const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       const target = new THREE.Vector3();
       if (this.raycaster.ray.intersectPlane(plane, target)) {
@@ -2176,6 +2212,79 @@ private setupAirplanes() {
     }
   }
 
+  public triggerMayorSpeech(customText?: string) {
+    if (!this.mayorNPC?.root) return;
+    if (this.mayorSpeechBubble) {
+      this.mayorNPC.root.remove(this.mayorSpeechBubble);
+      this.mayorSpeechBubble = null;
+    }
+    const quotes = [
+      'Halo warga netizen yang terhormat!',
+      'Selamat datang di Alun-Alun Tugu!',
+      'Kota Netizen semakin asri berkat kebersamaan warga!',
+      'Jaga kebersihan taman kota kita bersama ya!',
+      'Mampir juga ke Balai Kota dan Grand Mall warga!',
+      'Kucing oranye saya suka sekali bermain di sekitar sini hehe.',
+      'Senang melihat seluruh warga berkumpul dengan rukun!',
+    ];
+    const text = customText || quotes[Math.floor(Math.random() * quotes.length)];
+    const bubble = makeSpeechBubbleSprite(text, '#FFFBF0', '#343B35');
+    bubble.position.set(0, 2.35, 0);
+    this.mayorNPC.root.add(bubble);
+    this.mayorSpeechBubble = bubble;
+    this.mayorBubbleTimer = 6.0;
+  }
+
+  private updatePakMayor(delta: number, elapsed: number) {
+    if (!this.mayorNPC?.root || !this.mayorNPC.root.visible) return;
+
+    if (this.mayorSpeechBubble) {
+      this.mayorBubbleTimer -= delta;
+      if (this.mayorBubbleTimer <= 0) {
+        this.mayorNPC.root.remove(this.mayorSpeechBubble);
+        this.mayorSpeechBubble = null;
+      }
+    }
+
+    this.mayorSpeechTimer -= delta;
+    if (this.mayorSpeechTimer <= 0) {
+      this.mayorSpeechTimer = 16.0 + Math.random() * 8.0;
+      this.triggerMayorSpeech();
+    }
+
+    const cur = this.mayorNPC.root.position;
+    const target = this.mayorWaypoints[this.mayorWaypointIndex];
+    const dist = cur.distanceTo(target);
+
+    if (this.mayorIsMoving) {
+      if (dist < 0.25) {
+        cur.copy(target);
+        this.mayorIsMoving = false;
+        this.mayorPauseTimer = 3.5 + Math.random() * 2.5;
+        this.mayorNPC.pose(false, elapsed);
+      } else {
+        const dir = target.clone().sub(cur).normalize();
+        const moveFacing = Math.atan2(dir.x, dir.z);
+        let diff = (moveFacing - this.mayorNPC.root.rotation.y) % (Math.PI * 2);
+        if (diff > Math.PI) diff -= Math.PI * 2;
+        if (diff < -Math.PI) diff += Math.PI * 2;
+        this.mayorNPC.root.rotation.y += diff * Math.min(1, delta * 5.0);
+
+        const walkSpeed = 1.9;
+        cur.addScaledVector(dir, walkSpeed * delta);
+        this.mayorNPC.pose(true, elapsed, 4.0);
+      }
+    } else {
+      this.mayorPauseTimer -= delta;
+      this.mayorNPC.pose(false, elapsed);
+
+      if (this.mayorPauseTimer <= 0) {
+        this.mayorWaypointIndex = (this.mayorWaypointIndex + 1) % this.mayorWaypoints.length;
+        this.mayorIsMoving = true;
+      }
+    }
+  }
+
   private updateCharacter(delta: number, elapsed: number) {
     if (this.viewMode !== 'tugu') {
       return;
@@ -2214,7 +2323,7 @@ private setupAirplanes() {
     if (this.keysPressed['a'] || this.keysPressed['arrowleft']) moveVec.sub(camRight);
 
     let isMoving = false;
-    const speed = 12 * delta * analogFactor;
+    const speed = 5.8 * delta * analogFactor;
 
     if (moveVec.lengthSq() > 0.001) {
       this.targetPosition = null;
@@ -2266,11 +2375,11 @@ private setupAirplanes() {
     if (this.isPlayerAdmin && this.mayorPlayer) {
       this.mayorPlayer.root.position.copy(this.playerPos);
       this.mayorPlayer.root.rotation.y = this.playerFacing;
-      this.mayorPlayer.pose(isMoving, elapsed);
+      this.mayorPlayer.pose?.(isMoving, elapsed, 4.5);
     } else if (this.playerCitizen) {
       this.playerCitizen.root.position.copy(this.playerPos);
       this.playerCitizen.root.rotation.y = this.playerFacing;
-      this.playerCitizen.pose(isMoving, elapsed, 6.0);
+      this.playerCitizen.pose(isMoving, elapsed, 4.5);
     }
 
     if (this.cat) {
@@ -2522,6 +2631,7 @@ private setupAirplanes() {
       this.updateCharacter(delta, elapsed);
       this.updateTuguCitizens(delta, elapsed);
       this.updateRemotePlayersAnimation(delta, elapsed);
+      this.updatePakMayor(delta, elapsed);
       if (this.tuguMpark?.jets) {
         this.tuguMpark.jets.children.forEach((j: any, i: number) => {
           j.scale.y = 0.5 + Math.sin(elapsed * 4 + i * 0.4) * 0.4;

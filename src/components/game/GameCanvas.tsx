@@ -186,6 +186,8 @@ export default function GameCanvas() {
   const [showRoster, setShowRoster] = useState(false)
   const myClientIdRef = useRef<string>('')
   const lastSentChatRef = useRef<string | null>(null)
+  const isSyncingRef = useRef(false)
+  const lastSyncReqTimeRef = useRef(0)
 
   useEffect(() => {
     setMounted(true)
@@ -203,11 +205,18 @@ export default function GameCanvas() {
     return () => window.removeEventListener('player-chat-sent', onChatSent)
   }, [])
 
-  // Sync player position with Tugu room (Every 800ms while in Tugu mode)
+  // Sync player position with Tugu room (Adaptive, sequential, prevents out-of-order jitter & lag)
   useEffect(() => {
     if (viewMode !== 'tugu') return
 
+    let isMounted = true
+    let syncTimeout: NodeJS.Timeout | null = null
+
     const syncRoom = async () => {
+      if (isSyncingRef.current) return
+      isSyncingRef.current = true
+      const reqStart = Date.now()
+
       try {
         const clientId = myClientIdRef.current || getClientSessionId()
         myClientIdRef.current = clientId
@@ -235,7 +244,15 @@ export default function GameCanvas() {
           body: JSON.stringify(body),
         })
 
+        if (!isMounted) return
+
         if (res.ok) {
+          if (reqStart < lastSyncReqTimeRef.current) {
+            // Discard out-of-order response
+            return
+          }
+          lastSyncReqTimeRef.current = reqStart
+
           const data = await res.json()
           if (data.myClientId) {
             myClientIdRef.current = data.myClientId
@@ -272,15 +289,21 @@ export default function GameCanvas() {
         }
       } catch {
         // ignore network hiccup
+      } finally {
+        isSyncingRef.current = false
+        if (isMounted) {
+          syncTimeout = setTimeout(syncRoom, 450)
+        }
       }
     }
 
-    // Initial sync and fast responsive room polling
+    // Initial sync
     syncRoom()
-    const interval = setInterval(syncRoom, 400)
 
     return () => {
-      clearInterval(interval)
+      isMounted = false
+      if (syncTimeout) clearTimeout(syncTimeout)
+      isSyncingRef.current = false
       // Leave room on exit
       const cid = myClientIdRef.current || (typeof window !== 'undefined' ? sessionStorage.getItem('nc_citizen_session_id') : '')
       if (cid) {
