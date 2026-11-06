@@ -1,9 +1,117 @@
 {
-  "followerCount": 53479,
+  "followerCount": 53483,
   "source": "instagram_api",
-  "lastSyncAt": "2026-11-06T12:58:33.368Z",
+  "lastSyncAt": "2026-11-06T13:15:10.762Z",
   "lastError": null,
   "history": [
+    {
+      "id": "u2dquwi",
+      "followerCount": 53483,
+      "source": "instagram_api",
+      "oldValue": 53482,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:15:10.762Z"
+    },
+    {
+      "id": "kijuqr1",
+      "followerCount": 53482,
+      "source": "instagram_api",
+      "oldValue": 53482,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:13:25.789Z"
+    },
+    {
+      "id": "s8o58yy",
+      "followerCount": 53482,
+      "source": "instagram_api",
+      "oldValue": 53482,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:12:24.586Z"
+    },
+    {
+      "id": "owmm8pa",
+      "followerCount": 53482,
+      "source": "instagram_api",
+      "oldValue": 53482,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:11:10.934Z"
+    },
+    {
+      "id": "adqkqo2",
+      "followerCount": 53482,
+      "source": "instagram_api",
+      "oldValue": 53482,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:09:59.689Z"
+    },
+    {
+      "id": "2v4psnz",
+      "followerCount": 53482,
+      "source": "instagram_api",
+      "oldValue": 53482,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:08:10.840Z"
+    },
+    {
+      "id": "g5v69c7",
+      "followerCount": 53482,
+      "source": "instagram_api",
+      "oldValue": 53483,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:06:11.068Z"
+    },
+    {
+      "id": "d4ur5c0",
+      "followerCount": 53483,
+      "source": "instagram_api",
+      "oldValue": 53483,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:04:49.044Z"
+    },
+    {
+      "id": "jfsy9vv",
+      "followerCount": 53483,
+      "source": "instagram_api",
+      "oldValue": 53483,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:03:33.630Z"
+    },
+    {
+      "id": "0vd6oua",
+      "followerCount": 53483,
+      "source": "instagram_api",
+      "oldValue": 53483,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:02:18.746Z"
+    },
+    {
+      "id": "auo3kth",
+      "followerCount": 53483,
+      "source": "instagram_api",
+      "oldValue": 53481,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T13:01:03.295Z"
+    },
+    {
+      "id": "hxosupw",
+      "followerCount": 53481,
+      "source": "instagram_api",
+      "oldValue": 53479,
+      "reason": "Sinkronisasi otomatis Meta Graph API v19.0",
+      "updatedBy": "Meta Graph API",
+      "recordedAt": "2026-11-06T12:59:48.826Z"
+    },
     {
       "id": "kkly4h6",
       "followerCount": 53479,

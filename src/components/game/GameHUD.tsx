@@ -82,6 +82,8 @@ export default function GameHUD() {
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('avatar-updated'))
           }
+        } else {
+          setProfile(null)
         }
         if (citData.wallet) {
           setWallet({
@@ -92,9 +94,13 @@ export default function GameHUD() {
             totalSpent: citData.wallet.total_spent,
             updatedAt: citData.wallet.updated_at,
           })
+        } else {
+          setWallet(null)
         }
         if (citData.inventory) {
           setInventory(citData.inventory)
+        } else {
+          setInventory([])
         }
       }
 
@@ -155,36 +161,69 @@ export default function GameHUD() {
       {/* TOP BAR / NAVIGATION                                         */}
       {/* ============================================================ */}
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pointer-events-none">
-        {/* Left: Citizen Profile Badge & District */}
-        <div className="flex items-center space-x-3 bg-[#FFFDF9]/95 border-2 border-[#EADBCC] rounded-2xl p-1.5 pr-4 shadow-[0_8px_24px_rgba(70,50,60,0.1)] backdrop-blur-md pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => openModal('ktn_card')}
-            title="Klik untuk melihat Kartu Tanda Netizen"
-            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#F4A98C] via-[#F2C1D6] to-[#C9B8E8] p-0.5 flex items-center justify-center text-white font-heading font-black text-xs shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-          >
-            <div className="w-full h-full bg-[#FFFDF9] rounded-[10px] flex items-center justify-center text-[#F4A98C] font-extrabold text-xs">
-              NC
-            </div>
-          </button>
-          <div>
-            <div className="flex items-center space-x-1.5">
-              <span className="text-xs font-heading font-bold text-[#3B3340]">
-                {profile?.displayName || 'Warga Netizen'}
-              </span>
-              <span className="text-[10px] text-[#2F9474] font-heading font-bold bg-[#E8F8F2] px-1.5 py-0.2 rounded-full border border-[#BDE8D8]">
-                @{profile?.username || 'warga'}
-              </span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-gradient-to-r from-[#FFF5D0] to-[#FFE896] text-[#6A4D07] font-heading font-bold border border-[#ECC956]">
-                Lvl {profile?.level || 1}
-              </span>
-            </div>
-            <div className="flex items-center space-x-1 text-[11px] text-[#7A6E7E] font-medium mt-0.5">
-              <MapPin className="w-3 h-3 text-[#F4A98C]" />
-              <span>{districtNames[currentDistrict] || 'Netizen City'}</span>
+        {/* Left: Citizen Profile Badge or Guest Welcome */}
+        {profile ? (
+          <div className="flex items-center space-x-3 bg-[#FFFDF9]/95 border-2 border-[#EADBCC] rounded-2xl p-1.5 pr-4 shadow-[0_8px_24px_rgba(70,50,60,0.1)] backdrop-blur-md pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => openModal('ktn_card')}
+              title="Klik untuk melihat Kartu Tanda Netizen"
+              className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#F4A98C] via-[#F2C1D6] to-[#C9B8E8] p-0.5 flex items-center justify-center text-white font-heading font-black text-xs shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+            >
+              <div className="w-full h-full bg-[#FFFDF9] rounded-[10px] flex items-center justify-center text-[#F4A98C] font-extrabold text-xs">
+                NC
+              </div>
+            </button>
+            <div>
+              <div className="flex items-center space-x-1.5">
+                <span className="text-xs font-heading font-bold text-[#3B3340]">
+                  {profile.displayName}
+                </span>
+                <span className="text-[10px] text-[#2F9474] font-heading font-bold bg-[#E8F8F2] px-1.5 py-0.2 rounded-full border border-[#BDE8D8]">
+                  @{profile.username}
+                </span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-gradient-to-r from-[#FFF5D0] to-[#FFE896] text-[#6A4D07] font-heading font-bold border border-[#ECC956]">
+                  Lvl {profile.level || 1}
+                </span>
+              </div>
+              <div className="flex items-center space-x-1 text-[11px] text-[#7A6E7E] font-medium mt-0.5">
+                <MapPin className="w-3 h-3 text-[#F4A98C]" />
+                <span>{districtNames[currentDistrict] || 'Netizen City'}</span>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center space-x-2.5 bg-[#FFFDF9]/95 border-2 border-[#EADBCC] rounded-2xl p-2 pr-3.5 shadow-[0_8px_24px_rgba(70,50,60,0.1)] backdrop-blur-md pointer-events-auto">
+            <div className="w-9 h-9 rounded-xl bg-[#F0EBE3] border border-[#DDD3C7] flex items-center justify-center text-[#8C7E70] font-heading font-extrabold text-xs">
+              <Users className="w-4 h-4 text-[#8C7E70]" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-1.5">
+                <span className="text-xs font-heading font-bold text-[#3B3340]">
+                  Tamu Netizen
+                </span>
+                <span className="text-[10px] text-[#8C7E70] font-heading font-bold bg-[#EFE9E0] px-1.5 py-0.2 rounded-full border border-[#DDD3C7]">
+                  Belum Masuk
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 mt-0.5 text-[11px] font-heading font-bold">
+                <Link
+                  href="/login"
+                  className="text-[#D97858] hover:text-[#B85737] hover:underline"
+                >
+                  Masuk
+                </Link>
+                <span className="text-[#C5B8A8] text-[10px]">•</span>
+                <Link
+                  href="/welcome"
+                  className="text-[#2F9474] hover:text-[#1E6850] hover:underline"
+                >
+                  Daftar Warga
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Center: 3 Separate Population Counters */}
         <div className="hidden lg:flex items-center space-x-4 bg-[#FFFDF9]/95 border-2 border-[#EADBCC] rounded-2xl px-4 py-2 shadow-[0_8px_24px_rgba(70,50,60,0.1)] backdrop-blur-md text-xs pointer-events-auto">
@@ -332,14 +371,31 @@ export default function GameHUD() {
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#F4A98C] border-2 border-white" />
           </button>
 
-          {/* Exit / Home */}
-          <Link
-            href="/"
-            title="Keluar ke Beranda"
-            className="p-2 rounded-xl bg-[#F5EDE1] hover:bg-[#EDE1D1] text-[#786A7C] hover:text-[#9A2D45] border border-[#E3D4C2] border-b-2 border-b-[#CEBDBA] transition-all active:translate-y-0.5"
-          >
-            <LogOut className="w-4 h-4" />
-          </Link>
+          {/* Exit / Logout */}
+          {profile ? (
+            <button
+              type="button"
+              onClick={async () => {
+                await fetch('/api/auth/logout', { method: 'POST' })
+                setProfile(null)
+                setWallet(null)
+                setInventory([])
+                window.location.reload()
+              }}
+              title="Keluar Akun Warga (Logout)"
+              className="p-2 rounded-xl bg-[#FFF0F0] hover:bg-[#FFE0E0] text-[#C53030] hover:text-[#9B2424] border border-[#FFC4C4] border-b-2 border-b-[#FFA4A4] transition-all active:translate-y-0.5 cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          ) : (
+            <Link
+              href="/"
+              title="Keluar ke Beranda"
+              className="p-2 rounded-xl bg-[#F5EDE1] hover:bg-[#EDE1D1] text-[#786A7C] hover:text-[#9A2D45] border border-[#E3D4C2] border-b-2 border-b-[#CEBDBA] transition-all active:translate-y-0.5"
+            >
+              <LogOut className="w-4 h-4" />
+            </Link>
+          )}
         </div>
       </header>
 

@@ -78,7 +78,7 @@ export default function ChatPanel() {
     setInputMessage('')
     setIsSending(true)
 
-    const senderName = profile?.username || profile?.displayName || 'Warga'
+    const senderName = profile?.displayName || profile?.username || 'Pengunjung'
     const tempMsg: ChatMsg = {
       id: `local-${Date.now()}`,
       citizen_id: profile?.id || 'local-me',

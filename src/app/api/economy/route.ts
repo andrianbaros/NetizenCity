@@ -6,10 +6,22 @@ import {
   readLocalDB,
 } from '@/lib/db/localDb'
 
-export async function GET() {
-  const citizen = getActiveCitizen()
+export async function GET(request: NextRequest) {
+  const citizenId = request.cookies.get('nc_citizen_id')?.value
+  const citizen = getActiveCitizen(citizenId)
   if (!citizen) {
-    return NextResponse.json({ error: 'Citizen not found' }, { status: 404 })
+    return NextResponse.json({
+      wallet: {
+        id: 'guest-wallet',
+        citizen_id: 'guest',
+        balance: 0,
+        total_earned: 0,
+        total_spent: 0,
+        updated_at: new Date().toISOString(),
+      },
+      transactions: [],
+      isGuest: true,
+    })
   }
 
   const wallet = getCitizenWallet(citizen.id)
@@ -18,16 +30,20 @@ export async function GET() {
     .filter((tx) => tx.citizen_id === citizen.id)
     .slice(0, 20)
 
-  return NextResponse.json({ wallet, transactions })
+  return NextResponse.json({ wallet, transactions, isGuest: false })
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { action, amount, description } = body
-    const citizen = getActiveCitizen()
+    const citizenId = request.cookies.get('nc_citizen_id')?.value
+    const citizen = getActiveCitizen(citizenId)
     if (!citizen) {
-      return NextResponse.json({ error: 'Citizen not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Silakan masuk atau daftar terlebih dahulu.' },
+        { status: 401 }
+      )
     }
 
     if (action === 'earn' || action === 'reward') {

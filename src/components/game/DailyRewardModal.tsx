@@ -7,12 +7,14 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import {
   Coins,
   CheckCircle,
   Gift,
   Loader2,
   CalendarCheck,
+  UserPlus,
 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -25,6 +27,9 @@ export default function DailyRewardModal() {
   const addNotification = useUIStore((s) => s.addNotification)
   const updateBalance = useCitizenStore((s) => s.updateBalance)
   const wallet = useCitizenStore((s) => s.wallet)
+  const profile = useCitizenStore((s) => s.profile)
+
+  const isGuest = !profile
 
   const isOpen = activeModal === 'daily_rewards'
 
@@ -204,6 +209,24 @@ export default function DailyRewardModal() {
           })}
         </div>
 
+        {/* Guest Warning */}
+        {isGuest && (
+          <div className="p-3.5 rounded-2xl bg-[#FFF5EC] border-2 border-[#F4C8B4] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center space-x-2.5">
+              <UserPlus className="w-4 h-4 text-[#D97858] flex-shrink-0" />
+              <span className="text-[#3B3340] font-medium">
+                Kamu sedang berkunjung sebagai Tamu. Masuk atau daftar warga agar streak loginmu tersimpan permanen.
+              </span>
+            </div>
+            <Link
+              href="/welcome"
+              className="px-3.5 py-1.5 rounded-xl bg-[#F4A98C] text-white font-heading font-bold text-xs hover:bg-[#E88968] transition-colors whitespace-nowrap"
+            >
+              Daftar Warga
+            </Link>
+          </div>
+        )}
+
         {/* Claim Action */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#EADBCC]">
           <div className="text-xs text-[#6F6675]">
@@ -213,8 +236,9 @@ export default function DailyRewardModal() {
                 Kamu sudah mengklaim hadiah hari ini. Kembali lagi besok!
               </span>
             ) : (
-              <span className="text-[#3B3340] font-semibold">
-                ✨ Hadiah hari ini siap untuk kamu klaim!
+              <span className="text-[#3B3340] font-semibold flex items-center">
+                <Gift className="w-4 h-4 mr-1.5 text-[#D97858]" />
+                Hadiah hari ini siap untuk kamu klaim!
               </span>
             )}
           </div>

@@ -6,12 +6,15 @@ import {
   updateWalletBalance,
 } from '@/lib/db/localDb'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const db = readLocalDB()
-  const citizen = getActiveCitizen()
-  const citizenId = citizen ? citizen.id : 'c-netizen-01'
+  const citizenIdCookie = request.cookies.get('nc_citizen_id')?.value
+  const citizen = getActiveCitizen(citizenIdCookie)
+  const citizenId = citizen ? citizen.id : null
 
-  const userMissions = db.citizen_missions.filter((cm) => cm.citizen_id === citizenId)
+  const userMissions = citizenId
+    ? db.citizen_missions.filter((cm) => cm.citizen_id === citizenId)
+    : []
 
   const missionsWithProgress = db.missions.map((m) => {
     const userM = userMissions.find((um) => um.mission_id === m.id)
@@ -24,16 +27,20 @@ export async function GET() {
     }
   })
 
-  return NextResponse.json({ missions: missionsWithProgress })
+  return NextResponse.json({ missions: missionsWithProgress, isGuest: !citizen })
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { missionId } = body
-    const citizen = getActiveCitizen()
+    const citizenIdCookie = request.cookies.get('nc_citizen_id')?.value
+    const citizen = getActiveCitizen(citizenIdCookie)
     if (!citizen) {
-      return NextResponse.json({ error: 'Warga tidak ditemukan' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Silakan masuk atau daftar terlebih dahulu untuk klaim misi.' },
+        { status: 401 }
+      )
     }
 
     const db = readLocalDB()

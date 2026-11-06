@@ -5,9 +5,10 @@ import {
   buyShopItem,
 } from '@/lib/db/localDb'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const db = readLocalDB()
-  const citizen = getActiveCitizen()
+  const citizenId = request.cookies.get('nc_citizen_id')?.value
+  const citizen = getActiveCitizen(citizenId)
   const ownedItemIds = citizen
     ? db.inventory
         .filter((inv) => inv.citizen_id === citizen.id)
@@ -24,9 +25,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { itemId } = body
-    const citizen = getActiveCitizen()
+    const citizenId = request.cookies.get('nc_citizen_id')?.value
+    const citizen = getActiveCitizen(citizenId)
     if (!citizen) {
-      return NextResponse.json({ error: 'Warga tidak ditemukan' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Silakan masuk atau daftar terlebih dahulu untuk berbelanja.' },
+        { status: 401 }
+      )
     }
 
     const result = buyShopItem(citizen.id, itemId)

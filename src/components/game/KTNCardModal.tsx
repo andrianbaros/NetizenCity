@@ -6,6 +6,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import {
   ShieldCheck,
   Copy,
@@ -13,6 +14,8 @@ import {
   Home,
   Award,
   Calendar,
+  UserPlus,
+  ArrowRight,
 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -37,27 +40,37 @@ export default function KTNCardModal() {
     }
   }, [isOpen, profile?.avatarConfig])
 
+  const isGuest = !profile
+
   const citizenData = {
-    displayName: profile?.displayName || 'Warga Netizen',
-    username: profile?.username || 'warga_netizen',
-    ktnNumber: profile?.ktnNumber || 'KTN-20261103-8A29F',
+    displayName: profile?.displayName || 'Tamu Netizen',
+    username: profile?.username || 'tamu',
+    ktnNumber: profile?.ktnNumber || 'BELUM TERDAFTAR',
     joinedDate: profile?.joinedAt
       ? new Date(profile.joinedAt).toLocaleDateString('id-ID', {
           day: 'numeric',
           month: 'short',
           year: 'numeric',
         })
-      : '3 Nov 2026',
-    level: profile?.level || 1,
-    job: profile?.job || 'Warga Baru',
-    housing: profile?.housingName || 'Rusunawa Harapan Baru Unit 304',
-    district: profile?.district || 'Perumahan Utara',
+      : 'Hari Ini (Tamu)',
+    level: profile?.level || 0,
+    job: profile?.job || 'Pengunjung Kota',
+    housing: profile?.housingName || 'Belum Memiliki Hunian',
+    district: profile?.district || 'Pusat Kota',
     skinTone: profile?.avatarConfig?.skinTone || '#f5d0b0',
     hairColor: profile?.avatarConfig?.hairColor || '#1e293b',
     shirtColor: profile?.avatarConfig?.outfit?.top || '#2563eb',
   }
 
   const handleCopyKTN = () => {
+    if (isGuest) {
+      addNotification({
+        title: 'Belum Terdaftar 📋',
+        message: 'Silakan mendaftar sebagai warga untuk mendapatkan nomor KTN resmi.',
+        type: 'info',
+      })
+      return
+    }
     navigator.clipboard?.writeText(citizenData.ktnNumber)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -89,9 +102,15 @@ export default function KTNCardModal() {
                 </span>
               </div>
             </div>
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#EBF8F3] text-[#1E5D46] border border-[#B7E7D5] text-xs font-heading font-bold shadow-xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#2F9474]" />
-              <span>TERVERIFIKASI ✓</span>
+            <div
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-heading font-bold shadow-xs ${
+                !isGuest
+                  ? 'bg-[#EBF8F3] text-[#1E5D46] border border-[#B7E7D5]'
+                  : 'bg-[#FFF4E6] text-[#A65B20] border border-[#FCD8B5]'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{!isGuest ? 'TERVERIFIKASI ✓' : 'PASS PENGUNJUNG'}</span>
             </div>
           </div>
 
@@ -186,6 +205,32 @@ export default function KTNCardModal() {
             </button>
           </div>
         </div>
+
+        {/* Guest Banner if unauthenticated */}
+        {isGuest && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FFF5EC] to-[#FDF0EE] border-2 border-[#F4C8B4] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-[#FFFDF9] border border-[#F4C8B4] flex items-center justify-center text-[#D97858] flex-shrink-0">
+                <UserPlus className="w-5 h-5" />
+              </div>
+              <div>
+                <h5 className="font-heading font-bold text-xs text-[#3B3340]">
+                  Kamu belum memiliki KTN Resmi
+                </h5>
+                <p className="text-[11px] text-[#7A6E7E] mt-0.5">
+                  Daftarkan dirimu untuk mendapatkan KTN digital, hunian virtual, dan penghasilan koin harian.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/welcome"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#F4A98C] to-[#E88968] text-white font-heading font-bold text-xs shadow-md hover:scale-105 transition-transform flex items-center space-x-1 whitespace-nowrap"
+            >
+              <span>Daftar Warga Baru</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-3">

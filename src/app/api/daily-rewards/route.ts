@@ -1,13 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import {
   readLocalDB,
   getActiveCitizen,
   claimDailyStreakReward,
 } from '@/lib/db/localDb'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const db = readLocalDB()
-  const citizen = getActiveCitizen()
+  const citizenId = request.cookies.get('nc_citizen_id')?.value
+  const citizen = getActiveCitizen(citizenId)
   const today = new Date().toISOString().split('T')[0]
 
   const claims = citizen
@@ -21,14 +22,19 @@ export async function GET() {
     isClaimedToday,
     currentStreak,
     claims,
+    isGuest: !citizen,
   })
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const citizen = getActiveCitizen()
+    const citizenId = request.cookies.get('nc_citizen_id')?.value
+    const citizen = getActiveCitizen(citizenId)
     if (!citizen) {
-      return NextResponse.json({ error: 'Warga tidak ditemukan' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Silakan masuk atau daftar terlebih dahulu untuk klaim hadiah harian.' },
+        { status: 401 }
+      )
     }
 
     const result = claimDailyStreakReward(citizen.id)

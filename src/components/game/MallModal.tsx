@@ -7,6 +7,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import Link from 'next/link'
 import {
   ShoppingBag,
   Coins,
@@ -21,6 +22,7 @@ import {
   CheckCircle2,
   X,
   Zap,
+  UserPlus,
 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -473,10 +475,14 @@ export default function MallModal() {
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-extrabold text-[#3B3340] tracking-wide">
-                  {profile?.displayName || 'Warga Netizen'}
+                  {profile?.displayName || 'Tamu Netizen'}
                 </span>
-                <span className="text-[10px] text-[#2C6ECB] font-bold bg-[#EBF3FB] border border-[#A9C8EC] px-2 py-0.5 rounded-full">
-                  Avatar Kamu
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  profile
+                    ? 'text-[#2C6ECB] bg-[#EBF3FB] border-[#A9C8EC]'
+                    : 'text-[#8C7E70] bg-[#EFE9E0] border-[#DDD3C7]'
+                }`}>
+                  {profile ? 'Avatar Warga' : 'Avatar Tamu'}
                 </span>
               </div>
               <p className="text-[11px] text-[#6F6675] mt-0.5 leading-snug">
@@ -504,6 +510,24 @@ export default function MallModal() {
             </div>
           </div>
         </div>
+
+        {/* Guest Warning */}
+        {!profile && (
+          <div className="p-3.5 rounded-2xl bg-[#FFF5EC] border-2 border-[#F4C8B4] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center space-x-2.5">
+              <UserPlus className="w-4 h-4 text-[#D97858] flex-shrink-0" />
+              <span className="text-[#3B3340] font-medium">
+                Kamu sedang berkunjung sebagai Tamu. Masuk atau daftar warga agar koleksi pakaian dan tabungan koin tersimpan permanen.
+              </span>
+            </div>
+            <Link
+              href="/welcome"
+              className="px-3.5 py-1.5 rounded-xl bg-[#F4A98C] text-white font-heading font-bold text-xs hover:bg-[#E88968] transition-colors whitespace-nowrap"
+            >
+              Daftar Warga
+            </Link>
+          </div>
+        )}
 
         {/* Category Filter Tabs */}
         <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-thin">

@@ -730,13 +730,10 @@ export function writeLocalDB(data: LocalDBSchema): void {
 // ============================================================
 
 export function getActiveCitizen(citizenId?: string) {
+  if (!citizenId) return null
   const db = readLocalDB()
-  if (citizenId) {
-    const found = db.citizens.find((c) => c.id === citizenId)
-    if (found) return found
-  }
-  // Return most recently registered or default citizen
-  return db.citizens[db.citizens.length - 1] || db.citizens[0] || null
+  const found = db.citizens.find((c) => c.id === citizenId)
+  return found || null
 }
 
 export function getCitizenWallet(citizenId: string) {

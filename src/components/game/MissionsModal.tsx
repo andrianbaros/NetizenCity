@@ -7,6 +7,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import {
   Award,
   CheckCircle2,
@@ -16,6 +17,7 @@ import {
   Trash2,
   Package,
   Vote,
+  UserPlus,
 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -41,6 +43,7 @@ export default function MissionsModal() {
   const addNotification = useUIStore((s) => s.addNotification)
   const updateBalance = useCitizenStore((s) => s.updateBalance)
   const wallet = useCitizenStore((s) => s.wallet)
+  const profile = useCitizenStore((s) => s.profile)
 
   const isOpen = activeModal === 'missions'
 
@@ -200,6 +203,23 @@ export default function MissionsModal() {
         <div className="p-3 bg-[#FFF9F1] rounded-2xl border-2 border-[#EADBCC] text-xs text-[#5C5265] leading-relaxed">
           Selesaikan misi harian dan mingguan warga untuk mendapatkan Netizen Coins ekstra, menaikkan level, dan membangun peradaban kota bersama!
         </div>
+
+        {!profile && (
+          <div className="p-3.5 rounded-2xl bg-[#FFF5EC] border-2 border-[#F4C8B4] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center space-x-2.5">
+              <UserPlus className="w-4 h-4 text-[#D97858] flex-shrink-0" />
+              <span className="text-[#3B3340] font-medium">
+                Kamu sedang berkunjung sebagai Tamu. Masuk atau daftar warga agar progres misi dan hadiah koin tersimpan permanen.
+              </span>
+            </div>
+            <Link
+              href="/welcome"
+              className="px-3.5 py-1.5 rounded-xl bg-[#F4A98C] text-white font-heading font-bold text-xs hover:bg-[#E88968] transition-colors whitespace-nowrap"
+            >
+              Daftar Warga
+            </Link>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-10 text-[#6F6675] text-xs">
