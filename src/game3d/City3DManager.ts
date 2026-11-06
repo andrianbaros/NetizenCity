@@ -301,6 +301,8 @@ export class City3DManager {
       bubble?: THREE.Sprite | null;
       bubbleTimer?: number;
       lastChatTime?: number;
+      lastServerTime?: number;
+      moveSpeed?: number;
     }
   >();
 
@@ -1312,14 +1314,33 @@ export class City3DManager {
 
     const activeIds = new Set<string>();
 
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
     for (const p of players) {
       if (p.id === myClientId) continue; // Don't duplicate local player
       activeIds.add(p.id);
 
       const existing = this.remotePlayers.get(p.id);
       if (existing) {
-        existing.targetPos.set(p.x, 0, p.z);
-        existing.targetFacing = p.facing;
+        const targetV = new THREE.Vector3(p.x, 0, p.z);
+        const dist = existing.root.position.distanceTo(targetV);
+        const dt = Math.max(0.15, (now - (existing.lastServerTime || now - 400)) / 1000);
+        existing.lastServerTime = now;
+
+        // If distance is huge (e.g. initial spawn or teleport > 18 units), snap immediately
+        if (dist > 18) {
+          existing.root.position.copy(targetV);
+          existing.targetPos.copy(targetV);
+          existing.root.rotation.y = p.facing;
+          existing.targetFacing = p.facing;
+          existing.moveSpeed = 0;
+        } else {
+          existing.targetPos.copy(targetV);
+          existing.targetFacing = p.facing;
+          // Calculate natural walking speed (local player moves at 12 u/s)
+          // Clamped between 8 and 14 u/s to smoothly cover distance without sudden dashes
+          existing.moveSpeed = Math.min(14.5, Math.max(8.0, dist / dt));
+        }
 
         // Check if there is new chat to display
         if (p.lastChat && p.lastChat.time > (existing.lastChatTime || 0)) {
@@ -1357,6 +1378,8 @@ export class City3DManager {
           targetFacing: p.facing,
           nameTag,
           lastChatTime: p.lastChat?.time || 0,
+          lastServerTime: now,
+          moveSpeed: 11.5,
         });
       }
     }
@@ -1383,15 +1406,29 @@ export class City3DManager {
       const target = remote.targetPos;
       const dist = cur.distanceTo(target);
 
-      if (dist > 0.05) {
-        cur.lerp(target, Math.min(1, delta * 8));
-        remote.root.rotation.y = THREE.MathUtils.lerp(
-          remote.root.rotation.y,
-          remote.targetFacing,
-          Math.min(1, delta * 9)
-        );
-        remote.citizen.pose(true, elapsed, 5.2);
+      if (dist > 0.06) {
+        // Linear smooth movement at natural walking speed (prevents instant exponential lerp dashing)
+        const speed = remote.moveSpeed || 11.5;
+        const step = Math.min(dist, speed * delta);
+        const dir = target.clone().sub(cur).normalize();
+        cur.addScaledVector(dir, step);
+
+        // Turn body smoothly towards the direction of travel
+        const moveAngle = Math.atan2(dir.x, dir.z);
+        let diff = (moveAngle - remote.root.rotation.y) % (Math.PI * 2);
+        if (diff > Math.PI) diff -= Math.PI * 2;
+        if (diff < -Math.PI) diff += Math.PI * 2;
+        remote.root.rotation.y += diff * Math.min(1, delta * 12);
+
+        // Animate citizen legs and arms walking
+        remote.citizen.pose(true, elapsed, 5.0);
       } else {
+        // Reached destination: stand still and face the player's last reported orientation
+        let diff = (remote.targetFacing - remote.root.rotation.y) % (Math.PI * 2);
+        if (diff > Math.PI) diff -= Math.PI * 2;
+        if (diff < -Math.PI) diff += Math.PI * 2;
+        remote.root.rotation.y += diff * Math.min(1, delta * 8);
+
         remote.citizen.pose(false, elapsed);
       }
 

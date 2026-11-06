@@ -275,9 +275,9 @@ export default function GameCanvas() {
       }
     }
 
-    // Initial sync
+    // Initial sync and fast responsive room polling
     syncRoom()
-    const interval = setInterval(syncRoom, 800)
+    const interval = setInterval(syncRoom, 400)
 
     return () => {
       clearInterval(interval)
