@@ -5,16 +5,15 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { removePlayerFromTugu } from '@/lib/tuguRooms'
-import { getActiveCitizen } from '@/lib/db/localDb'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
-    const citizen = await getActiveCitizen()
-    const cookieSession = req.cookies.get('netizen_session')?.value
-    const clientId = body.clientId || cookieSession || (citizen ? citizen.id : `guest_${req.headers.get('x-forwarded-for') || 'local'}`)
+    const clientId = typeof body.clientId === 'string' && body.clientId.trim().length > 0 ? body.clientId.trim() : null
 
-    removePlayerFromTugu(clientId)
+    if (clientId) {
+      removePlayerFromTugu(clientId)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

@@ -118,19 +118,23 @@ function makeSpeechBubbleSprite(text: string, bgColor = '#FFFDF9', textColor = '
   return sprite;
 }
 
-function makeNameTagSprite(name: string, isGuest = false): THREE.Sprite {
+function makeNameTagSprite(name: string, isGuest = false, isSelf = false): THREE.Sprite {
   if (typeof document === 'undefined') return new THREE.Sprite();
   const canvas = document.createElement('canvas');
-  canvas.width = 384;
-  canvas.height = 96;
+  canvas.width = 440;
+  canvas.height = 100;
   const ctx = canvas.getContext('2d');
   if (!ctx) return new THREE.Sprite();
 
-  const r = 24;
-  const x = 12, y = 12, w = 360, h = 72;
-  ctx.fillStyle = isGuest ? 'rgba(239, 233, 216, 0.95)' : 'rgba(102, 139, 101, 0.95)';
-  ctx.strokeStyle = isGuest ? '#D8CEBE' : '#527251';
-  ctx.lineWidth = 4;
+  const r = 26;
+  const x = 12, y = 12, w = 416, h = 76;
+  ctx.fillStyle = isSelf
+    ? 'rgba(78, 120, 77, 0.98)'
+    : isGuest
+    ? 'rgba(239, 233, 216, 0.96)'
+    : 'rgba(102, 139, 101, 0.98)';
+  ctx.strokeStyle = isSelf ? '#2E4C2C' : isGuest ? '#D8CEBE' : '#476346';
+  ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -145,17 +149,26 @@ function makeNameTagSprite(name: string, isGuest = false): THREE.Sprite {
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = isGuest ? '#343B35' : '#FFFFFF';
+  // Green online indicator dot
+  ctx.fillStyle = '#22C55E';
+  ctx.beginPath();
+  ctx.arc(x + 32, y + h / 2, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  ctx.fillStyle = isGuest && !isSelf ? '#343B35' : '#FFFFFF';
   ctx.font = 'bold 30px sans-serif';
-  ctx.textAlign = 'center';
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(name.slice(0, 16), x + w / 2, y + h / 2);
+  ctx.fillText(name.slice(0, 15), x + 52, y + h / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
   const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
   const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(1.9, 0.48, 1);
+  sprite.scale.set(1.9, 0.44, 1);
   return sprite;
 }
 
@@ -1122,6 +1135,16 @@ export class City3DManager {
       this.mayorNPC = createPakMayorNPC(this.tuguWorldGroup, new THREE.Vector3(3.2, 0, 3.5));
     }
 
+    // Attach local player nametag
+    const localName = profile?.displayName || profile?.username || 'Kamu';
+    const localTag = makeNameTagSprite(localName + ' (Kamu)', !profile, true);
+    localTag.position.set(0, 1.55, 0);
+    if (this.isPlayerAdmin && this.mayorPlayer) {
+      this.mayorPlayer.root.add(localTag);
+    } else if (this.playerCitizen) {
+      this.playerCitizen.root.add(localTag);
+    }
+
     this.cat = makeCat();
     this.cat.root.position.set(1.2, 0, 13.2);
     this.tuguWorldGroup.add(this.cat.root);
@@ -1138,20 +1161,10 @@ export class City3DManager {
 
   private spawnTuguCitizens() {
     const tuguSpots: { pA: [number, number]; pB: [number, number]; isStationary?: boolean }[] = [
-      { pA: [-6, 7], pB: [6, 7] },
-      { pA: [7, 6], pB: [7, -6] },
-      { pA: [6, -7], pB: [-6, -7] },
-      { pA: [-7, -6], pB: [-7, 6] },
-      { pA: [-2, 10], pB: [-2, 17] },
-      { pA: [2, 17], pB: [2, 10] },
-      { pA: [10, -2], pB: [17, -2] },
-      { pA: [-17, 2], pB: [-10, 2] },
       { pA: [9.7, 9.7], pB: [9.7, 9.7], isStationary: true },
       { pA: [-9.7, 9.7], pB: [-9.7, 9.7], isStationary: true },
       { pA: [9.7, -9.7], pB: [9.7, -9.7], isStationary: true },
       { pA: [-9.7, -9.7], pB: [-9.7, -9.7], isStationary: true },
-      { pA: [-3.5, 4.5], pB: [-3.5, 4.5], isStationary: true },
-      { pA: [0, 8.5], pB: [0, 11] },
     ];
 
     const skinTones = ['#f5d0b0', '#e0ac69', '#8d5524', '#c68642', '#fcd5b5'];
@@ -1208,7 +1221,10 @@ export class City3DManager {
     this.cityWorldGroup.visible = false;
     this.tuguWorldGroup.visible = true;
 
-    this.playerPos.set(0, 0, 13);
+    // Slight random spawn offset so multiple entering citizens do not overlap identically
+    const spawnOffsetX = (Math.random() - 0.5) * 5;
+    const spawnOffsetZ = (Math.random() - 0.5) * 2;
+    this.playerPos.set(spawnOffsetX, 0, 13 + spawnOffsetZ);
     this.playerFacing = Math.PI;
 
     if (this.playerCitizen) {
@@ -1285,7 +1301,7 @@ export class City3DManager {
               existing.bubble = null;
             }
             const bubble = makeSpeechBubbleSprite(p.lastChat.text, '#FFFDF9', '#343B35');
-            bubble.position.set(0, 2.7, 0);
+            bubble.position.set(0, 2.15, 0);
             existing.root.add(bubble);
             existing.bubble = bubble;
             existing.bubbleTimer = 6.0;
@@ -1299,8 +1315,8 @@ export class City3DManager {
         citizen.root.rotation.y = p.facing;
 
         // Add nametag
-        const nameTag = makeNameTagSprite(p.name, p.isGuest);
-        nameTag.position.set(0, 2.3, 0);
+        const nameTag = makeNameTagSprite(p.name, p.isGuest, false);
+        nameTag.position.set(0, 1.55, 0);
         citizen.root.add(nameTag);
 
         this.tuguWorldGroup.add(citizen.root);
@@ -2008,7 +2024,7 @@ private setupAirplanes() {
       this.playerSpeechBubble = null;
     }
     const sprite = makeSpeechBubbleSprite(text, '#FFF0EB', '#D97858');
-    sprite.position.set(0, 2.7, 0);
+    sprite.position.set(0, 2.15, 0);
     const targetRoot = this.isPlayerAdmin ? this.mayorPlayer?.root : this.playerCitizen?.root;
     if (targetRoot) {
       targetRoot.add(sprite);

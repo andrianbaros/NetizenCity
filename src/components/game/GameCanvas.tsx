@@ -36,6 +36,21 @@ import {
   Check,
 } from 'lucide-react'
 import { City3DManager, TimeOfDay, CameraMode } from '@/game3d/City3DManager'
+import { useCitizenStore } from '@/lib/stores/useCitizenStore'
+
+function getClientSessionId(): string {
+  if (typeof window === 'undefined') return ''
+  try {
+    let id = sessionStorage.getItem('nc_citizen_session_id')
+    if (!id) {
+      id = 'client_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36).slice(-4)
+      sessionStorage.setItem('nc_citizen_session_id', id)
+    }
+    return id
+  } catch {
+    return 'client_' + Math.random().toString(36).substring(2, 9)
+  }
+}
 
 /**
  * Virtual Analog Joystick Component for Mobile Touch & Mouse Control
@@ -151,17 +166,30 @@ export default function GameCanvas() {
   // Multiplayer Tugu Room State (Max 10 users per room)
   const [currentRoomId, setCurrentRoomId] = useState('1')
   const [roomUserCount, setRoomUserCount] = useState(1)
+  const [roomPlayers, setRoomPlayers] = useState<
+    Array<{
+      id: string
+      name: string
+      isGuest: boolean
+      x: number
+      z: number
+      facing: number
+      avatarConfig?: any
+    }>
+  >([])
   const [allRooms, setAllRooms] = useState<
     Array<{ roomId: string; name: string; userCount: number; maxCapacity: number; isFull: boolean }>
   >([
     { roomId: '1', name: 'Ruang #1', userCount: 1, maxCapacity: 10, isFull: false },
   ])
   const [showRoomSwitcher, setShowRoomSwitcher] = useState(false)
+  const [showRoster, setShowRoster] = useState(false)
   const myClientIdRef = useRef<string>('')
   const lastSentChatRef = useRef<string | null>(null)
 
   useEffect(() => {
     setMounted(true)
+    myClientIdRef.current = getClientSessionId()
   }, [])
 
   // Listen to chat sent by local player to broadcast in Tugu room
@@ -175,15 +203,21 @@ export default function GameCanvas() {
     return () => window.removeEventListener('player-chat-sent', onChatSent)
   }, [])
 
-  // Sync player position with Tugu room (Every 1.4s while in Tugu mode)
+  // Sync player position with Tugu room (Every 800ms while in Tugu mode)
   useEffect(() => {
     if (viewMode !== 'tugu') return
 
     const syncRoom = async () => {
       try {
+        const clientId = myClientIdRef.current || getClientSessionId()
+        myClientIdRef.current = clientId
+
+        const profile = useCitizenStore.getState().profile
         const playerState = cityManagerRef.current?.getPlayerTuguState() || { x: 0, z: 12, facing: 0 }
         const body: any = {
-          clientId: myClientIdRef.current || undefined,
+          clientId,
+          name: profile?.displayName || profile?.username || undefined,
+          avatarConfig: profile?.avatarConfig || undefined,
           x: playerState.x,
           z: playerState.z,
           facing: playerState.facing,
@@ -216,6 +250,7 @@ export default function GameCanvas() {
             setAllRooms(data.allRooms)
           }
           if (data.players) {
+            setRoomPlayers(data.players)
             cityManagerRef.current?.updateRemotePlayers(data.players, myClientIdRef.current)
           }
         }
@@ -226,16 +261,19 @@ export default function GameCanvas() {
 
     // Initial sync
     syncRoom()
-    const interval = setInterval(syncRoom, 1400)
+    const interval = setInterval(syncRoom, 800)
 
     return () => {
       clearInterval(interval)
       // Leave room on exit
-      fetch('/api/tugu/leave', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: myClientIdRef.current }),
-      }).catch(() => {})
+      const cid = myClientIdRef.current || (typeof window !== 'undefined' ? sessionStorage.getItem('nc_citizen_session_id') : '')
+      if (cid) {
+        fetch('/api/tugu/leave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: cid }),
+        }).catch(() => {})
+      }
     }
   }, [viewMode, currentRoomId])
 
@@ -504,23 +542,27 @@ export default function GameCanvas() {
       {/* TUGU MULTIPLAYER ROOM STATUS & SWITCHER (Max 10 per room)     */}
       {/* ============================================================ */}
       {viewMode === 'tugu' && (
-        <div className="absolute top-14 sm:top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+        <div className="absolute top-14 sm:top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-2">
+          {/* Room Switcher Pill */}
           <div className="relative">
             <button
               type="button"
-              onClick={() => setShowRoomSwitcher(!showRoomSwitcher)}
+              onClick={() => {
+                setShowRoomSwitcher(!showRoomSwitcher)
+                setShowRoster(false)
+              }}
               className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-3 py-1.5 shadow-md text-xs font-semibold text-[#343B35] cursor-pointer transition-colors"
             >
               <span className="w-2 h-2 rounded-full bg-[#668B65]" />
               <span>Ruang #{currentRoomId}</span>
               <span className="text-[11px] px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
-                {roomUserCount}/10 Warga
+                {roomUserCount}/10
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-[#78634B]" />
             </button>
 
             {showRoomSwitcher && (
-              <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-60 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2 shadow-xl z-50 text-xs">
+              <div className="absolute top-full mt-1.5 left-0 sm:left-1/2 sm:-translate-x-1/2 w-60 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2 shadow-xl z-50 text-xs">
                 <div className="font-bold text-[10px] text-[#78634B] px-2 py-1 uppercase tracking-wide border-b border-[#D8CEBE] mb-1">
                   Pilih Server Ruangan (Maks 10)
                 </div>
@@ -554,6 +596,73 @@ export default function GameCanvas() {
                       </button>
                     )
                   })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Citizen Roster in Room Pill */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setShowRoster(!showRoster)
+                setShowRoomSwitcher(false)
+              }}
+              className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-2.5 py-1.5 shadow-md text-xs font-semibold text-[#343B35] cursor-pointer transition-colors"
+              title="Lihat warga di sekitar"
+            >
+              <Users className="w-3.5 h-3.5 text-[#668B65]" />
+              <span className="hidden sm:inline">Warga di Sekitar</span>
+              <span className="text-[11px] px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
+                {roomPlayers.length || roomUserCount}
+              </span>
+            </button>
+
+            {showRoster && (
+              <div className="absolute top-full mt-1.5 right-0 sm:left-1/2 sm:-translate-x-1/2 w-64 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2.5 shadow-xl z-50 text-xs">
+                <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-[#D8CEBE]">
+                  <span className="font-bold text-[11px] text-[#78634B] uppercase tracking-wide flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-[#668B65]" /> Warga di Ruang #{currentRoomId}
+                  </span>
+                  <button
+                    onClick={() => setShowRoster(false)}
+                    className="text-[#78634B] hover:text-[#343B35] p-0.5 rounded cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {roomPlayers.length === 0 ? (
+                    <div className="text-[11px] text-[#78634B] py-1 text-center">Menghubungkan warga...</div>
+                  ) : (
+                    roomPlayers.map((p) => {
+                      const isMe = p.id === myClientIdRef.current
+                      return (
+                        <div
+                          key={p.id}
+                          className={`flex items-center justify-between px-2 py-1.5 rounded-lg ${
+                            isMe ? 'bg-[#668B65]/15 font-bold text-[#343B35]' : 'bg-[#EFE9D8]/60 text-[#343B35]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="w-2 h-2 rounded-full bg-[#22C55E] shrink-0" />
+                            <span className="truncate">{p.name}</span>
+                            {isMe && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-[#668B65] text-white uppercase shrink-0">
+                                Kamu
+                              </span>
+                            )}
+                          </div>
+                          {!isMe && (
+                            <span className="text-[10px] text-[#668B65] font-semibold shrink-0">
+                              🟢 Online
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })
+                  )}
                 </div>
               </div>
             )}

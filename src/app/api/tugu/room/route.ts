@@ -21,14 +21,27 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const citizen = await getActiveCitizen()
+    const citizenCookie = req.cookies.get('nc_citizen_id')?.value
+    const citizen = citizenCookie ? getActiveCitizen(citizenCookie) : null
 
-    // Determine client identification
-    const cookieSession = req.cookies.get('netizen_session')?.value
-    const clientId = body.clientId || cookieSession || (citizen ? citizen.id : `guest_${req.headers.get('x-forwarded-for') || 'local'}`)
+    // Determine client identification: prioritize client-side unique session ID
+    let clientId = typeof body.clientId === 'string' && body.clientId.trim().length > 0
+      ? body.clientId.trim()
+      : null
 
-    const displayName = citizen?.display_name || citizen?.username || body.name || 'Pengunjung'
+    if (!clientId) {
+      clientId = `guest_${Math.random().toString(36).substring(2, 8)}_${Date.now().toString(36).slice(-4)}`
+    }
+
     const isGuest = !citizen
+    let displayName = 'Warga'
+    if (citizen) {
+      displayName = citizen.display_name || citizen.username
+    } else if (typeof body.name === 'string' && body.name.trim().length > 0 && body.name !== 'Pengunjung') {
+      displayName = body.name.trim()
+    } else {
+      displayName = `Tamu #${clientId.slice(-4)}`
+    }
 
     const result = syncPlayerInRoom({
       clientId,
