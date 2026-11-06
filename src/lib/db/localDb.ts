@@ -9,6 +9,17 @@ import { generateKTNNumber } from '@/lib/utils/ktn'
 import type { AvatarConfig } from '@/types/citizen'
 
 const DB_PATH = path.join(process.cwd(), 'data', 'local_db.json')
+const TMP_DB_PATH = path.join(
+  process.platform === 'win32'
+    ? process.env.TEMP || process.env.TMP || path.join(process.cwd(), 'data')
+    : '/tmp',
+  'netizencity_local_db.json'
+)
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __netizen_local_db: LocalDBSchema | undefined
+}
 
 export interface LocalDBSchema {
   citizens: Array<{
@@ -699,29 +710,63 @@ function getInitialSeedData(): LocalDBSchema {
 }
 
 export function readLocalDB(): LocalDBSchema {
+  if (globalThis.__netizen_local_db) {
+    return globalThis.__netizen_local_db
+  }
+
+  // 1. Try reading from TMP_DB_PATH (writable on Vercel)
+  try {
+    if (fs.existsSync(TMP_DB_PATH)) {
+      const data = fs.readFileSync(TMP_DB_PATH, 'utf-8')
+      const parsed = JSON.parse(data)
+      globalThis.__netizen_local_db = parsed
+      return parsed
+    }
+  } catch {
+    // ignore
+  }
+
+  // 2. Try reading from project DB_PATH
   try {
     if (fs.existsSync(DB_PATH)) {
       const data = fs.readFileSync(DB_PATH, 'utf-8')
-      return JSON.parse(data)
+      const parsed = JSON.parse(data)
+      globalThis.__netizen_local_db = parsed
+      return parsed
     }
   } catch {
     // ignore
   }
 
   const initial = getInitialSeedData()
+  globalThis.__netizen_local_db = initial
   writeLocalDB(initial)
   return initial
 }
 
 export function writeLocalDB(data: LocalDBSchema): void {
+  globalThis.__netizen_local_db = data
+
+  // 1. Try writing to TMP_DB_PATH (always works on Vercel & OS temp)
+  try {
+    const tmpDir = path.dirname(TMP_DB_PATH)
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true })
+    }
+    fs.writeFileSync(TMP_DB_PATH, JSON.stringify(data, null, 2), 'utf-8')
+  } catch {
+    // ignore
+  }
+
+  // 2. Try writing to DB_PATH (works in local development)
   try {
     const dir = path.dirname(DB_PATH)
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true })
     }
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8')
-  } catch (err) {
-    console.error('Failed to write local database:', err)
+  } catch {
+    // ignore EROFS on Vercel
   }
 }
 
@@ -933,20 +978,62 @@ export function claimDailyStreakReward(citizenId: string) {
   return { success: true, dayNumber: streak, rewardCoins, streak }
 }
 
+export const CHAT_RETENTION_MS = 30 * 60 * 1000 // 30 minutes retention
+
+export function pruneExpiredChatMessages(messages: Array<any>): Array<any> {
+  const cutoff = Date.now() - CHAT_RETENTION_MS
+  return messages.filter((m) => {
+    const time = new Date(m.created_at).getTime()
+    return !isNaN(time) && time >= cutoff
+  })
+}
+
+export function getChatMessages() {
+  const db = readLocalDB()
+  const currentMessages = db.chat_messages || []
+  const valid = pruneExpiredChatMessages(currentMessages)
+  if (valid.length !== currentMessages.length) {
+    db.chat_messages = valid
+    writeLocalDB(db)
+  }
+  return valid
+}
+
 export function addChatMessage(citizenId: string, senderName: string, content: string) {
   const db = readLocalDB()
+  if (!db.chat_messages) {
+    db.chat_messages = []
+  }
+
+  // Prune messages older than 30 minutes
+  db.chat_messages = pruneExpiredChatMessages(db.chat_messages)
+
+  // Prevent immediate duplicate message within 2.5 seconds
+  const now = Date.now()
+  const isDuplicate = db.chat_messages.some(
+    (m) =>
+      m.content === content &&
+      m.sender_name === senderName &&
+      now - new Date(m.created_at).getTime() < 2500
+  )
+  if (isDuplicate) {
+    return db.chat_messages[db.chat_messages.length - 1]
+  }
+
   const msg = {
-    id: 'msg-' + Math.random().toString(36).substring(2, 9),
+    id: 'msg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
     citizen_id: citizenId,
     sender_name: senderName,
     channel: 'global',
     content,
     created_at: new Date().toISOString(),
   }
+
   db.chat_messages.push(msg)
-  if (db.chat_messages.length > 100) {
+  if (db.chat_messages.length > 200) {
     db.chat_messages.shift()
   }
+
   writeLocalDB(db)
   return msg
 }

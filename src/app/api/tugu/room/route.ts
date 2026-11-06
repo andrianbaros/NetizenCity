@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { syncPlayerInRoom, getRoomsSummary } from '@/lib/tuguRooms'
-import { getActiveCitizen } from '@/lib/db/localDb'
+import { getActiveCitizen, addChatMessage } from '@/lib/db/localDb'
 
 export async function GET(req: NextRequest) {
   try {
@@ -54,6 +54,10 @@ export async function POST(req: NextRequest) {
       preferredRoomId: body.preferredRoomId,
       chatText: body.chatText,
     })
+
+    if (typeof body.chatText === 'string' && body.chatText.trim().length > 0) {
+      addChatMessage(citizen?.id || clientId, displayName, body.chatText.trim())
+    }
 
     return NextResponse.json({
       success: true,
