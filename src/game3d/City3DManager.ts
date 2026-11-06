@@ -118,6 +118,47 @@ function makeSpeechBubbleSprite(text: string, bgColor = '#FFFDF9', textColor = '
   return sprite;
 }
 
+function makeNameTagSprite(name: string, isGuest = false): THREE.Sprite {
+  if (typeof document === 'undefined') return new THREE.Sprite();
+  const canvas = document.createElement('canvas');
+  canvas.width = 384;
+  canvas.height = 96;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.Sprite();
+
+  const r = 24;
+  const x = 12, y = 12, w = 360, h = 72;
+  ctx.fillStyle = isGuest ? 'rgba(239, 233, 216, 0.95)' : 'rgba(102, 139, 101, 0.95)';
+  ctx.strokeStyle = isGuest ? '#D8CEBE' : '#527251';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = isGuest ? '#343B35' : '#FFFFFF';
+  ctx.font = 'bold 30px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(name.slice(0, 16), x + w / 2, y + h / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(1.9, 0.48, 1);
+  return sprite;
+}
+
 const TUGU_DIALOGUES = [
   'Senang sekali bisa kumpul di Alun-Alun Tugu!',
   'Followers kita sekarang sudah 53.000+!',
@@ -223,6 +264,22 @@ export class City3DManager {
   private npcBubbleTimer = 3.5;
   private handlePlayerChat?: (e: any) => void;
   private isDestroyed = false;
+
+  // Multiplayer Remote Players in Tugu (Max 10 per room)
+  public currentTuguRoomId = '1';
+  public remotePlayers = new Map<
+    string,
+    {
+      root: THREE.Group;
+      citizen: Citizen3DInstance;
+      targetPos: THREE.Vector3;
+      targetFacing: number;
+      nameTag: THREE.Sprite;
+      bubble?: THREE.Sprite | null;
+      bubbleTimer?: number;
+      lastChatTime?: number;
+    }
+  >();
 
   // Event handlers for mode changes
   private handleEnterTuguEvent?: () => void;
@@ -1193,9 +1250,133 @@ export class City3DManager {
     }
   }
 
+  public updateRemotePlayers(
+    players: Array<{
+      id: string;
+      name: string;
+      isGuest: boolean;
+      x: number;
+      z: number;
+      facing: number;
+      avatarConfig?: any;
+      lastChat?: { text: string; time: number };
+    }>,
+    myClientId: string
+  ) {
+    if (this.viewMode !== 'tugu') return;
+
+    const activeIds = new Set<string>();
+
+    for (const p of players) {
+      if (p.id === myClientId) continue; // Don't duplicate local player
+      activeIds.add(p.id);
+
+      const existing = this.remotePlayers.get(p.id);
+      if (existing) {
+        existing.targetPos.set(p.x, 0, p.z);
+        existing.targetFacing = p.facing;
+
+        // Check if there is new chat to display
+        if (p.lastChat && p.lastChat.time > (existing.lastChatTime || 0)) {
+          existing.lastChatTime = p.lastChat.time;
+          if (Date.now() - p.lastChat.time < 8000) {
+            if (existing.bubble) {
+              existing.root.remove(existing.bubble);
+              existing.bubble = null;
+            }
+            const bubble = makeSpeechBubbleSprite(p.lastChat.text, '#FFFDF9', '#343B35');
+            bubble.position.set(0, 2.7, 0);
+            existing.root.add(bubble);
+            existing.bubble = bubble;
+            existing.bubbleTimer = 6.0;
+          }
+        }
+      } else {
+        // Spawn new remote citizen
+        const colors = resolveAvatarColors(p.avatarConfig);
+        const citizen = makeCitizen3D(colors);
+        citizen.root.position.set(p.x, 0, p.z);
+        citizen.root.rotation.y = p.facing;
+
+        // Add nametag
+        const nameTag = makeNameTagSprite(p.name, p.isGuest);
+        nameTag.position.set(0, 2.3, 0);
+        citizen.root.add(nameTag);
+
+        this.tuguWorldGroup.add(citizen.root);
+
+        this.remotePlayers.set(p.id, {
+          root: citizen.root,
+          citizen,
+          targetPos: new THREE.Vector3(p.x, 0, p.z),
+          targetFacing: p.facing,
+          nameTag,
+          lastChatTime: p.lastChat?.time || 0,
+        });
+      }
+    }
+
+    // Remove disconnected players
+    for (const [id, remote] of this.remotePlayers.entries()) {
+      if (!activeIds.has(id)) {
+        this.tuguWorldGroup.remove(remote.root);
+        this.remotePlayers.delete(id);
+      }
+    }
+  }
+
+  public clearRemotePlayers() {
+    for (const [, remote] of this.remotePlayers.entries()) {
+      this.tuguWorldGroup.remove(remote.root);
+    }
+    this.remotePlayers.clear();
+  }
+
+  private updateRemotePlayersAnimation(delta: number, elapsed: number) {
+    for (const [, remote] of this.remotePlayers.entries()) {
+      const cur = remote.root.position;
+      const target = remote.targetPos;
+      const dist = cur.distanceTo(target);
+
+      if (dist > 0.05) {
+        cur.lerp(target, Math.min(1, delta * 8));
+        remote.root.rotation.y = THREE.MathUtils.lerp(
+          remote.root.rotation.y,
+          remote.targetFacing,
+          Math.min(1, delta * 9)
+        );
+        remote.citizen.pose(true, elapsed, 5.2);
+      } else {
+        remote.citizen.pose(false, elapsed);
+      }
+
+      if (remote.bubble) {
+        remote.bubbleTimer = (remote.bubbleTimer || 0) - delta;
+        if (remote.bubbleTimer <= 0) {
+          remote.root.remove(remote.bubble);
+          remote.bubble = null;
+        }
+      }
+    }
+  }
+
+  public getPlayerTuguState(): { x: number; z: number; facing: number } {
+    const root = this.isPlayerAdmin ? this.mayorPlayer?.root : this.playerCitizen?.root;
+    if (!root) {
+      return { x: this.playerPos.x, z: this.playerPos.z, facing: this.playerFacing };
+    }
+    return {
+      x: root.position.x,
+      z: root.position.z,
+      facing: root.rotation.y,
+    };
+  }
+
   public exitTuguArea() {
     this.viewMode = 'city';
     this.targetPosition = null;
+
+    this.clearRemotePlayers();
 
     this.tuguWorldGroup.visible = false;
     this.cityWorldGroup.visible = true;
@@ -1318,9 +1499,9 @@ private setupAirplanes() {
   private registerInteractiveLandmarks() {
     this.interactiveMeshes = [];
     this.landmarks.forEach((lm) => {
-      // Cylinder hitbox wrapping each major landmark
-      const radius = Math.max(lm.radius * 0.9, 6.0);
-      const height = Math.max(16, radius * 1.1);
+      // Cylinder hitbox wrapping each landmark - generous sizing for effortless tapping on mobile
+      const radius = lm.id === 'monument' ? 38.0 : Math.max(lm.radius * 1.3, 14.0);
+      const height = lm.id === 'monument' ? 34.0 : Math.max(22, radius * 1.2);
       const geo = new THREE.CylinderGeometry(radius, radius, height, 16);
       const mat = new THREE.MeshBasicMaterial({ visible: false });
       const hitBox = new THREE.Mesh(geo, mat);
@@ -1707,27 +1888,80 @@ private setupAirplanes() {
       e.clientX - (this.pointerDownPos?.x ?? e.clientX),
       e.clientY - (this.pointerDownPos?.y ?? e.clientY)
     );
-    if (dragDist > 6) return;
+    // Generous tap tolerance for touch devices (up to 16px finger slip)
+    if (dragDist > 16) return;
 
-    if (this.viewMode === 'city' && this.hoveredLandmark) {
-      if (this.hoveredLandmark.id === 'monument') {
-        useGameStore.getState().setSelectedBuilding('monument');
-        useGameStore.getState().setCurrentDistrict('Pusat Kota');
+    if (this.viewMode === 'city') {
+      const rect = this.container.getBoundingClientRect();
+      const clickMouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      this.raycaster.setFromCamera(clickMouse, this.camera);
+
+      // 1. Raycast directly against interactive landmark hitboxes
+      const intersects = this.raycaster.intersectObjects(
+        this.interactiveMeshes.map((m) => m.mesh)
+      );
+
+      let targetLandmark: LandmarkLocation | null = null;
+
+      if (intersects.length > 0) {
+        const hit = this.interactiveMeshes.find((m) => m.mesh === intersects[0].object);
+        if (hit) {
+          targetLandmark = hit.landmark;
+        }
+      }
+
+      // 2. If no direct cylinder hit, check ground ray intersection distance
+      if (!targetLandmark) {
+        const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const groundHit = new THREE.Vector3();
+        if (this.raycaster.ray.intersectPlane(groundPlane, groundHit)) {
+          // Check proximity to any landmark, prioritizing monument (Tugu)
+          const monumentLm = this.landmarks.find((lm) => lm.id === 'monument');
+          if (monumentLm && groundHit.distanceTo(monumentLm.position) <= 38.0) {
+            targetLandmark = monumentLm;
+          } else {
+            // Find closest landmark within its generous radius
+            let closestDist = Infinity;
+            for (const lm of this.landmarks) {
+              const d = groundHit.distanceTo(lm.position);
+              const maxDist = lm.id === 'monument' ? 38.0 : Math.max(lm.radius * 1.5, 16.0);
+              if (d <= maxDist && d < closestDist) {
+                closestDist = d;
+                targetLandmark = lm;
+              }
+            }
+          }
+        }
+      }
+
+      // Fallback to hoveredLandmark if any
+      if (!targetLandmark && this.hoveredLandmark) {
+        targetLandmark = this.hoveredLandmark;
+      }
+
+      if (targetLandmark) {
+        if (targetLandmark.id === 'monument') {
+          useGameStore.getState().setSelectedBuilding('monument');
+          useGameStore.getState().setCurrentDistrict('Pusat Kota');
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('open-tugu-confirm'));
+          }
+          return;
+        }
+
+        // For every other landmark: update Zustand store and dispatch landmark-selected
+        useGameStore.getState().setSelectedBuilding(targetLandmark.id);
+        useGameStore.getState().setCurrentDistrict(targetLandmark.district);
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('open-tugu-confirm'));
+          window.dispatchEvent(
+            new CustomEvent('landmark-selected', { detail: targetLandmark })
+          );
         }
         return;
       }
-
-      // For every other landmark: update Zustand store and dispatch landmark-selected
-      useGameStore.getState().setSelectedBuilding(this.hoveredLandmark.id);
-      useGameStore.getState().setCurrentDistrict(this.hoveredLandmark.district);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('landmark-selected', { detail: this.hoveredLandmark })
-        );
-      }
-      return;
     }
 
     if (this.viewMode === 'tugu') {
@@ -1881,11 +2115,16 @@ private setupAirplanes() {
     const camRight = new THREE.Vector3().crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
 
     let moveVec = new THREE.Vector3();
+    let analogFactor = 1.0;
     if (this.virtualMove) {
-      if (this.virtualMove.y < 0) moveVec.add(camDir);
-      if (this.virtualMove.y > 0) moveVec.sub(camDir);
-      if (this.virtualMove.x > 0) moveVec.add(camRight);
-      if (this.virtualMove.x < 0) moveVec.sub(camRight);
+      const vx = THREE.MathUtils.clamp(this.virtualMove.x, -1, 1);
+      const vy = THREE.MathUtils.clamp(this.virtualMove.y, -1, 1);
+      const mag = Math.hypot(vx, vy);
+      if (mag > 0.05) {
+        analogFactor = Math.min(1.0, mag);
+        moveVec.addScaledVector(camDir, -vy);
+        moveVec.addScaledVector(camRight, vx);
+      }
     }
     if (this.keysPressed['w'] || this.keysPressed['arrowup']) moveVec.add(camDir);
     if (this.keysPressed['s'] || this.keysPressed['arrowdown']) moveVec.sub(camDir);
@@ -1893,7 +2132,7 @@ private setupAirplanes() {
     if (this.keysPressed['a'] || this.keysPressed['arrowleft']) moveVec.sub(camRight);
 
     let isMoving = false;
-    const speed = 12 * delta;
+    const speed = 12 * delta * analogFactor;
 
     if (moveVec.lengthSq() > 0.001) {
       this.targetPosition = null;
@@ -2200,6 +2439,7 @@ private setupAirplanes() {
     if (this.viewMode === 'tugu') {
       this.updateCharacter(delta, elapsed);
       this.updateTuguCitizens(delta, elapsed);
+      this.updateRemotePlayersAnimation(delta, elapsed);
       if (this.tuguMpark?.jets) {
         this.tuguMpark.jets.children.forEach((j: any, i: number) => {
           j.scale.y = 0.5 + Math.sin(elapsed * 4 + i * 0.4) * 0.4;

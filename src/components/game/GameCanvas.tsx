@@ -1,6 +1,13 @@
+// ============================================================
+// NETIZENCITY - GameCanvas Component (Cozy Simulation Game Canvas)
+// Supports Multi-Touch Pinch Zoom, Virtual Analog Joystick,
+// Centered Modals (via React Portal), and Tugu Multiplayer Rooms (Max 10 per Room)
+// ============================================================
+
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Sun,
   Moon,
@@ -23,26 +30,114 @@ import {
   X,
   MessageSquare,
   Eye,
-  Trophy,
   Plus,
   Minus,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-  SlidersHorizontal,
+  Users,
+  Check,
 } from 'lucide-react'
 import { City3DManager, TimeOfDay, CameraMode } from '@/game3d/City3DManager'
+
+/**
+ * Virtual Analog Joystick Component for Mobile Touch & Mouse Control
+ */
+function AnalogJoystick({
+  onMove,
+}: {
+  onMove: (dir: { x: number; y: number } | null) => void
+}) {
+  const baseRef = useRef<HTMLDivElement>(null)
+  const [knobPos, setKnobPos] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const activePointerId = useRef<number | null>(null)
+
+  const updateKnob = useCallback((clientX: number, clientY: number) => {
+    if (!baseRef.current) return
+    const rect = baseRef.current.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+    const dx = clientX - centerX
+    const dy = clientY - centerY
+    const dist = Math.hypot(dx, dy)
+    const maxRadius = 36
+
+    let clampedX = dx
+    let clampedY = dy
+    if (dist > maxRadius) {
+      clampedX = (dx / dist) * maxRadius
+      clampedY = (dy / dist) * maxRadius
+    }
+
+    setKnobPos({ x: clampedX, y: clampedY })
+    // Send normalized proportional vector (-1.0 to 1.0)
+    onMove({
+      x: clampedX / maxRadius,
+      y: clampedY / maxRadius,
+    })
+  }, [onMove])
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+    activePointerId.current = e.pointerId
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    updateKnob(e.clientX, e.clientY)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging || e.pointerId !== activePointerId.current) return
+    e.preventDefault()
+    e.stopPropagation()
+    updateKnob(e.clientX, e.clientY)
+  }
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (e.pointerId !== activePointerId.current) return
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    activePointerId.current = null
+    setKnobPos({ x: 0, y: 0 })
+    onMove(null)
+  }
+
+  return (
+    <div
+      ref={baseRef}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      className="relative w-26 h-26 rounded-full bg-[#F7F4E9]/90 border-2 border-[#D8CEBE] shadow-xl backdrop-blur-xs flex items-center justify-center touch-none select-none pointer-events-auto"
+      title="Analog Joystick Karakter"
+    >
+      {/* Decorative concentric indicator */}
+      <div className="absolute w-14 h-14 rounded-full border border-[#D8CEBE]/80 pointer-events-none" />
+      <div className="absolute w-2 h-2 rounded-full bg-[#78634B]/30 pointer-events-none" />
+
+      {/* Movable Knob */}
+      <div
+        className="w-12 h-12 rounded-full bg-[#668B65] border-2 border-[#527251] shadow-md flex items-center justify-center pointer-events-none transition-transform duration-75"
+        style={{
+          transform: `translate3d(${knobPos.x}px, ${knobPos.y}px, 0)`,
+        }}
+      >
+        <div className="w-4 h-4 rounded-full bg-white/40" />
+      </div>
+    </div>
+  )
+}
 
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null)
   const cityManagerRef = useRef<City3DManager | null>(null)
 
+  const [mounted, setMounted] = useState(false)
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('noon')
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit')
   const [viewMode, setViewMode] = useState<'city' | 'tugu'>('city')
   const [showLandmarkMenu, setShowLandmarkMenu] = useState(false)
-  const [showHelpHint, setShowHelpHint] = useState(false) // Collapsed by default for clean mobile screen
-  const [showMobileControls, setShowMobileControls] = useState(true)
+  const [showHelpHint, setShowHelpHint] = useState(false)
   const [tuguConfirmOpen, setTuguConfirmOpen] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [transitionMessage, setTransitionMessage] = useState('')
@@ -52,6 +147,97 @@ export default function GameCanvas() {
     district: string
     type?: string
   } | null>(null)
+
+  // Multiplayer Tugu Room State (Max 10 users per room)
+  const [currentRoomId, setCurrentRoomId] = useState('1')
+  const [roomUserCount, setRoomUserCount] = useState(1)
+  const [allRooms, setAllRooms] = useState<
+    Array<{ roomId: string; name: string; userCount: number; maxCapacity: number; isFull: boolean }>
+  >([
+    { roomId: '1', name: 'Ruang #1', userCount: 1, maxCapacity: 10, isFull: false },
+  ])
+  const [showRoomSwitcher, setShowRoomSwitcher] = useState(false)
+  const myClientIdRef = useRef<string>('')
+  const lastSentChatRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Listen to chat sent by local player to broadcast in Tugu room
+  useEffect(() => {
+    const onChatSent = (e: any) => {
+      if (e.detail?.text) {
+        lastSentChatRef.current = e.detail.text
+      }
+    }
+    window.addEventListener('player-chat-sent', onChatSent)
+    return () => window.removeEventListener('player-chat-sent', onChatSent)
+  }, [])
+
+  // Sync player position with Tugu room (Every 1.4s while in Tugu mode)
+  useEffect(() => {
+    if (viewMode !== 'tugu') return
+
+    const syncRoom = async () => {
+      try {
+        const playerState = cityManagerRef.current?.getPlayerTuguState() || { x: 0, z: 12, facing: 0 }
+        const body: any = {
+          clientId: myClientIdRef.current || undefined,
+          x: playerState.x,
+          z: playerState.z,
+          facing: playerState.facing,
+          preferredRoomId: currentRoomId,
+        }
+
+        if (lastSentChatRef.current) {
+          body.chatText = lastSentChatRef.current
+          lastSentChatRef.current = null
+        }
+
+        const res = await fetch('/api/tugu/room', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          if (data.myClientId) {
+            myClientIdRef.current = data.myClientId
+          }
+          if (data.roomId && data.roomId !== currentRoomId) {
+            setCurrentRoomId(data.roomId)
+          }
+          if (typeof data.userCount === 'number') {
+            setRoomUserCount(data.userCount)
+          }
+          if (data.allRooms) {
+            setAllRooms(data.allRooms)
+          }
+          if (data.players) {
+            cityManagerRef.current?.updateRemotePlayers(data.players, myClientIdRef.current)
+          }
+        }
+      } catch {
+        // ignore network hiccup
+      }
+    }
+
+    // Initial sync
+    syncRoom()
+    const interval = setInterval(syncRoom, 1400)
+
+    return () => {
+      clearInterval(interval)
+      // Leave room on exit
+      fetch('/api/tugu/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: myClientIdRef.current }),
+      }).catch(() => {})
+    }
+  }, [viewMode, currentRoomId])
 
   useEffect(() => {
     if (containerRef.current && !cityManagerRef.current) {
@@ -154,253 +340,157 @@ export default function GameCanvas() {
     }, 450)
   }
 
-  // Virtual D-Pad helpers for mobile touch walking in Tugu mode
-  const handleVirtualDirection = (dir: { x: number; y: number } | null) => {
+  const handleAnalogMove = useCallback((dir: { x: number; y: number } | null) => {
     cityManagerRef.current?.setVirtualMovement(dir)
-  }
+  }, [])
 
   return (
-    <div
-      className="relative w-full h-full overflow-hidden bg-[#CDE7F0] select-none touch-none"
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      {/* 3D WebGL Canvas Container with touch-none for proper multi-touch */}
+    <div className="relative w-full h-full select-none overflow-hidden bg-[#CDE7F0] font-sans">
+      {/* 3D Canvas Mounting Point */}
       <div
         ref={containerRef}
-        id="netizencity-3d-canvas"
-        onContextMenu={(e) => e.preventDefault()}
-        className="w-full h-full absolute inset-0 cursor-grab active:cursor-grabbing touch-none"
+        className="w-full h-full touch-none select-none cursor-grab active:cursor-grabbing outline-none"
       />
 
       {/* ============================================================ */}
-      {/* GAME ENVIRONMENT CONTROLS: Time of Day, Camera & Destination */}
-      {/* Positioned cleanly below the top HUD (responsive & non-intrusive) */}
+      {/* TOP CANVAS CONTROLS (Time & Camera / Exit Tugu)              */}
       {/* ============================================================ */}
-      <div className="absolute top-14 sm:top-16 left-2 sm:left-4 z-20 flex flex-wrap items-center gap-1.5 sm:gap-2 pointer-events-auto">
-        {/* Mobile controls toggle pill on small screens */}
-        <button
-          type="button"
-          onClick={() => setShowMobileControls(!showMobileControls)}
-          className="sm:hidden p-1.5 rounded-lg bg-[#F7F4E9] border border-[#D8CEBE] shadow-xs text-[#343B35] flex items-center gap-1 text-[11px] font-heading font-bold"
-        >
-          <SlidersHorizontal className="w-3.5 h-3.5 text-[#78634B]" />
-          <span>{showMobileControls ? 'Sembunyikan' : 'Kontrol'}</span>
-        </button>
-
-        {showMobileControls && (
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 animate-in fade-in">
-            {/* 1. Time of Day Segmented Control (Solid, Restrained Game Palette) */}
-            <div className="flex items-center bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-0.5 shadow-[0_3px_10px_rgba(52,59,53,0.08)]">
+      <div className="absolute top-14 sm:top-16 left-3 sm:left-4 z-20 flex flex-col space-y-2 pointer-events-auto font-sans">
+        {viewMode === 'tugu' ? (
+          <button
+            type="button"
+            onClick={handleExitTugu}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] font-semibold text-xs border border-[#D8CEBE] shadow-md transition-colors cursor-pointer"
+          >
+            <Compass className="w-3.5 h-3.5 text-[#668B65]" />
+            <span>Kembali ke Orbit Kota</span>
+          </button>
+        ) : (
+          <div className="flex flex-col space-y-1.5">
+            {/* 4-Segment Time of Day Control */}
+            <div className="flex items-center bg-[#F7F4E9] p-0.5 rounded-xl border border-[#D8CEBE] shadow-xs">
               <button
                 type="button"
                 onClick={() => handleTimeChange('morning')}
-                title="Pagi (Sunrise)"
-                className={`flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
+                title="Pagi"
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   timeOfDay === 'morning'
-                    ? 'bg-[#EFE9D8] text-[#78634B] shadow-xs'
-                    : 'text-[#78634B]/70 hover:text-[#343B35]'
+                    ? 'bg-[#668B65] text-white shadow-xs'
+                    : 'text-[#78634B] hover:bg-[#EFE9D8]'
                 }`}
               >
-                <Sunrise className="w-3.5 h-3.5 text-[#E6C66F]" />
-                <span className="hidden md:inline text-[11px]">Pagi</span>
+                <Sunrise className="w-3.5 h-3.5" />
               </button>
-
               <button
                 type="button"
                 onClick={() => handleTimeChange('noon')}
-                title="Siang (Daylight)"
-                className={`flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
+                title="Siang"
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   timeOfDay === 'noon'
-                    ? 'bg-[#EFE9D8] text-[#78634B] shadow-xs'
-                    : 'text-[#78634B]/70 hover:text-[#343B35]'
+                    ? 'bg-[#668B65] text-white shadow-xs'
+                    : 'text-[#78634B] hover:bg-[#EFE9D8]'
                 }`}
               >
-                <Sun className="w-3.5 h-3.5 text-[#E6C66F]" />
-                <span className="hidden md:inline text-[11px]">Siang</span>
+                <Sun className="w-3.5 h-3.5" />
               </button>
-
               <button
                 type="button"
                 onClick={() => handleTimeChange('sunset')}
-                title="Sore (Sunset)"
-                className={`flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
+                title="Sore"
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   timeOfDay === 'sunset'
-                    ? 'bg-[#EFE9D8] text-[#78634B] shadow-xs'
-                    : 'text-[#78634B]/70 hover:text-[#343B35]'
+                    ? 'bg-[#668B65] text-white shadow-xs'
+                    : 'text-[#78634B] hover:bg-[#EFE9D8]'
                 }`}
               >
-                <Sunset className="w-3.5 h-3.5 text-[#78634B]" />
-                <span className="hidden md:inline text-[11px]">Sore</span>
+                <Sunset className="w-3.5 h-3.5" />
               </button>
-
               <button
                 type="button"
                 onClick={() => handleTimeChange('night')}
-                title="Malam (City Lights & Stars)"
-                className={`flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
+                title="Malam"
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   timeOfDay === 'night'
-                    ? 'bg-[#343B35] text-[#F7F4E9] shadow-xs'
-                    : 'text-[#78634B]/70 hover:text-[#343B35]'
+                    ? 'bg-[#668B65] text-white shadow-xs'
+                    : 'text-[#78634B] hover:bg-[#EFE9D8]'
                 }`}
               >
-                <Moon className="w-3.5 h-3.5 text-[#A9C9D8]" />
-                <span className="hidden md:inline text-[11px]">Malam</span>
+                <Moon className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* 2. Camera Mode & Return Control */}
-            {viewMode === 'city' ? (
-              <div className="flex items-center space-x-1.5 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl px-2.5 py-1 shadow-[0_3px_10px_rgba(52,59,53,0.08)] text-[11px] font-heading font-bold text-[#343B35]">
-                <Compass className="w-3.5 h-3.5 text-[#668B65]" />
-                <span className="hidden sm:inline">Mode Orbit 360°</span>
-                <span className="sm:hidden">Orbit</span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-1.5">
-                <button
-                  type="button"
-                  onClick={handleExitTugu}
-                  className="px-2.5 py-1 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] font-heading font-bold text-[11px] border border-[#D8CEBE] shadow-xs flex items-center space-x-1 transition-transform cursor-pointer"
-                >
-                  <Landmark className="w-3.5 h-3.5 text-[#668B65]" />
-                  <span>Keluar Tugu</span>
-                </button>
-
-                <div className="flex items-center bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-0.5 shadow-xs">
-                  <button
-                    type="button"
-                    onClick={() => handleCameraChange('orbit')}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-heading font-bold transition-all cursor-pointer ${
-                      cameraMode === 'orbit'
-                        ? 'bg-[#EFE9D8] text-[#343B35]'
-                        : 'text-[#78634B] hover:text-[#343B35]'
-                    }`}
-                  >
-                    Orbit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCameraChange('follow')}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-heading font-bold transition-all cursor-pointer ${
-                      cameraMode === 'follow'
-                        ? 'bg-[#668B65] text-white'
-                        : 'text-[#78634B] hover:text-[#343B35]'
-                    }`}
-                  >
-                    Karakter
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 3. Landmark Destination Selector */}
+            {/* Landmark Destination Switcher */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowLandmarkMenu(!showLandmarkMenu)}
-                className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-2.5 py-1 text-[11px] font-heading font-bold text-[#343B35] shadow-[0_3px_10px_rgba(52,59,53,0.08)] transition-all cursor-pointer"
+                className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] px-2.5 py-1.5 rounded-xl border border-[#D8CEBE] shadow-xs text-xs font-semibold cursor-pointer transition-colors"
               >
                 <Navigation className="w-3.5 h-3.5 text-[#668B65]" />
-                <span className="hidden sm:inline">Kunjungi Landmark</span>
+                <span className="hidden sm:inline">Tujuan Landmark</span>
                 <span className="sm:hidden">Landmark</span>
                 <ChevronDown className="w-3 h-3 text-[#78634B]" />
               </button>
 
               {showLandmarkMenu && (
-                <div className="absolute top-full left-0 mt-1.5 w-64 max-h-72 overflow-y-auto bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl shadow-xl p-1.5 z-50 flex flex-col space-y-1 font-sans text-xs">
+                <div className="absolute top-full mt-1.5 left-0 w-56 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1.5 shadow-lg z-50 flex flex-col space-y-1">
                   <button
                     type="button"
                     onClick={() => handleFlyTo('monument')}
-                    className="flex items-center space-x-2 text-left p-2 rounded-lg text-[#343B35] bg-[#EFE9D8] hover:bg-[#E2DAC7] font-bold transition-colors cursor-pointer"
+                    className="flex items-center space-x-2 text-left p-1.5 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
                   >
                     <Landmark className="w-4 h-4 text-[#668B65] shrink-0" />
                     <div>
-                      <div className="font-heading font-bold text-xs text-[#343B35]">Alun-Alun Tugu</div>
-                      <div className="text-[10px] text-[#78634B]">Kumpul Warga &amp; Eksplorasi</div>
+                      <div className="font-semibold text-xs text-[#668B65]">Alun-Alun Tugu</div>
+                      <div className="text-[10px] text-[#78634B]">Pusat Kota &bull; Kunjungi Langsung</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleFlyTo('city_hall')}
-                    className="flex items-center space-x-2 text-left p-2 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
+                    className="flex items-center space-x-2 text-left p-1.5 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
                   >
                     <Building2 className="w-4 h-4 text-[#78634B] shrink-0" />
                     <div>
-                      <div className="font-heading font-semibold text-xs">Balai Kota (City Hall)</div>
-                      <div className="text-[10px] text-[#78634B]">Pemerintahan &amp; Kantor Mayor</div>
+                      <div className="font-semibold text-xs">Balai Kota Netizen</div>
+                      <div className="text-[10px] text-[#78634B]">Pusat Administrasi &bull; Polling</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleFlyTo('netizen_mall')}
-                    className="flex items-center space-x-2 text-left p-2 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
+                    onClick={() => handleFlyTo('mall')}
+                    className="flex items-center space-x-2 text-left p-1.5 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
                   >
                     <ShoppingBag className="w-4 h-4 text-[#78634B] shrink-0" />
                     <div>
-                      <div className="font-heading font-semibold text-xs">Netizen Mall</div>
-                      <div className="text-[10px] text-[#78634B]">Toko Busana &amp; Aksesoris</div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleFlyTo('sports_stadium')}
-                    className="flex items-center space-x-2 text-left p-2 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
-                  >
-                    <Trophy className="w-4 h-4 text-[#78634B] shrink-0" />
-                    <div>
-                      <div className="font-heading font-semibold text-xs">Stadion Kota</div>
-                      <div className="text-[10px] text-[#78634B]">Tribun &amp; Lintasan Atletik</div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleFlyTo('airport')}
-                    className="flex items-center space-x-2 text-left p-2 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
-                  >
-                    <Plane className="w-4 h-4 text-[#78634B] shrink-0" />
-                    <div>
-                      <div className="font-heading font-semibold text-xs">Bandara Internasional</div>
-                      <div className="text-[10px] text-[#78634B]">Terminal &amp; Landasan Pesawat</div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleFlyTo('university')}
-                    className="flex items-center space-x-2 text-left p-2 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
-                  >
-                    <GraduationCap className="w-4 h-4 text-[#78634B] shrink-0" />
-                    <div>
-                      <div className="font-heading font-semibold text-xs">Universitas Netizen</div>
-                      <div className="text-[10px] text-[#78634B]">Gedung Rektorat &amp; Sains</div>
+                      <div className="font-semibold text-xs">Netizen Grand Mall</div>
+                      <div className="text-[10px] text-[#78634B]">Kawasan Belanja Busana</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleFlyTo('zoo')}
-                    className="flex items-center space-x-2 text-left p-2 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
+                    className="flex items-center space-x-2 text-left p-1.5 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
                   >
                     <Dog className="w-4 h-4 text-[#78634B] shrink-0" />
                     <div>
-                      <div className="font-heading font-semibold text-xs">Kebun Binatang Safari</div>
-                      <div className="text-[10px] text-[#78634B]">Habitat Hewan &amp; Flamingo</div>
+                      <div className="font-semibold text-xs">Kebun Binatang Safari</div>
+                      <div className="text-[10px] text-[#78634B]">Habitat Hewan Kota</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleFlyTo('nature_mountain')}
-                    className="flex items-center space-x-2 text-left p-2 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
+                    className="flex items-center space-x-2 text-left p-1.5 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
                   >
                     <Mountain className="w-4 h-4 text-[#78634B] shrink-0" />
                     <div>
-                      <div className="font-heading font-semibold text-xs">Gunung &amp; Air Terjun</div>
-                      <div className="text-[10px] text-[#78634B]">Kawasan Alam &amp; Sungai</div>
+                      <div className="font-semibold text-xs">Gunung &amp; Air Terjun</div>
+                      <div className="text-[10px] text-[#78634B]">Kawasan Wisata Alam</div>
                     </div>
                   </button>
                 </div>
@@ -411,105 +501,130 @@ export default function GameCanvas() {
       </div>
 
       {/* ============================================================ */}
-      {/* TACTILE ON-SCREEN ZOOM BUTTONS (Mobile & Desktop Accessibility) */}
+      {/* TUGU MULTIPLAYER ROOM STATUS & SWITCHER (Max 10 per room)     */}
+      {/* ============================================================ */}
+      {viewMode === 'tugu' && (
+        <div className="absolute top-14 sm:top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowRoomSwitcher(!showRoomSwitcher)}
+              className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-3 py-1.5 shadow-md text-xs font-semibold text-[#343B35] cursor-pointer transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#668B65]" />
+              <span>Ruang #{currentRoomId}</span>
+              <span className="text-[11px] px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
+                {roomUserCount}/10 Warga
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-[#78634B]" />
+            </button>
+
+            {showRoomSwitcher && (
+              <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-60 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2 shadow-xl z-50 text-xs">
+                <div className="font-bold text-[10px] text-[#78634B] px-2 py-1 uppercase tracking-wide border-b border-[#D8CEBE] mb-1">
+                  Pilih Server Ruangan (Maks 10)
+                </div>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {allRooms.map((r) => {
+                    const isCurrent = r.roomId === currentRoomId
+                    return (
+                      <button
+                        key={r.roomId}
+                        type="button"
+                        disabled={r.isFull && !isCurrent}
+                        onClick={() => {
+                          setCurrentRoomId(r.roomId)
+                          setShowRoomSwitcher(false)
+                        }}
+                        className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-colors cursor-pointer ${
+                          isCurrent
+                            ? 'bg-[#668B65] text-white font-bold'
+                            : r.isFull
+                            ? 'bg-[#EFE9D8]/50 text-[#78634B]/50 cursor-not-allowed'
+                            : 'hover:bg-[#EFE9D8] text-[#343B35]'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5">
+                          {isCurrent && <Check className="w-3 h-3 text-white" />}
+                          {r.name}
+                        </span>
+                        <span className={`text-[10px] font-semibold ${isCurrent ? 'text-white' : 'text-[#78634B]'}`}>
+                          {r.isFull ? 'Penuh (10/10)' : `${r.userCount}/10 Warga`}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* TACTILE ON-SCREEN ZOOM BUTTONS                               */}
       {/* ============================================================ */}
       <div className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col space-y-1.5 pointer-events-auto">
         <button
           type="button"
           onClick={handleZoomIn}
-          title="Perbesar Kamera (Zoom In)"
-          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] shadow-[0_3px_10px_rgba(52,59,53,0.08)] flex items-center justify-center text-[#343B35] cursor-pointer transition-transform"
+          title="Zoom In"
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] shadow-sm flex items-center justify-center text-[#343B35] cursor-pointer transition-transform"
         >
           <Plus className="w-4 h-4" />
         </button>
         <button
           type="button"
           onClick={handleZoomOut}
-          title="Perkecil Kamera (Zoom Out)"
-          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] shadow-[0_3px_10px_rgba(52,59,53,0.08)] flex items-center justify-center text-[#343B35] cursor-pointer transition-transform"
+          title="Zoom Out"
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] shadow-sm flex items-center justify-center text-[#343B35] cursor-pointer transition-transform"
         >
           <Minus className="w-4 h-4" />
         </button>
       </div>
 
       {/* ============================================================ */}
-      {/* MOBILE VIRTUAL D-PAD (Only visible on mobile screens in Tugu mode) */}
+      {/* VIRTUAL ANALOG JOYSTICK (Tugu Mode on Touch/Mobile Screens)  */}
       {/* ============================================================ */}
       {viewMode === 'tugu' && (
-        <div className="sm:hidden absolute bottom-20 left-3 z-30 pointer-events-auto flex flex-col items-center">
-          <button
-            type="button"
-            onPointerDown={() => handleVirtualDirection({ x: 0, y: -1 })}
-            onPointerUp={() => handleVirtualDirection(null)}
-            onPointerCancel={() => handleVirtualDirection(null)}
-            className="w-10 h-10 rounded-lg bg-[#F7F4E9]/90 active:bg-[#668B65] active:text-white border border-[#D8CEBE] shadow-md flex items-center justify-center text-[#343B35] mb-1"
-          >
-            <ChevronUp className="w-5 h-5" />
-          </button>
-          <div className="flex space-x-1">
-            <button
-              type="button"
-              onPointerDown={() => handleVirtualDirection({ x: -1, y: 0 })}
-              onPointerUp={() => handleVirtualDirection(null)}
-              onPointerCancel={() => handleVirtualDirection(null)}
-              className="w-10 h-10 rounded-lg bg-[#F7F4E9]/90 active:bg-[#668B65] active:text-white border border-[#D8CEBE] shadow-md flex items-center justify-center text-[#343B35]"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onPointerDown={() => handleVirtualDirection({ x: 0, y: 1 })}
-              onPointerUp={() => handleVirtualDirection(null)}
-              onPointerCancel={() => handleVirtualDirection(null)}
-              className="w-10 h-10 rounded-lg bg-[#F7F4E9]/90 active:bg-[#668B65] active:text-white border border-[#D8CEBE] shadow-md flex items-center justify-center text-[#343B35]"
-            >
-              <ChevronDown className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onPointerDown={() => handleVirtualDirection({ x: 1, y: 0 })}
-              onPointerUp={() => handleVirtualDirection(null)}
-              onPointerCancel={() => handleVirtualDirection(null)}
-              className="w-10 h-10 rounded-lg bg-[#F7F4E9]/90 active:bg-[#668B65] active:text-white border border-[#D8CEBE] shadow-md flex items-center justify-center text-[#343B35]"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
+        <div className="absolute bottom-16 sm:bottom-20 left-3 sm:left-6 z-30 pointer-events-auto">
+          <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}
 
       {/* ============================================================ */}
       {/* COMPACT PLAYER GUIDANCE PANEL (Bottom-Left)                 */}
       {/* ============================================================ */}
-      <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 z-20 pointer-events-auto font-sans">
+      <div className="absolute bottom-2.5 sm:bottom-3 left-3 sm:left-4 z-20 pointer-events-auto font-sans">
         {showHelpHint ? (
-          <div className="w-64 sm:w-72 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2.5 shadow-lg text-[11px] text-[#343B35] animate-in fade-in">
+          <div className="w-64 sm:w-72 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2.5 shadow-lg text-[11px] text-[#343B35]">
             <div className="flex items-center justify-between pb-1.5 border-b border-[#D8CEBE] mb-1.5">
-              <span className="font-heading font-bold text-xs flex items-center gap-1.5 text-[#343B35]">
+              <span className="font-bold text-xs flex items-center gap-1.5 text-[#343B35]">
                 <Info className="w-3.5 h-3.5 text-[#668B65]" />
                 {viewMode === 'city' ? 'Panduan Kota 3D' : 'Panduan Alun-Alun'}
               </span>
               <button
                 type="button"
                 onClick={() => setShowHelpHint(false)}
-                className="text-[#78634B] hover:text-[#343B35] p-0.5 cursor-pointer"
+                className="text-[#78634B] hover:text-[#343B35] p-0.5 rounded cursor-pointer"
               >
-                ✕
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
+
             <div className="space-y-1 text-[#78634B]">
               {viewMode === 'city' ? (
                 <>
                   <div>• <strong className="text-[#343B35]">Geser 1 Jari / Mouse:</strong> Putar orbit kota</div>
                   <div>• <strong className="text-[#343B35]">Cubit 2 Jari / Scroll:</strong> Zoom in &amp; out</div>
                   <div>• <strong className="text-[#343B35]">Geser 2 Jari:</strong> Pindah pandangan kamera</div>
-                  <div>• <strong className="text-[#343B35]">Klik Tugu:</strong> Kunjungi Alun-Alun Warga</div>
+                  <div>• <strong className="text-[#343B35]">Klik Landmark / Tugu:</strong> Kunjungi Alun-Alun Warga</div>
                 </>
               ) : (
                 <>
-                  <div>• <strong className="text-[#343B35]">D-Pad / WASD / Tap:</strong> Gerakkan karakter</div>
-                  <div>• <strong className="text-[#343B35]">Obrolan Warga:</strong> Kirim pesan ke seluruh warga</div>
-                  <div>• <strong className="text-[#343B35]">Keluar Tugu:</strong> Kembali ke orbit kota utama</div>
+                  <div>• <strong className="text-[#343B35]">Analog / WASD:</strong> Gerakkan karakter 360°</div>
+                  <div>• <strong className="text-[#343B35]">Obrolan Kota:</strong> Mengobrol bersama warga satu ruangan</div>
+                  <div>• <strong className="text-[#343B35]">Ruangan:</strong> Maksimal 10 warga per ruangan</div>
                 </>
               )}
             </div>
@@ -518,7 +633,7 @@ export default function GameCanvas() {
           <button
             type="button"
             onClick={() => setShowHelpHint(true)}
-            className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-2.5 py-1 text-[11px] font-heading font-bold text-[#343B35] shadow-sm cursor-pointer transition-colors"
+            className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-2.5 py-1 text-[11px] font-semibold text-[#343B35] shadow-sm cursor-pointer transition-colors"
           >
             <Info className="w-3.5 h-3.5 text-[#668B65]" />
             <span>Panduan</span>
@@ -527,65 +642,86 @@ export default function GameCanvas() {
       </div>
 
       {/* ============================================================ */}
-      {/* FLOATING LANDMARK INFO POPUP (City Mode)                     */}
+      {/* FLOATING LANDMARK INFO POPUP (Rendered via Portal, Centered)  */}
       {/* ============================================================ */}
-      {selectedLandmarkInfo && viewMode === 'city' && (
-        <div className="absolute bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 z-40 w-[90%] max-w-sm bg-[#F7F4E9] border border-[#D8CEBE] rounded-2xl p-3 shadow-xl transition-all font-sans pointer-events-auto">
-          <div className="flex items-start justify-between gap-2.5">
-            <div className="flex items-center space-x-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#668B65] shrink-0">
-                <Landmark className="w-4 h-4" />
+      {mounted && selectedLandmarkInfo && viewMode === 'city' && createPortal(
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-[#343B35]/25 backdrop-blur-xs font-sans">
+          <div
+            className="w-full max-w-sm bg-[#F7F4E9] border border-[#D8CEBE] rounded-2xl p-4 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-2.5">
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#668B65] shrink-0">
+                  <Landmark className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-[#668B65] bg-[#668B65]/15 px-1.5 py-0.2 rounded border border-[#668B65]/30">
+                    {selectedLandmarkInfo.district}
+                  </span>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#343B35] mt-0.5 truncate">
+                    {selectedLandmarkInfo.name}
+                  </h4>
+                </div>
               </div>
-              <div className="min-w-0">
-                <span className="text-[9px] font-heading font-bold uppercase tracking-wider text-[#668B65] bg-[#E6F0E4] px-1.5 py-0.2 rounded-md border border-[#C5D8C4]">
-                  {selectedLandmarkInfo.district}
-                </span>
-                <h4 className="text-xs font-heading font-extrabold text-[#343B35] mt-0.5 truncate">
-                  {selectedLandmarkInfo.name}
-                </h4>
-              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedLandmarkInfo(null)}
+                className="p-1 rounded-lg text-[#78634B] hover:text-[#343B35] hover:bg-[#EFE9D8] cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setSelectedLandmarkInfo(null)}
-              className="p-1 rounded-lg text-[#78634B] hover:text-[#343B35] cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+            <p className="text-xs text-[#78634B] mt-2 leading-relaxed">
+              Titik landmark kota terdaftar. Klik tombol di bawah untuk mengarahkan kamera ke lokasi ini.
+            </p>
 
-          <div className="mt-2.5 pt-2 border-t border-[#D8CEBE] flex items-center justify-end space-x-2">
-            <button
-              type="button"
-              onClick={() => {
-                cityManagerRef.current?.flyToLandmark(selectedLandmarkInfo.id)
-              }}
-              className="px-2.5 py-1 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] font-heading font-bold text-xs border border-[#D8CEBE] flex items-center space-x-1 cursor-pointer transition-colors"
-            >
-              <Eye className="w-3.5 h-3.5 text-[#668B65]" />
-              <span>Arahkan Kamera</span>
-            </button>
+            <div className="mt-3 pt-2.5 border-t border-[#D8CEBE] flex items-center justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setSelectedLandmarkInfo(null)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#343B35] bg-[#EFE9D8] hover:bg-[#E2DACB] border border-[#D8CEBE] transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  cityManagerRef.current?.flyToLandmark(selectedLandmarkInfo.id)
+                  setSelectedLandmarkInfo(null)
+                }}
+                className="px-3.5 py-1.5 rounded-lg bg-[#668B65] hover:bg-[#557754] text-white font-semibold text-xs border border-[#557754] flex items-center space-x-1 cursor-pointer transition-colors shadow-xs"
+              >
+                <Eye className="w-3.5 h-3.5 mr-1" />
+                <span>Arahkan Kamera</span>
+              </button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================ */}
-      {/* POPUP MODAL: "MAU MENGUNJUNGI TUGU?"                         */}
+      {/* POPUP MODAL: "MAU MENGUNJUNGI TUGU?" (Rendered via Portal)   */}
       {/* ============================================================ */}
-      {tuguConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#343B35]/40 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-[#F7F4E9] border border-[#D8CEBE] rounded-2xl p-5 shadow-2xl relative font-sans animate-in fade-in zoom-in-95">
+      {mounted && tuguConfirmOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#343B35]/50 backdrop-blur-xs font-sans">
+          <div
+            className="w-full max-w-sm bg-[#F7F4E9] border border-[#D8CEBE] rounded-2xl p-4 sm:p-5 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center space-x-2.5">
                 <div className="w-10 h-10 rounded-xl bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#668B65]">
                   <Landmark className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-heading font-extrabold text-[#343B35]">
+                  <h3 className="text-sm font-bold text-[#343B35]">
                     Kunjungi Alun-Alun Tugu?
                   </h3>
-                  <span className="text-[10px] text-[#4F6E4E] font-heading font-bold bg-[#E6F0E4] px-1.5 py-0.2 rounded-md border border-[#C5D8C4]">
+                  <span className="text-[10px] text-[#668B65] font-semibold bg-[#668B65]/15 px-1.5 py-0.2 rounded border border-[#668B65]/30">
                     Pusat Komunitas
                   </span>
                 </div>
@@ -593,66 +729,55 @@ export default function GameCanvas() {
               <button
                 type="button"
                 onClick={() => setTuguConfirmOpen(false)}
-                className="text-[#78634B] hover:text-[#343B35] p-1 cursor-pointer"
+                className="text-[#78634B] hover:text-[#343B35] p-1 rounded-lg hover:bg-[#EFE9D8] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-[#78634B] leading-relaxed mb-3">
-              Kunjungi area <strong className="text-[#343B35]">Alun-Alun Monumen Tugu</strong> untuk berjalan-jalan bersama karaktermu dan saling mengobrol bersama seluruh warga Netizen City secara langsung!
+            <p className="text-xs text-[#78634B] leading-relaxed mb-4">
+              Masuk ke area khusus Alun-Alun Tugu untuk mengendalikan karaktermu secara bebas dengan analog joystick, mengobrol langsung, dan berkumpul dengan sesama warga dalam ruangan komunitas (maksimal 10 warga per ruangan).
             </p>
 
-            <div className="p-3 bg-[#EFE9D8] rounded-xl border border-[#D8CEBE] space-y-1.5 mb-4 text-[11px] text-[#78634B]">
-              <div className="flex items-center space-x-2 text-[#343B35] font-heading font-bold">
-                <User className="w-3.5 h-3.5 text-[#668B65]" />
-                <span>Karakter Aktif &amp; Bebas Bergerak</span>
-              </div>
-              <div className="flex items-center space-x-2 text-[#343B35] font-heading font-bold">
-                <MessageSquare className="w-3.5 h-3.5 text-[#668B65]" />
-                <span>Obrolan Komunitas Warga</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-[#D8CEBE]">
+            <div className="flex items-center justify-end space-x-2">
               <button
                 type="button"
                 onClick={() => setTuguConfirmOpen(false)}
-                className="px-3 py-1.5 rounded-xl text-xs font-heading font-bold text-[#78634B] hover:text-[#343B35] cursor-pointer"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#343B35] bg-[#EFE9D8] hover:bg-[#E2DACB] border border-[#D8CEBE] transition-colors cursor-pointer"
               >
                 Batal
               </button>
-
               <button
                 type="button"
                 onClick={handleEnterTugu}
-                className="px-4 py-2 rounded-xl bg-[#668B65] hover:bg-[#547553] text-white font-heading font-bold text-xs shadow-sm flex items-center space-x-1.5 active:translate-y-0.5 transition-all cursor-pointer"
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#668B65] hover:bg-[#557754] border border-[#557754] shadow-sm flex items-center space-x-1.5 transition-colors cursor-pointer"
               >
-                <span>Kunjungi Sekarang</span>
+                <span>Masuk Sekarang</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================ */}
       {/* MAP TRANSITION LOADING SCREEN                                */}
       {/* ============================================================ */}
       {isTransitioning && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#343B35]/90 backdrop-blur-sm text-white font-sans animate-in fade-in">
-          <div className="w-14 h-14 rounded-2xl bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#668B65] mb-3 shadow-md animate-bounce">
-            <Compass className="w-7 h-7" />
+        <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-[#343B35]/90 backdrop-blur-sm text-white font-sans animate-in fade-in">
+          <div className="w-12 h-12 rounded-2xl bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#668B65] mb-3 shadow-md animate-bounce">
+            <Compass className="w-6 h-6" />
           </div>
-          <h2 className="text-base font-heading font-black tracking-wide text-[#F7F4E9] mb-1">
+          <h2 className="text-sm sm:text-base font-bold tracking-wide text-[#F7F4E9] mb-1">
             {transitionMessage}
           </h2>
-          <p className="text-xs text-[#A9C9D8] font-medium text-center max-w-xs">
+          <p className="text-xs text-[#A9C9D8] font-normal text-center max-w-xs">
             {transitionMessage.includes('Alun-Alun')
-              ? 'Memuat peta khusus Alun-Alun Tugu & warga...'
+              ? 'Menghubungkan ke server ruangan Alun-Alun Tugu...'
               : 'Memuat peta diorama 3D kota utama...'}
           </p>
-          <div className="w-40 h-1.5 bg-white/20 rounded-full mt-4 overflow-hidden">
+          <div className="w-36 h-1 bg-white/20 rounded-full mt-3 overflow-hidden">
             <div className="w-full h-full bg-[#668B65] rounded-full animate-pulse" />
           </div>
         </div>

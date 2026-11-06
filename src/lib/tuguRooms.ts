@@ -1,0 +1,243 @@
+// ============================================================
+// NETIZENCITY - Tugu Alun-Alun Multiplayer Room Manager
+// Server-side presence and position synchronization for Tugu
+// Enforces max 10 users per room/server instance
+// ============================================================
+
+export interface TuguPlayer {
+  id: string
+  name: string
+  isGuest: boolean
+  x: number
+  z: number
+  facing: number
+  avatarConfig?: any
+  lastSeen: number
+  lastChat?: { text: string; time: number }
+}
+
+export interface RoomSummary {
+  roomId: string
+  name: string
+  userCount: number
+  maxCapacity: number
+  isFull: boolean
+}
+
+const MAX_ROOM_CAPACITY = 10
+const PLAYER_TIMEOUT_MS = 12 * 1000 // 12 seconds timeout
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __netizen_tugu_rooms: Map<string, Map<string, TuguPlayer>> | undefined
+}
+
+function getRoomsMap(): Map<string, Map<string, TuguPlayer>> {
+  if (!globalThis.__netizen_tugu_rooms) {
+    globalThis.__netizen_tugu_rooms = new Map<string, Map<string, TuguPlayer>>()
+    // Always initialize at least room-1
+    globalThis.__netizen_tugu_rooms.set('1', new Map<string, TuguPlayer>())
+  }
+  return globalThis.__netizen_tugu_rooms
+}
+
+/**
+ * Remove stale players who haven't pinged within PLAYER_TIMEOUT_MS
+ */
+export function pruneStalePlayers() {
+  const rooms = getRoomsMap()
+  const now = Date.now()
+
+  for (const [roomId, playerMap] of rooms.entries()) {
+    for (const [playerId, player] of playerMap.entries()) {
+      if (now - player.lastSeen > PLAYER_TIMEOUT_MS) {
+        playerMap.delete(playerId)
+      }
+    }
+    // Keep room '1' always, but prune empty higher rooms if empty for a while
+    if (roomId !== '1' && playerMap.size === 0) {
+      rooms.delete(roomId)
+    }
+  }
+}
+
+/**
+ * Get summary of all active rooms
+ */
+export function getRoomsSummary(): RoomSummary[] {
+  pruneStalePlayers()
+  const rooms = getRoomsMap()
+
+  // Ensure room 1 exists
+  if (!rooms.has('1')) {
+    rooms.set('1', new Map())
+  }
+
+  const summaries: RoomSummary[] = []
+  const sortedRoomIds = Array.from(rooms.keys()).sort((a, b) => parseInt(a, 10) - parseInt(b, 10))
+
+  for (const roomId of sortedRoomIds) {
+    const playerMap = rooms.get(roomId)!
+    summaries.push({
+      roomId,
+      name: `Ruang #${roomId}`,
+      userCount: playerMap.size,
+      maxCapacity: MAX_ROOM_CAPACITY,
+      isFull: playerMap.size >= MAX_ROOM_CAPACITY,
+    })
+  }
+
+  // If the last room is full, show the next available room ready for joiners
+  const lastSummary = summaries[summaries.length - 1]
+  if (lastSummary && lastSummary.isFull) {
+    const nextId = (parseInt(lastSummary.roomId, 10) + 1).toString()
+    summaries.push({
+      roomId: nextId,
+      name: `Ruang #${nextId}`,
+      userCount: 0,
+      maxCapacity: MAX_ROOM_CAPACITY,
+      isFull: false,
+    })
+  }
+
+  return summaries
+}
+
+/**
+ * Join or update player position in a room
+ */
+export function syncPlayerInRoom(params: {
+  clientId: string
+  name: string
+  isGuest: boolean
+  x: number
+  z: number
+  facing: number
+  avatarConfig?: any
+  preferredRoomId?: string
+  chatText?: string
+}): {
+  roomId: string
+  userCount: number
+  maxCapacity: number
+  players: Array<{
+    id: string
+    name: string
+    isGuest: boolean
+    x: number
+    z: number
+    facing: number
+    avatarConfig?: any
+    lastChat?: { text: string; time: number }
+  }>
+  allRooms: RoomSummary[]
+} {
+  pruneStalePlayers()
+  const rooms = getRoomsMap()
+  const { clientId, name, isGuest, x, z, facing, avatarConfig, preferredRoomId, chatText } = params
+  const now = Date.now()
+
+  // Find if player is currently in any room
+  let currentRoomId: string | null = null
+  for (const [rId, playerMap] of rooms.entries()) {
+    if (playerMap.has(clientId)) {
+      currentRoomId = rId
+      break
+    }
+  }
+
+  let targetRoomId = preferredRoomId || currentRoomId || '1'
+
+  // If player requested a room switch or has no room, check capacity
+  if (targetRoomId !== currentRoomId) {
+    const targetMap = rooms.get(targetRoomId)
+    if (targetMap && targetMap.size >= MAX_ROOM_CAPACITY && !targetMap.has(clientId)) {
+      // Preferred room is full, find first available room
+      let foundAvailable = false
+      for (const [rId, playerMap] of rooms.entries()) {
+        if (playerMap.size < MAX_ROOM_CAPACITY) {
+          targetRoomId = rId
+          foundAvailable = true
+          break
+        }
+      }
+      if (!foundAvailable) {
+        // Create next room
+        const nextNum = rooms.size + 1
+        targetRoomId = nextNum.toString()
+        rooms.set(targetRoomId, new Map())
+      }
+    } else if (!targetMap) {
+      rooms.set(targetRoomId, new Map())
+    }
+
+    // Remove from previous room if switching
+    if (currentRoomId && currentRoomId !== targetRoomId) {
+      rooms.get(currentRoomId)?.delete(clientId)
+    }
+  }
+
+  const roomMap = rooms.get(targetRoomId)!
+
+  const existingPlayer = roomMap.get(clientId)
+  const lastChat = chatText
+    ? { text: chatText, time: now }
+    : existingPlayer?.lastChat
+
+  roomMap.set(clientId, {
+    id: clientId,
+    name: name || 'Pengunjung',
+    isGuest: Boolean(isGuest),
+    x,
+    z,
+    facing,
+    avatarConfig: avatarConfig || existingPlayer?.avatarConfig,
+    lastSeen: now,
+    lastChat,
+  })
+
+  // Collect other players in this room
+  const playersList: Array<{
+    id: string
+    name: string
+    isGuest: boolean
+    x: number
+    z: number
+    facing: number
+    avatarConfig?: any
+    lastChat?: { text: string; time: number }
+  }> = []
+
+  for (const p of roomMap.values()) {
+    playersList.push({
+      id: p.id,
+      name: p.name,
+      isGuest: p.isGuest,
+      x: p.x,
+      z: p.z,
+      facing: p.facing,
+      avatarConfig: p.avatarConfig,
+      lastChat: p.lastChat,
+    })
+  }
+
+  return {
+    roomId: targetRoomId,
+    userCount: roomMap.size,
+    maxCapacity: MAX_ROOM_CAPACITY,
+    players: playersList,
+    allRooms: getRoomsSummary(),
+  }
+}
+
+/**
+ * Leave Tugu room
+ */
+export function removePlayerFromTugu(clientId: string) {
+  const rooms = getRoomsMap()
+  for (const playerMap of rooms.values()) {
+    if (playerMap.has(clientId)) {
+      playerMap.delete(clientId)
+    }
+  }
+}
