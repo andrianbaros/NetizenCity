@@ -73,7 +73,7 @@ function AnalogJoystick({
     const dx = clientX - centerX
     const dy = clientY - centerY
     const dist = Math.hypot(dx, dy)
-    const maxRadius = 36
+    const maxRadius = Math.max(22, rect.width / 2 - 14)
 
     let clampedX = dx
     let clampedY = dy
@@ -123,21 +123,21 @@ function AnalogJoystick({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="relative w-26 h-26 rounded-full bg-[#F7F4E9]/90 border-2 border-[#D8CEBE] shadow-xl backdrop-blur-xs flex items-center justify-center touch-none select-none pointer-events-auto"
+      className="relative w-22 h-22 sm:w-26 sm:h-26 rounded-full bg-[#F7F4E9]/95 border-2 border-[#D8CEBE] shadow-xl backdrop-blur-xs flex items-center justify-center touch-none select-none pointer-events-auto"
       title="Analog Joystick Karakter"
     >
       {/* Decorative concentric indicator */}
-      <div className="absolute w-14 h-14 rounded-full border border-[#D8CEBE]/80 pointer-events-none" />
+      <div className="absolute w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-[#D8CEBE]/80 pointer-events-none" />
       <div className="absolute w-2 h-2 rounded-full bg-[#78634B]/30 pointer-events-none" />
 
       {/* Movable Knob */}
       <div
-        className="w-12 h-12 rounded-full bg-[#668B65] border-2 border-[#527251] shadow-md flex items-center justify-center pointer-events-none transition-transform duration-75"
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#668B65] border-2 border-[#527251] shadow-md flex items-center justify-center pointer-events-none transition-transform duration-75"
         style={{
           transform: `translate3d(${knobPos.x}px, ${knobPos.y}px, 0)`,
         }}
       >
-        <div className="w-4 h-4 rounded-full bg-white/40" />
+        <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white/40" />
       </div>
     </div>
   )
@@ -409,7 +409,7 @@ export default function GameCanvas() {
       {/* ============================================================ */}
       {/* TOP CANVAS CONTROLS (Time & Camera / Exit Tugu)              */}
       {/* ============================================================ */}
-      <div className="absolute top-[48px] sm:top-16 left-2 sm:left-4 z-20 flex flex-col space-y-2 pointer-events-auto font-sans">
+      <div className="absolute top-13 sm:top-16 left-2 sm:left-4 z-20 pointer-events-auto font-sans">
         {viewMode === 'tugu' ? (
           <button
             type="button"
@@ -420,9 +420,9 @@ export default function GameCanvas() {
             <span>Kembali ke Kota</span>
           </button>
         ) : (
-          <div className="flex flex-col space-y-1.5">
+          <div className="flex items-center space-x-1.5 flex-wrap gap-y-1.5">
             {/* 4-Segment Time of Day Control */}
-            <div className="flex items-center bg-[#F7F4E9] p-0.5 rounded-xl border border-[#D8CEBE] shadow-xs">
+            <div className="flex items-center bg-[#F7F4E9] p-0.5 rounded-xl border border-[#D8CEBE] shadow-xs shrink-0">
               <button
                 type="button"
                 onClick={() => handleTimeChange('morning')}
@@ -474,11 +474,11 @@ export default function GameCanvas() {
             </div>
 
             {/* Landmark Destination Switcher */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setShowLandmarkMenu(!showLandmarkMenu)}
-                className="flex items-center space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] px-2.5 py-1.5 rounded-xl border border-[#D8CEBE] shadow-xs text-xs font-semibold cursor-pointer transition-colors"
+                className="flex items-center space-x-1 sm:space-x-1.5 bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] px-2 sm:px-2.5 py-1.5 rounded-xl border border-[#D8CEBE] shadow-xs text-[11px] sm:text-xs font-semibold cursor-pointer transition-colors"
               >
                 <Navigation className="w-3.5 h-3.5 text-[#668B65]" />
                 <span className="hidden sm:inline">Tujuan Landmark</span>
@@ -558,7 +558,7 @@ export default function GameCanvas() {
       {/* TUGU MULTIPLAYER ROOM STATUS & SWITCHER (Max 10 per room)     */}
       {/* ============================================================ */}
       {viewMode === 'tugu' && (
-        <div className="absolute top-2 sm:top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-1 sm:gap-2">
+        <div className="absolute top-2 sm:top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Room Switcher Pill */}
           <div className="relative">
             <button
@@ -567,11 +567,12 @@ export default function GameCanvas() {
                 setShowRoomSwitcher(!showRoomSwitcher)
                 setShowRoster(false)
               }}
-              className="flex items-center space-x-1 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-2 sm:px-3 py-1 sm:py-1.5 shadow-sm text-[11px] sm:text-xs font-semibold text-[#343B35] cursor-pointer transition-colors"
+              className="flex items-center space-x-1 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-1.5 sm:px-3 py-1 sm:py-1.5 shadow-sm text-[10px] sm:text-xs font-semibold text-[#343B35] cursor-pointer transition-colors shrink-0"
             >
-              <span className="w-2 h-2 rounded-full bg-[#668B65]" />
-              <span>Ruang #{currentRoomId}</span>
-              <span className="text-[10px] sm:text-[11px] px-1 sm:px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#668B65]" />
+              <span className="sm:hidden">R#{currentRoomId}</span>
+              <span className="hidden sm:inline">Ruang #{currentRoomId}</span>
+              <span className="text-[9px] sm:text-[11px] px-1 sm:px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
                 {roomUserCount}/10
               </span>
               <ChevronDown className="w-3 h-3 text-[#78634B]" />
@@ -625,12 +626,12 @@ export default function GameCanvas() {
                 setShowRoster(!showRoster)
                 setShowRoomSwitcher(false)
               }}
-              className="flex items-center space-x-1 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 shadow-sm text-[11px] sm:text-xs font-semibold text-[#343B35] cursor-pointer transition-colors"
+              className="flex items-center space-x-1 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 shadow-sm text-[10px] sm:text-xs font-semibold text-[#343B35] cursor-pointer transition-colors shrink-0"
               title="Lihat warga di sekitar"
             >
               <Users className="w-3.5 h-3.5 text-[#668B65]" />
               <span className="hidden sm:inline">Warga:</span>
-              <span className="text-[10px] sm:text-[11px] px-1 sm:px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
+              <span className="text-[9px] sm:text-[11px] px-1 sm:px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
                 {roomPlayers.length || roomUserCount}
               </span>
             </button>
@@ -712,15 +713,21 @@ export default function GameCanvas() {
       {/* VIRTUAL ANALOG JOYSTICK (Tugu Mode on Touch/Mobile Screens)  */}
       {/* ============================================================ */}
       {viewMode === 'tugu' && (
-        <div className="absolute bottom-16 sm:bottom-20 left-3 sm:left-6 z-30 pointer-events-auto">
+        <div className="absolute bottom-5 sm:bottom-6 left-3 sm:left-6 z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* COMPACT PLAYER GUIDANCE PANEL (Bottom-Left)                 */}
+      {/* COMPACT PLAYER GUIDANCE PANEL                                */}
       {/* ============================================================ */}
-      <div className="absolute bottom-2.5 sm:bottom-3 left-3 sm:left-4 z-20 pointer-events-auto font-sans">
+      <div
+        className={`absolute z-20 pointer-events-auto font-sans ${
+          viewMode === 'tugu'
+            ? 'bottom-16 sm:bottom-5 right-3 sm:right-4'
+            : 'bottom-4 sm:bottom-5 right-3 sm:right-4'
+        }`}
+      >
         {showHelpHint ? (
           <div className="w-64 sm:w-72 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2.5 shadow-lg text-[11px] text-[#343B35]">
             <div className="flex items-center justify-between pb-1.5 border-b border-[#D8CEBE] mb-1.5">

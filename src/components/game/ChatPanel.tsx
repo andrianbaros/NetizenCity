@@ -118,15 +118,17 @@ export default function ChatPanel() {
       <button
         type="button"
         onClick={toggleChat}
-        className="bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-[#D8CEBE] shadow-md flex items-center gap-2 transition-colors cursor-pointer pointer-events-auto select-auto"
+        className="bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-[#D8CEBE] shadow-md flex items-center gap-1.5 sm:gap-2 transition-colors cursor-pointer pointer-events-auto select-auto"
+        title="Buka Obrolan Warga"
       >
-        <div className="w-5 h-5 rounded-md bg-[#668B65]/15 text-[#668B65] flex items-center justify-center">
+        <div className="w-5 h-5 rounded-md bg-[#668B65]/15 text-[#668B65] flex items-center justify-center shrink-0">
           <MessageSquare className="w-3 h-3" />
         </div>
         <span className="text-xs font-semibold text-[#343B35]">
-          Obrolan Warga
+          <span className="sm:hidden">Obrolan</span>
+          <span className="hidden sm:inline">Obrolan Warga</span>
         </span>
-        <span className="w-2 h-2 rounded-full bg-[#668B65]" />
+        <span className="w-2 h-2 rounded-full bg-[#668B65] shrink-0 animate-pulse" />
       </button>
     )
   }
@@ -225,7 +227,7 @@ export default function ChatPanel() {
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="Ketik pesan..."
-          className="flex-1 bg-[#F7F4E9] border border-[#D8CEBE] rounded-lg px-2.5 py-1.5 text-xs text-[#343B35] placeholder-[#78634B]/60 focus:outline-none focus:border-[#668B65]"
+          className="flex-1 bg-[#F7F4E9] border border-[#D8CEBE] rounded-lg px-2.5 py-1.5 text-sm sm:text-xs text-[#343B35] placeholder-[#78634B]/60 focus:outline-none focus:border-[#668B65]"
           maxLength={150}
         />
         <button

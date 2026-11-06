@@ -202,7 +202,7 @@ export default function GameHUD() {
       <header className="flex items-center justify-between gap-1.5 sm:gap-2.5 pointer-events-none w-full">
         {/* A. Player Profile — Top Left */}
         {profile ? (
-          <div className="flex items-center space-x-2 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 sm:p-1.5 pr-2.5 sm:pr-3 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 sm:p-1.5 pr-2 sm:pr-3 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto shrink-0">
             <button
               type="button"
               onClick={() => openModal('ktn_card')}
@@ -213,17 +213,17 @@ export default function GameHUD() {
             </button>
             <div className="min-w-0">
               <div className="flex items-center space-x-1 sm:space-x-1.5">
-                <span className="text-xs font-heading font-bold text-[#343B35] truncate max-w-[80px] sm:max-w-[130px]">
+                <span className="text-[11px] sm:text-xs font-heading font-bold text-[#343B35] truncate max-w-[65px] sm:max-w-[130px]">
                   {profile.displayName}
                 </span>
-                <span className="text-[9px] sm:text-[10px] text-[#4F6E4E] font-heading font-bold bg-[#E6F0E4] px-1.5 py-0.2 rounded-md border border-[#C5D8C4]">
+                <span className="hidden sm:inline-block text-[9px] sm:text-[10px] text-[#4F6E4E] font-heading font-bold bg-[#E6F0E4] px-1.5 py-0.2 rounded-md border border-[#C5D8C4]">
                   @{profile.username}
                 </span>
-                <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-md bg-[#EFE9D8] text-[#78634B] font-heading font-bold border border-[#D8CEBE]">
+                <span className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.2 rounded-md bg-[#EFE9D8] text-[#78634B] font-heading font-bold border border-[#D8CEBE]">
                   Lv.{profile.level || 1}
                 </span>
               </div>
-              <div className="flex items-center space-x-1 text-[10px] text-[#78634B] font-medium mt-0.5 truncate">
+              <div className="hidden sm:flex items-center space-x-1 text-[10px] text-[#78634B] font-medium mt-0.5 truncate">
                 <MapPin className="w-2.5 h-2.5 text-[#668B65] shrink-0" />
                 <span className="truncate">{districtNames[currentDistrict] || 'Netizen City'}</span>
               </div>
@@ -243,7 +243,7 @@ export default function GameHUD() {
                   Belum Masuk
                 </span>
               </div>
-              <div className="flex items-center space-x-1.5 text-[10px] font-heading font-bold leading-none mt-0.5">
+              <div className="flex items-center space-x-1 sm:space-x-1.5 text-[9px] sm:text-[10px] font-heading font-bold leading-none mt-0.5">
                 <Link
                   href="/login"
                   className="text-[#78634B] hover:text-[#343B35]"
@@ -334,11 +334,11 @@ export default function GameHUD() {
         )}
 
         {/* C. Main Action Bar — Top Right */}
-        <div className="flex items-center space-x-1 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto">
+        <div className="flex items-center space-x-1 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto shrink-0">
           {/* Coin Wallet */}
-          <div className="flex items-center space-x-1.5 bg-[#EFE9D8] px-2 py-1 rounded-lg border border-[#D8CEBE] text-xs">
-            <Coins className="w-3.5 h-3.5 text-[#E6C66F]" />
-            <span className="font-heading font-extrabold text-xs text-[#343B35]">
+          <div className="flex items-center space-x-1 sm:space-x-1.5 bg-[#EFE9D8] px-1.5 sm:px-2 py-1 rounded-lg border border-[#D8CEBE] text-xs shrink-0">
+            <Coins className="w-3.5 h-3.5 text-[#E6C66F] shrink-0" />
+            <span className="font-heading font-extrabold text-[11px] sm:text-xs text-[#343B35]">
               {formatCoins(currentCoins)}
             </span>
           </div>
@@ -348,16 +348,17 @@ export default function GameHUD() {
             type="button"
             onClick={() => openModal('mall')}
             title="Mall Busana"
-            className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer"
+            className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
           </button>
 
+          {/* Missions button: Available on sm+, in mobile menu on small screens */}
           <button
             type="button"
             onClick={() => openModal('missions')}
             title="Misi & Prestasi"
-            className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer"
+            className="hidden sm:flex p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0"
           >
             <Award className="w-3.5 h-3.5" />
           </button>
@@ -460,6 +461,18 @@ export default function GameHUD() {
 
                 <button
                   type="button"
+                  onClick={() => {
+                    openModal('missions')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                >
+                  <Award className="w-4 h-4 text-[#78634B]" />
+                  <span>Misi & Prestasi</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleStartCourier}
                   className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
                 >
@@ -550,9 +563,15 @@ export default function GameHUD() {
       </div>
 
       {/* ============================================================ */}
-      {/* BOTTOM AREA: CHAT OVERLAY (Elevated & Centered)              */}
+      {/* BOTTOM AREA: CHAT OVERLAY                                    */}
       {/* ============================================================ */}
-      <div className="fixed bottom-14 sm:bottom-16 left-1/2 -translate-x-1/2 z-40 pointer-events-auto flex items-center justify-center">
+      <div
+        className={`fixed z-40 pointer-events-auto flex items-center justify-center ${
+          isTuguMode
+            ? 'bottom-5 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2'
+            : 'bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2'
+        }`}
+      >
         <ChatPanel />
       </div>
 
