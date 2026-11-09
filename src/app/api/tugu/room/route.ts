@@ -51,8 +51,10 @@ export async function POST(req: NextRequest) {
       z: typeof body.z === 'number' ? body.z : 12,
       facing: typeof body.facing === 'number' ? body.facing : 0,
       avatarConfig: citizen?.avatar_config || body.avatarConfig,
+      isMoving: Boolean(body.isMoving),
       preferredRoomId: body.preferredRoomId,
       chatText: body.chatText,
+      chatId: body.chatId,
     })
 
     // Note: Persistent chat messages are handled by /api/chat.

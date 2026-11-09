@@ -13,8 +13,9 @@ export interface RiverPlayer {
   facing: number
   avatarConfig?: any
   isFishing?: boolean
+  isMoving?: boolean
   lastSeen: number
-  lastChat?: { text: string; time: number }
+  lastChat?: { id: string; text: string; time: number }
 }
 
 export interface RiverRoomSummary {
@@ -115,8 +116,10 @@ export function syncPlayerInRiverRoom(params: {
   facing: number
   avatarConfig?: any
   isFishing?: boolean
+  isMoving?: boolean
   preferredRoomId?: string
   chatText?: string
+  chatId?: string
 }): {
   roomId: string
   userCount: number
@@ -130,13 +133,14 @@ export function syncPlayerInRiverRoom(params: {
     facing: number
     avatarConfig?: any
     isFishing?: boolean
-    lastChat?: { text: string; time: number }
+    isMoving?: boolean
+    lastChat?: { id: string; text: string; time: number }
   }>
   allRooms: RiverRoomSummary[]
 } {
   pruneStaleRiverPlayers()
   const rooms = getRoomsMap()
-  const { clientId, name, isGuest, x, z, facing, avatarConfig, isFishing, preferredRoomId, chatText } = params
+  const { clientId, name, isGuest, x, z, facing, avatarConfig, isFishing, isMoving, preferredRoomId, chatText, chatId } = params
   const now = Date.now()
 
   // Find if player is currently in any river room
@@ -180,7 +184,7 @@ export function syncPlayerInRiverRoom(params: {
   const roomMap = rooms.get(targetRoomId)!
   const existingPlayer = roomMap.get(clientId)
   const lastChat = chatText
-    ? { text: chatText, time: now }
+    ? { id: chatId || `msg_${now}`, text: chatText, time: now }
     : existingPlayer?.lastChat
 
   roomMap.set(clientId, {
@@ -192,6 +196,7 @@ export function syncPlayerInRiverRoom(params: {
     facing,
     avatarConfig: avatarConfig || existingPlayer?.avatarConfig,
     isFishing: typeof isFishing === 'boolean' ? isFishing : existingPlayer?.isFishing,
+    isMoving: typeof isMoving === 'boolean' ? isMoving : false,
     lastSeen: now,
     lastChat,
   })
@@ -206,7 +211,8 @@ export function syncPlayerInRiverRoom(params: {
     facing: number
     avatarConfig?: any
     isFishing?: boolean
-    lastChat?: { text: string; time: number }
+    isMoving?: boolean
+    lastChat?: { id: string; text: string; time: number }
   }> = []
 
   for (const p of roomMap.values()) {
@@ -219,6 +225,7 @@ export function syncPlayerInRiverRoom(params: {
       facing: p.facing,
       avatarConfig: p.avatarConfig,
       isFishing: p.isFishing,
+      isMoving: p.isMoving,
       lastChat: p.lastChat,
     })
   }

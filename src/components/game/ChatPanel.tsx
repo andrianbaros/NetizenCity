@@ -179,7 +179,7 @@ export default function ChatPanel() {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('player-chat-sent', {
-          detail: { text, sender: senderName },
+          detail: { text, sender: senderName, id: tempMsg.id },
         })
       )
     }

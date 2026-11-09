@@ -190,7 +190,8 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
 
   // Citizen store
   const wallet = useCitizenStore((s) => s.wallet)
-  const inventory = useCitizenStore((s) => s.inventory)
+  const rawInventory = useCitizenStore((s) => s.inventory)
+  const inventory = useMemo(() => (Array.isArray(rawInventory) ? rawInventory : []), [rawInventory])
   const setInventory = useCitizenStore((s) => s.setInventory)
   const updateBalance = useCitizenStore((s) => s.updateBalance)
   const toggleFavorite = useCitizenStore((s) => s.toggleFavorite)
@@ -560,7 +561,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
   }
 
   const requestBatchSell = () => {
-    const itemsToSell = inventory.filter((i) => selectedIds.has(i.id))
+    const itemsToSell = inventory.filter((i) => i && selectedIds.has(i.id))
     if (itemsToSell.length === 0) return
 
     const totalCoins = itemsToSell.reduce((sum, item) => sum + (item.sellPrice || 50), 0)

@@ -622,10 +622,13 @@ export class City3DManager {
       bubble?: THREE.Sprite | null;
       bubbleTimer?: number;
       lastChatTime?: number;
+      lastChatId?: string;
       lastServerTime?: number;
+      lastTargetUpdate?: number;
       moveSpeed?: number;
       missingSince?: number;
       isFishing?: boolean;
+      isMoving?: boolean;
       fishingLine?: THREE.Line;
       bobber?: THREE.Group;
       rodTip?: THREE.Object3D;
@@ -2537,7 +2540,8 @@ export class City3DManager {
       facing: number;
       avatarConfig?: any;
       isFishing?: boolean;
-      lastChat?: { text: string; time: number };
+      isMoving?: boolean;
+      lastChat?: { id?: string; text: string; time: number };
     }>,
     myClientId: string
   ) {
@@ -2550,7 +2554,8 @@ export class City3DManager {
     const activeGroup = isRiver ? this.riverWorldGroup : this.tuguWorldGroup;
 
     for (const p of players) {
-      if (p.id === myClientId) continue; // Don't duplicate local player
+      if (!p || !p.id || p.id === myClientId) continue; // Don't duplicate local player
+      if (typeof p.x !== 'number' || typeof p.z !== 'number' || !Number.isFinite(p.x) || !Number.isFinite(p.z)) continue;
       activeIds.add(p.id);
 
       const existing = this.remotePlayers.get(p.id);
@@ -2560,6 +2565,7 @@ export class City3DManager {
         const targetV = new THREE.Vector3(p.x, targetY, p.z);
         const dist = existing.root.position.distanceTo(targetV);
         existing.lastServerTime = now;
+        existing.isMoving = Boolean(p.isMoving);
 
         // If distance is large (e.g. initial spawn or teleport > 6.0 units), snap immediately
         if (dist > 6.0) {
@@ -2569,7 +2575,9 @@ export class City3DManager {
           existing.targetFacing = p.facing;
         } else {
           existing.targetPos.copy(targetV);
-          existing.targetFacing = p.facing;
+          if (typeof p.facing === 'number' && Number.isFinite(p.facing)) {
+            existing.targetFacing = p.facing;
+          }
         }
 
         // Update fishing state & nametag if changed
@@ -2581,32 +2589,37 @@ export class City3DManager {
           existing.root.add(existing.nameTag);
         }
 
-        // Check if there is new chat to display (allowing for mobile clock skew up to 25s)
+        // Display new chat speech bubbles with reliable ID matching
         if (p.lastChat && p.lastChat.text) {
-          const chatTime = p.lastChat.time || 0;
-          if (chatTime > (existing.lastChatTime || 0)) {
-            existing.lastChatTime = chatTime;
-            const ageMs = Math.abs(nowMs - chatTime);
-            if (ageMs < 25000) {
-              if (existing.bubble) {
-                existing.root.remove(existing.bubble);
-                existing.bubble = null;
-              }
-              const bubble = makeSpeechBubbleSprite(p.lastChat.text, '#FFFDF9', '#343B35');
-              bubble.position.set(0, 2.15, 0);
-              existing.root.add(bubble);
-              existing.bubble = bubble;
-              existing.bubbleTimer = 6.0;
+          const chatId = p.lastChat.id || `msg_${p.lastChat.time || 0}_${p.lastChat.text}`;
+          if (chatId !== existing.lastChatId) {
+            existing.lastChatId = chatId;
+            existing.lastChatTime = p.lastChat.time || nowMs;
+            if (existing.bubble) {
+              existing.root.remove(existing.bubble);
+              existing.bubble = null;
             }
+            const bubble = makeSpeechBubbleSprite(p.lastChat.text, '#FFFDF9', '#343B35');
+            bubble.position.set(0, 2.15, 0);
+            existing.root.add(bubble);
+            existing.bubble = bubble;
+            existing.bubbleTimer = 6.0;
           }
         }
       } else {
         // Spawn new remote citizen
         const colors = resolveAvatarColors(p.avatarConfig);
         const citizen = makeCitizen3D(colors);
+        // Disable frustum culling so Three.js never clips or hides avatar meshes during rotation
+        citizen.root.traverse((obj) => {
+          if ((obj as THREE.Mesh).isMesh) {
+            obj.frustumCulled = false;
+          }
+        });
+
         const targetY = isRiver && p.z < 2.5 ? 0.35 : 0;
         citizen.root.position.set(p.x, targetY, p.z);
-        citizen.root.rotation.y = p.facing;
+        citizen.root.rotation.y = typeof p.facing === 'number' && Number.isFinite(p.facing) ? p.facing : 0;
 
         // Add nametag (with 🎣 indicator if currently fishing)
         const nameTag = makeNameTagSprite(p.name, p.isGuest, false, Boolean(p.isFishing));
@@ -2635,12 +2648,13 @@ export class City3DManager {
         // Check if newly spawned player has an active recent speech bubble!
         let initialBubble: THREE.Sprite | null = null;
         let initialBubbleTimer = 0;
+        const initialChatId = p.lastChat?.id || (p.lastChat?.text ? `msg_${p.lastChat.time || 0}_${p.lastChat.text}` : undefined);
         const chatTime = p.lastChat?.time || 0;
-        if (p.lastChat && p.lastChat.text && Math.abs(nowMs - chatTime) < 20000) {
+        if (p.lastChat && p.lastChat.text && (nowMs - chatTime < 8000 || chatTime === 0)) {
           initialBubble = makeSpeechBubbleSprite(p.lastChat.text, '#FFFDF9', '#343B35');
           initialBubble.position.set(0, 2.15, 0);
           citizen.root.add(initialBubble);
-          initialBubbleTimer = Math.max(1.5, 6.0 - Math.max(0, (nowMs - chatTime) / 1000));
+          initialBubbleTimer = 6.0;
         }
 
         activeGroup.add(citizen.root);
@@ -2654,9 +2668,11 @@ export class City3DManager {
           bubble: initialBubble,
           bubbleTimer: initialBubbleTimer,
           lastChatTime: chatTime,
+          lastChatId: initialChatId,
           lastServerTime: now,
           missingSince: 0,
           isFishing: Boolean(p.isFishing),
+          isMoving: Boolean(p.isMoving),
           fishingLine: remoteLine,
           bobber: remoteBobber,
           rodTip: anglerRodTip,
@@ -2769,47 +2785,55 @@ export class City3DManager {
       const target = remote.targetPos;
       const dist = cur.distanceTo(target);
 
-      if (dist > 0.05) {
-        // Continuous smooth exponential damping towards target (eliminates jerky dash & stop)
-        const lerpFactor = Math.min(1.0, delta * 9.5);
-        cur.x += (target.x - cur.x) * lerpFactor;
-        cur.y += (target.y - cur.y) * lerpFactor;
-        cur.z += (target.z - cur.z) * lerpFactor;
+      // 1. Natural, steady walking movement (eliminates "ngedash ngedash stop ngedash")
+      // Player walking speed in NetizenCity is ~4.2 units/second.
+      // If lag causes distance to build up (>1.2 units), smoothly catch up.
+      const isPlayerWalking = Boolean(remote.isMoving) || dist > 0.08;
 
-        // Turn body smoothly towards the direction of travel
-        const dirX = target.x - cur.x;
-        const dirZ = target.z - cur.z;
-        if (Math.hypot(dirX, dirZ) > 0.02) {
-          const moveAngle = Math.atan2(dirX, dirZ);
-          let diff = (moveAngle - remote.root.rotation.y) % (Math.PI * 2);
-          if (diff > Math.PI) diff -= Math.PI * 2;
-          if (diff < -Math.PI) diff += Math.PI * 2;
-          remote.root.rotation.y += diff * Math.min(1.0, delta * 10.0);
-        }
+      if (dist > 0.02) {
+        const baseSpeed = 4.2;
+        const speed = dist > 1.2 ? baseSpeed * (dist / 1.0) : baseSpeed;
+        const step = Math.min(dist, speed * delta);
 
-        // Animate citizen walking pose smoothly
-        remote.citizen.pose(true, elapsed, 4.5);
+        cur.x += ((target.x - cur.x) / dist) * step;
+        cur.y += ((target.y - cur.y) / dist) * step;
+        cur.z += ((target.z - cur.z) / dist) * step;
       } else {
-        // Reached destination: stand still and face the player's last reported orientation smoothly
-        let diff = (remote.targetFacing - remote.root.rotation.y) % (Math.PI * 2);
-        if (diff > Math.PI) diff -= Math.PI * 2;
-        if (diff < -Math.PI) diff += Math.PI * 2;
-        remote.root.rotation.y += diff * Math.min(1.0, delta * 8.0);
-
-        remote.citizen.pose(false, elapsed);
+        cur.copy(target);
       }
 
-      // River Fishing Visuals for Remote Players
-      if (this.viewMode === 'river' && remote.rodTip && remote.bobber && remote.fishingLine) {
-        if (remote.isFishing && dist <= 0.1) {
-          // 1. Dual-hand active fishing pose pointing rod forward out toward the river
-          remote.citizen.rightArm.rotation.set(-1.15, 0.15, -0.05);
-          remote.citizen.leftArm.rotation.set(-0.85, 0.45, 0.1);
+      // 2. Smooth shortest-arc rotation towards movement direction or target facing
+      let targetAngle = remote.targetFacing;
+      const dirX = target.x - cur.x;
+      const dirZ = target.z - cur.z;
+      if (dist > 0.08 && Math.hypot(dirX, dirZ) > 0.04) {
+        targetAngle = Math.atan2(dirX, dirZ);
+      }
 
+      const angleDiff = Math.atan2(
+        Math.sin(targetAngle - remote.root.rotation.y),
+        Math.cos(targetAngle - remote.root.rotation.y)
+      );
+      remote.root.rotation.y += angleDiff * Math.min(1.0, delta * 9.0);
+
+      // 3. Pose animation: walking vs idle vs fishing
+      if (remote.isFishing) {
+        // While fishing, citizen stance is held steady (rod forward towards river)
+        // Legs & body step if moving, but arms hold angling posture
+        remote.citizen.pose(isPlayerWalking, elapsed, 4.5);
+        remote.citizen.rightArm.rotation.set(-1.15, 0.15, -0.05);
+        remote.citizen.leftArm.rotation.set(-0.85, 0.45, 0.1);
+      } else {
+        remote.citizen.pose(isPlayerWalking, elapsed, 4.5);
+      }
+
+      // 4. River Fishing Visuals for Remote Players
+      if (this.viewMode === 'river' && remote.rodTip && remote.bobber && remote.fishingLine) {
+        if (remote.isFishing) {
           remote.bobber.visible = true;
           remote.fishingLine.visible = true;
 
-          // 2. Position the bobber ~4.5 units in front of the avatar in the river
+          // Position bobber ~4.5 units in front of avatar in river
           const facing = remote.root.rotation.y;
           const forwardX = Math.sin(facing);
           const forwardZ = Math.cos(facing);
@@ -2819,7 +2843,7 @@ export class City3DManager {
           const targetBobberZ = cur.z + forwardZ * 4.5;
           remote.bobber.position.set(targetBobberX, bobberWaveY, targetBobberZ);
 
-          // 3. Update 3D fishing line curve from rod tip to bobber
+          // Update 3D fishing line curve from rod tip to bobber
           remote.rodTip.updateWorldMatrix(true, false);
           const rodTipWorld = new THREE.Vector3();
           remote.rodTip.getWorldPosition(rodTipWorld);
@@ -2838,7 +2862,7 @@ export class City3DManager {
           posAttr.needsUpdate = true;
           remote.fishingLine.geometry.computeBoundingSphere();
         } else {
-          // Not fishing or walking: casual rod holding pose
+          // Not fishing: reset rod to resting side pose if stopped
           if (dist <= 0.05) {
             remote.citizen.rightArm.rotation.set(-0.55, 0.1, 0);
             remote.citizen.leftArm.rotation.set(0, 0, 0);
@@ -2848,6 +2872,7 @@ export class City3DManager {
         }
       }
 
+      // 5. Speech Bubble Lifespan
       if (remote.bubble) {
         remote.bubbleTimer = (remote.bubbleTimer || 0) - delta;
         if (remote.bubbleTimer <= 0) {
@@ -2858,15 +2883,16 @@ export class City3DManager {
     }
   }
 
-  public getPlayerTuguState(): { x: number; z: number; facing: number } {
+  public getPlayerTuguState(): { x: number; z: number; facing: number; isMoving: boolean } {
     const root = this.isPlayerAdmin ? this.mayorPlayer?.root : this.playerCitizen?.root;
     if (!root) {
-      return { x: this.playerPos.x, z: this.playerPos.z, facing: this.playerFacing };
+      return { x: this.playerPos.x, z: this.playerPos.z, facing: this.playerFacing, isMoving: Boolean(this.isPlayerWalking) };
     }
     return {
       x: root.position.x,
       z: root.position.z,
       facing: root.rotation.y,
+      isMoving: Boolean(this.isPlayerWalking),
     };
   }
 

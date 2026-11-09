@@ -50,8 +50,10 @@ export async function POST(req: NextRequest) {
       facing: typeof body.facing === 'number' ? body.facing : Math.PI,
       avatarConfig: citizen?.avatar_config || body.avatarConfig,
       isFishing: Boolean(body.isFishing),
+      isMoving: Boolean(body.isMoving),
       preferredRoomId: body.preferredRoomId,
       chatText: body.chatText,
+      chatId: body.chatId,
     })
 
     return NextResponse.json({

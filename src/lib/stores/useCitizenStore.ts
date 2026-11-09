@@ -37,24 +37,24 @@ export const useCitizenStore = create<CitizenState>((set) => ({
     set((state) => ({
       wallet: state.wallet ? { ...state.wallet, balance } : null,
     })),
-  setInventory: (inventory) => set({ inventory }),
+  setInventory: (inventory) => set({ inventory: Array.isArray(inventory) ? inventory : [] }),
   addToInventory: (item) =>
     set((state) => ({
-      inventory: [item, ...state.inventory],
+      inventory: [item, ...(Array.isArray(state.inventory) ? state.inventory : [])],
     })),
   removeFromInventory: (inventoryId) =>
     set((state) => ({
-      inventory: state.inventory.filter((inv) => inv.id !== inventoryId),
+      inventory: (Array.isArray(state.inventory) ? state.inventory : []).filter((inv) => inv.id !== inventoryId),
     })),
   batchRemoveFromInventory: (inventoryIds) => {
     const idSet = new Set(inventoryIds)
     set((state) => ({
-      inventory: state.inventory.filter((inv) => !idSet.has(inv.id)),
+      inventory: (Array.isArray(state.inventory) ? state.inventory : []).filter((inv) => !idSet.has(inv.id)),
     }))
   },
   toggleFavorite: (inventoryId) =>
     set((state) => ({
-      inventory: state.inventory.map((inv) =>
+      inventory: (Array.isArray(state.inventory) ? state.inventory : []).map((inv) =>
         inv.id === inventoryId ? { ...inv, isFavorite: !inv.isFavorite } : inv
       ),
     })),

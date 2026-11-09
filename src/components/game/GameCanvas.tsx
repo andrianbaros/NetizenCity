@@ -197,10 +197,19 @@ export default function GameCanvas() {
   const setRoomPlayers = useGameStore((s) => s.setRoomPlayers)
 
   const myClientIdRef = useRef<string>('')
-  const lastSentChatRef = useRef<string | null>(null)
+  const lastSentChatRef = useRef<{ text: string; id: string } | null>(null)
   const fastSyncTriggerRef = useRef<(() => void) | null>(null)
   const isSyncingRef = useRef(false)
   const lastSyncReqTimeRef = useRef(0)
+  const fishingStateRef = useRef<FishingState>(fishingState)
+
+  useEffect(() => {
+    fishingStateRef.current = fishingState
+    // When fishing state transitions, flush update to server immediately without disconnecting from room!
+    if (fastSyncTriggerRef.current) {
+      fastSyncTriggerRef.current()
+    }
+  }, [fishingState])
 
   const inventory = useCitizenStore((s) => s.inventory)
 
@@ -227,7 +236,10 @@ export default function GameCanvas() {
   useEffect(() => {
     const onChatSent = (e: any) => {
       if (e.detail?.text) {
-        lastSentChatRef.current = e.detail.text
+        lastSentChatRef.current = {
+          text: e.detail.text,
+          id: e.detail.id || `msg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        }
         if (fastSyncTriggerRef.current) {
           fastSyncTriggerRef.current()
         }
@@ -257,7 +269,8 @@ export default function GameCanvas() {
         myClientIdRef.current = clientId
 
         const profile = useCitizenStore.getState().profile
-        const playerState = cityManagerRef.current?.getPlayerTuguState() || { x: 0, z: isRiver ? -5.5 : 12, facing: 0 }
+        const playerState = cityManagerRef.current?.getPlayerTuguState() || { x: 0, z: isRiver ? -5.5 : 12, facing: 0, isMoving: false }
+        const isFishingNow = isRiver ? fishingStateRef.current !== 'idle' : false
         const body: any = {
           clientId,
           name: profile?.displayName || profile?.username || undefined,
@@ -265,13 +278,15 @@ export default function GameCanvas() {
           x: playerState.x,
           z: playerState.z,
           facing: playerState.facing,
+          isMoving: Boolean(playerState.isMoving),
           preferredRoomId: currentRoomId,
-          isFishing: isRiver ? fishingState !== 'idle' : undefined,
+          isFishing: isFishingNow,
         }
 
         const chatToSend = lastSentChatRef.current
         if (chatToSend) {
-          body.chatText = chatToSend
+          body.chatText = chatToSend.text
+          body.chatId = chatToSend.id
         }
 
         const res = await fetch(syncEndpoint, {
@@ -283,7 +298,7 @@ export default function GameCanvas() {
         if (!isMounted) return
 
         if (res.ok) {
-          if (chatToSend && lastSentChatRef.current === chatToSend) {
+          if (chatToSend && lastSentChatRef.current?.id === chatToSend.id) {
             lastSentChatRef.current = null
           }
 
@@ -349,7 +364,7 @@ export default function GameCanvas() {
         }).catch(() => {})
       }
     }
-  }, [viewMode, currentRoomId, fishingState, setCurrentRoomId, setRoomUserCount, setAllRooms, setRoomPlayers])
+  }, [viewMode, currentRoomId, setCurrentRoomId, setRoomUserCount, setAllRooms, setRoomPlayers])
 
   useEffect(() => {
     if (containerRef.current && !cityManagerRef.current) {
@@ -895,7 +910,7 @@ export default function GameCanvas() {
       {/* Positioned at bottom-6 left-4 (spacious, thumb-friendly)     */}
       {/* ============================================================ */}
       {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium') && (
-        <div className="absolute bottom-6 sm:bottom-8 left-4 sm:left-8 z-30 pointer-events-auto">
+        <div className="md:hidden absolute bottom-6 sm:bottom-8 left-4 sm:left-8 z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}

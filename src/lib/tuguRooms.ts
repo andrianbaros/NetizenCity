@@ -12,8 +12,9 @@ export interface TuguPlayer {
   z: number
   facing: number
   avatarConfig?: any
+  isMoving?: boolean
   lastSeen: number
-  lastChat?: { text: string; time: number }
+  lastChat?: { id: string; text: string; time: number }
 }
 
 export interface RoomSummary {
@@ -114,8 +115,10 @@ export function syncPlayerInRoom(params: {
   z: number
   facing: number
   avatarConfig?: any
+  isMoving?: boolean
   preferredRoomId?: string
   chatText?: string
+  chatId?: string
 }): {
   roomId: string
   userCount: number
@@ -128,13 +131,14 @@ export function syncPlayerInRoom(params: {
     z: number
     facing: number
     avatarConfig?: any
-    lastChat?: { text: string; time: number }
+    isMoving?: boolean
+    lastChat?: { id: string; text: string; time: number }
   }>
   allRooms: RoomSummary[]
 } {
   pruneStalePlayers()
   const rooms = getRoomsMap()
-  const { clientId, name, isGuest, x, z, facing, avatarConfig, preferredRoomId, chatText } = params
+  const { clientId, name, isGuest, x, z, facing, avatarConfig, isMoving, preferredRoomId, chatText, chatId } = params
   const now = Date.now()
 
   // Find if player is currently in any room
@@ -181,7 +185,7 @@ export function syncPlayerInRoom(params: {
 
   const existingPlayer = roomMap.get(clientId)
   const lastChat = chatText
-    ? { text: chatText, time: now }
+    ? { id: chatId || `msg_${now}`, text: chatText, time: now }
     : existingPlayer?.lastChat
 
   roomMap.set(clientId, {
@@ -192,6 +196,7 @@ export function syncPlayerInRoom(params: {
     z,
     facing,
     avatarConfig: avatarConfig || existingPlayer?.avatarConfig,
+    isMoving: typeof isMoving === 'boolean' ? isMoving : false,
     lastSeen: now,
     lastChat,
   })
@@ -205,7 +210,8 @@ export function syncPlayerInRoom(params: {
     z: number
     facing: number
     avatarConfig?: any
-    lastChat?: { text: string; time: number }
+    isMoving?: boolean
+    lastChat?: { id: string; text: string; time: number }
   }> = []
 
   for (const p of roomMap.values()) {
@@ -217,6 +223,7 @@ export function syncPlayerInRoom(params: {
       z: p.z,
       facing: p.facing,
       avatarConfig: p.avatarConfig,
+      isMoving: p.isMoving,
       lastChat: p.lastChat,
     })
   }
