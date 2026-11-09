@@ -371,7 +371,7 @@ function makeSpeechBubbleSprite(text: string, bgColor = '#FFFDF9', textColor = '
   return sprite;
 }
 
-function makeNameTagSprite(name: string, isGuest = false, isSelf = false): THREE.Sprite {
+function makeNameTagSprite(name: string, isGuest = false, isSelf = false, isFishing = false): THREE.Sprite {
   if (typeof document === 'undefined') return new THREE.Sprite();
   const canvas = document.createElement('canvas');
   canvas.width = 440;
@@ -415,7 +415,13 @@ function makeNameTagSprite(name: string, isGuest = false, isSelf = false): THREE
   ctx.font = 'bold 30px sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(name.slice(0, 15), x + 52, y + h / 2);
+  ctx.fillText(name.slice(0, 13), x + 52, y + h / 2);
+
+  if (isFishing) {
+    ctx.font = '28px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('🎣', x + w - 18, y + h / 2);
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
@@ -619,6 +625,10 @@ export class City3DManager {
       lastServerTime?: number;
       moveSpeed?: number;
       missingSince?: number;
+      isFishing?: boolean;
+      fishingLine?: THREE.Line;
+      bobber?: THREE.Group;
+      rodTip?: THREE.Object3D;
     }
   >();
 
@@ -2562,6 +2572,15 @@ export class City3DManager {
           existing.targetFacing = p.facing;
         }
 
+        // Update fishing state & nametag if changed
+        if (typeof p.isFishing === 'boolean' && p.isFishing !== existing.isFishing) {
+          existing.isFishing = p.isFishing;
+          existing.root.remove(existing.nameTag);
+          existing.nameTag = makeNameTagSprite(p.name, p.isGuest, false, p.isFishing);
+          existing.nameTag.position.set(0, 1.55, 0);
+          existing.root.add(existing.nameTag);
+        }
+
         // Check if there is new chat to display (allowing for mobile clock skew up to 25s)
         if (p.lastChat && p.lastChat.text) {
           const chatTime = p.lastChat.time || 0;
@@ -2589,19 +2608,28 @@ export class City3DManager {
         citizen.root.position.set(p.x, targetY, p.z);
         citizen.root.rotation.y = p.facing;
 
-        // Add nametag
-        const nameTag = makeNameTagSprite(p.name, p.isGuest, false);
+        // Add nametag (with 🎣 indicator if currently fishing)
+        const nameTag = makeNameTagSprite(p.name, p.isGuest, false, Boolean(p.isFishing));
         nameTag.position.set(0, 1.55, 0);
         citizen.root.add(nameTag);
 
-        // In River mode, attach low-poly angler rod to right hand!
+        let anglerRodTip: THREE.Object3D | undefined;
+        let remoteBobber: THREE.Group | undefined;
+        let remoteLine: THREE.Line | undefined;
+
+        // In River mode, attach low-poly angler rod to right hand & prepare 3D line + bobber!
         if (isRiver) {
-          const anglerRod = this.createAnglerRod();
-          anglerRod.position.set(0, -0.32, 0.05);
-          anglerRod.rotation.set(1.2, 0, 0);
-          citizen.rightArm.add(anglerRod);
-          citizen.rightArm.rotation.set(-0.6, 0.1, 0);
-          citizen.leftArm.rotation.set(-0.45, 0.3, 0);
+          const rod = this.createAnglerRod();
+          rod.group.position.set(0, -0.32, 0.05);
+          rod.group.rotation.set(1.2, 0, 0);
+          citizen.rightArm.add(rod.group);
+          anglerRodTip = rod.tip;
+
+          remoteBobber = this.createRemoteBobber();
+          this.riverWorldGroup.add(remoteBobber);
+
+          remoteLine = this.createRemoteFishingLine();
+          this.riverWorldGroup.add(remoteLine);
         }
 
         // Check if newly spawned player has an active recent speech bubble!
@@ -2628,6 +2656,10 @@ export class City3DManager {
           lastChatTime: chatTime,
           lastServerTime: now,
           missingSince: 0,
+          isFishing: Boolean(p.isFishing),
+          fishingLine: remoteLine,
+          bobber: remoteBobber,
+          rodTip: anglerRodTip,
         });
       }
     }
@@ -2641,6 +2673,8 @@ export class City3DManager {
         if (!remote.missingSince) {
           remote.missingSince = nowMs;
         } else if (nowMs - remote.missingSince > 4000) {
+          if (remote.bobber) this.riverWorldGroup.remove(remote.bobber);
+          if (remote.fishingLine) this.riverWorldGroup.remove(remote.fishingLine);
           this.tuguWorldGroup.remove(remote.root);
           this.riverWorldGroup.remove(remote.root);
           this.remotePlayers.delete(id);
@@ -2651,13 +2685,15 @@ export class City3DManager {
 
   public clearRemotePlayers() {
     for (const [, remote] of this.remotePlayers.entries()) {
+      if (remote.bobber) this.riverWorldGroup.remove(remote.bobber);
+      if (remote.fishingLine) this.riverWorldGroup.remove(remote.fishingLine);
       this.tuguWorldGroup.remove(remote.root);
       this.riverWorldGroup.remove(remote.root);
     }
     this.remotePlayers.clear();
   }
 
-  private createAnglerRod(): THREE.Group {
+  private createAnglerRod(): { group: THREE.Group; tip: THREE.Object3D } {
     const rodGroup = new THREE.Group();
     rodGroup.name = 'RemoteAnglerRod';
 
@@ -2676,7 +2712,55 @@ export class City3DManager {
     blank.position.set(0, 1.05, 0);
     rodGroup.add(blank);
 
-    return rodGroup;
+    // Tip marker for exact 3D line anchoring
+    const tip = new THREE.Object3D();
+    tip.position.set(0, 1.95, 0);
+    rodGroup.add(tip);
+
+    return { group: rodGroup, tip };
+  }
+
+  private createRemoteBobber(): THREE.Group {
+    const bobber = new THREE.Group();
+    bobber.name = 'RemoteBobber';
+    const redMat = new THREE.MeshStandardMaterial({ color: '#EF4444', roughness: 0.3 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.3 });
+
+    const topHemisphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      redMat
+    );
+    const bottomHemisphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 8, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
+      whiteMat
+    );
+    const bobberPin = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.01, 0.01, 0.22, 6),
+      new THREE.MeshStandardMaterial({ color: '#1F2937' })
+    );
+    bobber.add(topHemisphere, bottomHemisphere, bobberPin);
+    bobber.position.set(0, -0.05, 0);
+    bobber.visible = false;
+    return bobber;
+  }
+
+  private createRemoteFishingLine(): THREE.Line {
+    const linePositions = new Float32Array(8 * 3);
+    const lineGeom = new THREE.BufferGeometry();
+    const linePosAttr = new THREE.BufferAttribute(linePositions, 3);
+    linePosAttr.setUsage(THREE.DynamicDrawUsage);
+    lineGeom.setAttribute('position', linePosAttr);
+    const lineMat = new THREE.LineBasicMaterial({
+      color: '#FFFFFF',
+      transparent: true,
+      opacity: 0.9,
+      depthTest: true,
+      depthWrite: false,
+    });
+    const line = new THREE.Line(lineGeom, lineMat);
+    line.frustumCulled = false;
+    line.visible = false;
+    return line;
   }
 
   private updateRemotePlayersAnimation(delta: number, elapsed: number) {
@@ -2713,6 +2797,55 @@ export class City3DManager {
         remote.root.rotation.y += diff * Math.min(1.0, delta * 8.0);
 
         remote.citizen.pose(false, elapsed);
+      }
+
+      // River Fishing Visuals for Remote Players
+      if (this.viewMode === 'river' && remote.rodTip && remote.bobber && remote.fishingLine) {
+        if (remote.isFishing && dist <= 0.1) {
+          // 1. Dual-hand active fishing pose pointing rod forward out toward the river
+          remote.citizen.rightArm.rotation.set(-1.15, 0.15, -0.05);
+          remote.citizen.leftArm.rotation.set(-0.85, 0.45, 0.1);
+
+          remote.bobber.visible = true;
+          remote.fishingLine.visible = true;
+
+          // 2. Position the bobber ~4.5 units in front of the avatar in the river
+          const facing = remote.root.rotation.y;
+          const forwardX = Math.sin(facing);
+          const forwardZ = Math.cos(facing);
+          const bobberWaveY = -0.05 + Math.sin(elapsed * 3.5 + cur.x) * 0.025;
+
+          const targetBobberX = cur.x + forwardX * 4.5;
+          const targetBobberZ = cur.z + forwardZ * 4.5;
+          remote.bobber.position.set(targetBobberX, bobberWaveY, targetBobberZ);
+
+          // 3. Update 3D fishing line curve from rod tip to bobber
+          remote.rodTip.updateWorldMatrix(true, false);
+          const rodTipWorld = new THREE.Vector3();
+          remote.rodTip.getWorldPosition(rodTipWorld);
+          this.riverWorldGroup.worldToLocal(rodTipWorld);
+
+          const endPos = new THREE.Vector3(targetBobberX, bobberWaveY + 0.12, targetBobberZ);
+          const midPos = rodTipWorld.clone().lerp(endPos, 0.5);
+          midPos.y -= 0.18; // Natural catenary line sag
+
+          const curve = new THREE.QuadraticBezierCurve3(rodTipWorld, midPos, endPos);
+          const points = curve.getPoints(7); // 8 points
+          const posAttr = remote.fishingLine.geometry.attributes.position as THREE.BufferAttribute;
+          for (let i = 0; i < points.length; i++) {
+            posAttr.setXYZ(i, points[i].x, points[i].y, points[i].z);
+          }
+          posAttr.needsUpdate = true;
+          remote.fishingLine.geometry.computeBoundingSphere();
+        } else {
+          // Not fishing or walking: casual rod holding pose
+          if (dist <= 0.05) {
+            remote.citizen.rightArm.rotation.set(-0.55, 0.1, 0);
+            remote.citizen.leftArm.rotation.set(0, 0, 0);
+          }
+          remote.bobber.visible = false;
+          remote.fishingLine.visible = false;
+        }
       }
 
       if (remote.bubble) {
