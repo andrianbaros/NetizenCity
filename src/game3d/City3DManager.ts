@@ -2525,15 +2525,17 @@ export class City3DManager {
       z: number;
       facing: number;
       avatarConfig?: any;
+      isFishing?: boolean;
       lastChat?: { text: string; time: number };
     }>,
     myClientId: string
   ) {
-    if (this.viewMode !== 'tugu') return;
+    if (this.viewMode !== 'tugu' && this.viewMode !== 'river') return;
 
     const activeIds = new Set<string>();
-
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const isRiver = this.viewMode === 'river';
+    const activeGroup = isRiver ? this.riverWorldGroup : this.tuguWorldGroup;
 
     for (const p of players) {
       if (p.id === myClientId) continue; // Don't duplicate local player
@@ -2541,9 +2543,9 @@ export class City3DManager {
 
       const existing = this.remotePlayers.get(p.id);
       if (existing) {
-        const targetV = new THREE.Vector3(p.x, 0, p.z);
+        const targetY = isRiver && p.z < 2.5 ? 0.35 : 0;
+        const targetV = new THREE.Vector3(p.x, targetY, p.z);
         const dist = existing.root.position.distanceTo(targetV);
-        const dt = Math.max(0.15, (now - (existing.lastServerTime || now - 400)) / 1000);
         existing.lastServerTime = now;
 
         // If distance is large (e.g. initial spawn or teleport > 8 units), snap immediately
@@ -2557,7 +2559,6 @@ export class City3DManager {
           existing.targetPos.copy(targetV);
           existing.targetFacing = p.facing;
           // Calculate natural walking speed based on distance and polling window (~0.45s)
-          // Clamped closely around natural player walking speed [2.8, 6.8] to ensure continuous smooth walking without dash/stop
           const idealSpeed = dist / 0.45;
           existing.moveSpeed = THREE.MathUtils.clamp(idealSpeed, 2.8, 6.8);
         }
@@ -2581,7 +2582,8 @@ export class City3DManager {
         // Spawn new remote citizen
         const colors = resolveAvatarColors(p.avatarConfig);
         const citizen = makeCitizen3D(colors);
-        citizen.root.position.set(p.x, 0, p.z);
+        const targetY = isRiver && p.z < 2.5 ? 0.35 : 0;
+        citizen.root.position.set(p.x, targetY, p.z);
         citizen.root.rotation.y = p.facing;
 
         // Add nametag
@@ -2589,12 +2591,22 @@ export class City3DManager {
         nameTag.position.set(0, 1.55, 0);
         citizen.root.add(nameTag);
 
-        this.tuguWorldGroup.add(citizen.root);
+        // In River mode, attach low-poly angler rod to right hand!
+        if (isRiver) {
+          const anglerRod = this.createAnglerRod();
+          anglerRod.position.set(0, -0.32, 0.05);
+          anglerRod.rotation.set(1.2, 0, 0);
+          citizen.rightArm.add(anglerRod);
+          citizen.rightArm.rotation.set(-0.6, 0.1, 0);
+          citizen.leftArm.rotation.set(-0.45, 0.3, 0);
+        }
+
+        activeGroup.add(citizen.root);
 
         this.remotePlayers.set(p.id, {
           root: citizen.root,
           citizen,
-          targetPos: new THREE.Vector3(p.x, 0, p.z),
+          targetPos: new THREE.Vector3(p.x, targetY, p.z),
           targetFacing: p.facing,
           nameTag,
           lastChatTime: p.lastChat?.time || 0,
@@ -2608,6 +2620,7 @@ export class City3DManager {
     for (const [id, remote] of this.remotePlayers.entries()) {
       if (!activeIds.has(id)) {
         this.tuguWorldGroup.remove(remote.root);
+        this.riverWorldGroup.remove(remote.root);
         this.remotePlayers.delete(id);
       }
     }
@@ -2616,8 +2629,31 @@ export class City3DManager {
   public clearRemotePlayers() {
     for (const [, remote] of this.remotePlayers.entries()) {
       this.tuguWorldGroup.remove(remote.root);
+      this.riverWorldGroup.remove(remote.root);
     }
     this.remotePlayers.clear();
+  }
+
+  private createAnglerRod(): THREE.Group {
+    const rodGroup = new THREE.Group();
+    rodGroup.name = 'RemoteAnglerRod';
+
+    const handleMat = new THREE.MeshStandardMaterial({ color: '#8B5A2B', roughness: 0.8 });
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.018, 0.28, 6), handleMat);
+    rodGroup.add(handle);
+
+    const reelMat = new THREE.MeshStandardMaterial({ color: '#D4AF37', metalness: 0.8, roughness: 0.2 });
+    const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.03, 8), reelMat);
+    reel.rotation.z = Math.PI / 2;
+    reel.position.set(0.03, 0.08, 0);
+    rodGroup.add(reel);
+
+    const blankMat = new THREE.MeshStandardMaterial({ color: '#2B4C3F', roughness: 0.4 });
+    const blank = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.014, 1.8, 6), blankMat);
+    blank.position.set(0, 1.05, 0);
+    rodGroup.add(blank);
+
+    return rodGroup;
   }
 
   private updateRemotePlayersAnimation(delta: number, elapsed: number) {
@@ -2712,6 +2748,7 @@ export class City3DManager {
   }
 
   public enterRiverArea() {
+    this.clearRemotePlayers();
     this.viewMode = 'river';
     this.cityWorldGroup.visible = false;
     this.tuguWorldGroup.visible = false;
@@ -2780,6 +2817,7 @@ export class City3DManager {
   }
 
   public exitRiverArea() {
+    this.clearRemotePlayers();
     this.resetFishing();
     this.viewMode = 'city';
     this.targetPosition = null;
@@ -5026,6 +5064,7 @@ private setupAirplanes() {
       }
     } else if (this.viewMode === 'river') {
       this.updateCharacter(delta, elapsed);
+      this.updateRemotePlayersAnimation(delta, elapsed);
       this.updateRiver(delta, elapsed);
     } else if (this.viewMode === 'stadium') {
       this.updateCharacter(delta, elapsed);

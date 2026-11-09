@@ -15,6 +15,20 @@ export interface CityStats {
 
 export type ViewMode = 'city' | 'tugu' | 'river' | 'stadium'
 
+export interface MultiplayerRoomSummary {
+  roomId: string
+  name: string
+  userCount: number
+  maxCapacity: number
+  isFull: boolean
+}
+
+export interface MultiplayerRoomPlayer {
+  id: string
+  name: string
+  isGuest: boolean
+}
+
 interface GameState {
   isGameReady: boolean
   viewMode: ViewMode
@@ -27,6 +41,12 @@ interface GameState {
   selectedBuilding: string | null
   selectedPlayer: PlayerState | null
 
+  // Dedicated Multiplayer Instances (Alun-Alun Tugu & Sungai Dermaga Pancing)
+  currentRoomId: string
+  roomUserCount: number
+  allRooms: MultiplayerRoomSummary[]
+  roomPlayers: MultiplayerRoomPlayer[]
+
   setGameReady: (ready: boolean) => void
   setViewMode: (viewMode: ViewMode) => void
   setCurrentDistrict: (district: string) => void
@@ -38,6 +58,11 @@ interface GameState {
   removeRemotePlayer: (citizenId: string) => void
   setSelectedBuilding: (buildingId: string | null) => void
   setSelectedPlayer: (player: PlayerState | null) => void
+
+  setCurrentRoomId: (currentRoomId: string) => void
+  setRoomUserCount: (roomUserCount: number) => void
+  setAllRooms: (allRooms: MultiplayerRoomSummary[]) => void
+  setRoomPlayers: (roomPlayers: MultiplayerRoomPlayer[]) => void
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -55,6 +80,11 @@ export const useGameStore = create<GameState>((set) => ({
   },
   selectedBuilding: null,
   selectedPlayer: null,
+
+  currentRoomId: '1',
+  roomUserCount: 1,
+  allRooms: [{ roomId: '1', name: 'Ruang #1', userCount: 1, maxCapacity: 10, isFull: false }],
+  roomPlayers: [],
 
   setGameReady: (isGameReady) => set({ isGameReady }),
   setViewMode: (viewMode) => set({ viewMode }),
@@ -78,4 +108,9 @@ export const useGameStore = create<GameState>((set) => ({
     }),
   setSelectedBuilding: (selectedBuilding) => set({ selectedBuilding }),
   setSelectedPlayer: (selectedPlayer) => set({ selectedPlayer }),
+
+  setCurrentRoomId: (currentRoomId) => set({ currentRoomId }),
+  setRoomUserCount: (roomUserCount) => set({ roomUserCount }),
+  setAllRooms: (allRooms) => set({ allRooms }),
+  setRoomPlayers: (roomPlayers) => set({ roomPlayers }),
 }))

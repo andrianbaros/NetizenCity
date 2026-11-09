@@ -37,6 +37,7 @@ import {
   Fish,
   Waves,
   Trophy,
+  Zap,
 } from 'lucide-react'
 import {
   City3DManager,
@@ -185,27 +186,16 @@ export default function GameCanvas() {
     type?: string
   } | null>(null)
 
-  // Multiplayer Tugu Room State (Max 10 users per room)
-  const [currentRoomId, setCurrentRoomId] = useState('1')
-  const [roomUserCount, setRoomUserCount] = useState(1)
-  const [roomPlayers, setRoomPlayers] = useState<
-    Array<{
-      id: string
-      name: string
-      isGuest: boolean
-      x: number
-      z: number
-      facing: number
-      avatarConfig?: any
-    }>
-  >([])
-  const [allRooms, setAllRooms] = useState<
-    Array<{ roomId: string; name: string; userCount: number; maxCapacity: number; isFull: boolean }>
-  >([
-    { roomId: '1', name: 'Ruang #1', userCount: 1, maxCapacity: 10, isFull: false },
-  ])
-  const [showRoomSwitcher, setShowRoomSwitcher] = useState(false)
-  const [showRoster, setShowRoster] = useState(false)
+  // Multiplayer Room State from Zustand Store (Alun-Alun Tugu & Sungai Dermaga Pancing)
+  const currentRoomId = useGameStore((s) => s.currentRoomId)
+  const setCurrentRoomId = useGameStore((s) => s.setCurrentRoomId)
+  const roomUserCount = useGameStore((s) => s.roomUserCount)
+  const setRoomUserCount = useGameStore((s) => s.setRoomUserCount)
+  const allRooms = useGameStore((s) => s.allRooms)
+  const setAllRooms = useGameStore((s) => s.setAllRooms)
+  const roomPlayers = useGameStore((s) => s.roomPlayers)
+  const setRoomPlayers = useGameStore((s) => s.setRoomPlayers)
+
   const myClientIdRef = useRef<string>('')
   const lastSentChatRef = useRef<string | null>(null)
   const isSyncingRef = useRef(false)
@@ -243,12 +233,15 @@ export default function GameCanvas() {
     return () => window.removeEventListener('player-chat-sent', onChatSent)
   }, [])
 
-  // Sync player position with Tugu room (Adaptive, sequential, prevents out-of-order jitter & lag)
+  // Sync player position with Tugu & River pier rooms (Adaptive, sequential, prevents out-of-order jitter & lag)
   useEffect(() => {
-    if (viewMode !== 'tugu') return
+    if (viewMode !== 'tugu' && viewMode !== 'river') return
 
     let isMounted = true
     let syncTimeout: NodeJS.Timeout | null = null
+    const isRiver = viewMode === 'river'
+    const syncEndpoint = isRiver ? '/api/river/room' : '/api/tugu/room'
+    const leaveEndpoint = isRiver ? '/api/river/leave' : '/api/tugu/leave'
 
     const syncRoom = async () => {
       if (isSyncingRef.current) return
@@ -260,7 +253,7 @@ export default function GameCanvas() {
         myClientIdRef.current = clientId
 
         const profile = useCitizenStore.getState().profile
-        const playerState = cityManagerRef.current?.getPlayerTuguState() || { x: 0, z: 12, facing: 0 }
+        const playerState = cityManagerRef.current?.getPlayerTuguState() || { x: 0, z: isRiver ? -5.5 : 12, facing: 0 }
         const body: any = {
           clientId,
           name: profile?.displayName || profile?.username || undefined,
@@ -269,6 +262,7 @@ export default function GameCanvas() {
           z: playerState.z,
           facing: playerState.facing,
           preferredRoomId: currentRoomId,
+          isFishing: isRiver ? fishingState !== 'idle' : undefined,
         }
 
         if (lastSentChatRef.current) {
@@ -276,7 +270,7 @@ export default function GameCanvas() {
           lastSentChatRef.current = null
         }
 
-        const res = await fetch('/api/tugu/room', {
+        const res = await fetch(syncEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
@@ -299,29 +293,13 @@ export default function GameCanvas() {
             setCurrentRoomId(data.roomId)
           }
           if (typeof data.userCount === 'number') {
-            setRoomUserCount((prev) => (prev === data.userCount ? prev : data.userCount))
+            setRoomUserCount(data.userCount)
           }
           if (data.allRooms) {
-            setAllRooms((prev) => {
-              if (
-                prev.length === data.allRooms.length &&
-                prev.every((r, i) => r.roomId === data.allRooms[i].roomId && r.userCount === data.allRooms[i].userCount)
-              ) {
-                return prev
-              }
-              return data.allRooms
-            })
+            setAllRooms(data.allRooms)
           }
           if (data.players) {
-            setRoomPlayers((prev) => {
-              if (
-                prev.length === data.players.length &&
-                prev.every((p, i) => p.id === data.players[i].id && p.name === data.players[i].name)
-              ) {
-                return prev
-              }
-              return data.players
-            })
+            setRoomPlayers(data.players)
             cityManagerRef.current?.updateRemotePlayers(data.players, myClientIdRef.current)
           }
         }
@@ -345,14 +323,14 @@ export default function GameCanvas() {
       // Leave room on exit
       const cid = myClientIdRef.current || (typeof window !== 'undefined' ? sessionStorage.getItem('nc_citizen_session_id') : '')
       if (cid) {
-        fetch('/api/tugu/leave', {
+        fetch(leaveEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ clientId: cid }),
         }).catch(() => {})
       }
     }
-  }, [viewMode, currentRoomId])
+  }, [viewMode, currentRoomId, fishingState, setCurrentRoomId, setRoomUserCount, setAllRooms, setRoomPlayers])
 
   useEffect(() => {
     if (containerRef.current && !cityManagerRef.current) {
@@ -715,56 +693,10 @@ export default function GameCanvas() {
       />
 
       {/* ============================================================ */}
-      {/* TOP CANVAS CONTROLS (Time & Camera / Exit Tugu)              */}
+      {/* TOP CANVAS CONTROLS (City Mode Time & Landmark Navigation)   */}
       {/* ============================================================ */}
-      <div className="absolute top-13 sm:top-16 left-2 sm:left-4 z-20 pointer-events-auto font-sans">
-        {viewMode === 'tugu' ? (
-          <button
-            type="button"
-            onClick={handleExitTugu}
-            className="flex items-center space-x-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] text-[#343B35] font-bold text-[11px] sm:text-xs shadow-sm transition-transform cursor-pointer"
-          >
-            <Navigation className="w-3.5 h-3.5 text-[#668B65]" />
-            <span>Kembali ke Kota</span>
-          </button>
-        ) : viewMode === 'river' ? (
-          <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={handleExitRiver}
-              className="flex items-center space-x-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] text-[#343B35] font-bold text-[11px] sm:text-xs shadow-sm transition-transform cursor-pointer"
-            >
-              <Navigation className="w-3.5 h-3.5 text-[#668B65]" />
-              <span>Kembali ke Kota</span>
-            </button>
-            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#F7F4E9]/90 border border-[#D8CEBE] text-[#343B35] text-xs font-semibold shadow-xs">
-              <Fish className="w-3.5 h-3.5 text-[#267385]" />
-              <span>Dermaga Pancing Sungai Kali Netizen</span>
-            </div>
-          </div>
-        ) : viewMode === 'stadium' ? (
-          <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={() => {
-                setIsTransitioning(true)
-                setTransitionMessage('Kembali ke Kota Utama...')
-                setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('exit-stadium-area'))
-                  setTimeout(() => setIsTransitioning(false), 400)
-                }, 450)
-              }}
-              className="flex items-center space-x-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] text-[#343B35] font-bold text-[11px] sm:text-xs shadow-sm transition-transform cursor-pointer"
-            >
-              <Navigation className="w-3.5 h-3.5 text-[#668B65]" />
-              <span>Kembali ke Kota</span>
-            </button>
-            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#F7F4E9]/90 border border-[#D8CEBE] text-[#343B35] text-xs font-semibold shadow-xs">
-              <Trophy className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Stadion Gelora Netizen (Freekick 3D)</span>
-            </div>
-          </div>
-        ) : (
+      {viewMode === 'city' && (
+        <div className="absolute top-13 sm:top-16 left-2 sm:left-4 z-20 pointer-events-auto font-sans">
           <div className="flex items-center space-x-1.5 flex-wrap gap-y-1.5">
             {/* 4-Segment Time of Day Control */}
             <div className="flex items-center bg-[#F7F4E9] p-0.5 rounded-xl border border-[#D8CEBE] shadow-xs shrink-0">
@@ -914,151 +846,6 @@ export default function GameCanvas() {
               )}
             </div>
           </div>
-        )}
-      </div>
-
-      {/* ============================================================ */}
-      {/* TUGU MULTIPLAYER ROOM STATUS & SWITCHER (Max 10 per room)     */}
-      {/* ============================================================ */}
-      {viewMode === 'tugu' && (
-        <div className="absolute top-2 sm:top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {/* Room Switcher Pill */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setShowRoomSwitcher(!showRoomSwitcher)
-                setShowRoster(false)
-              }}
-              className="flex items-center space-x-1 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-1.5 sm:px-3 py-1 sm:py-1.5 shadow-sm text-[10px] sm:text-xs font-semibold text-[#343B35] cursor-pointer transition-colors shrink-0"
-            >
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#668B65]" />
-              <span className="sm:hidden">R#{currentRoomId}</span>
-              <span className="hidden sm:inline">Ruang #{currentRoomId}</span>
-              <span className="text-[9px] sm:text-[11px] px-1 sm:px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
-                {roomUserCount}/10
-              </span>
-              <ChevronDown className="w-3 h-3 text-[#78634B]" />
-            </button>
-
-            {showRoomSwitcher && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowRoomSwitcher(false)}
-                />
-                <div className="absolute top-full mt-1.5 left-0 sm:left-1/2 sm:-translate-x-1/2 w-60 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2 shadow-xl z-50 text-xs">
-                <div className="font-bold text-[10px] text-[#78634B] px-2 py-1 uppercase tracking-wide border-b border-[#D8CEBE] mb-1">
-                  Pilih Server Ruangan (Maks 10)
-                </div>
-                <div className="space-y-1 max-h-40 overflow-y-auto">
-                  {allRooms.map((r) => {
-                    const isCurrent = r.roomId === currentRoomId
-                    return (
-                      <button
-                        key={r.roomId}
-                        type="button"
-                        disabled={r.isFull && !isCurrent}
-                        onClick={() => {
-                          setCurrentRoomId(r.roomId)
-                          setShowRoomSwitcher(false)
-                        }}
-                        className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-colors cursor-pointer ${
-                          isCurrent
-                            ? 'bg-[#668B65] text-white font-bold'
-                            : r.isFull
-                            ? 'bg-[#EFE9D8]/50 text-[#78634B]/50 cursor-not-allowed'
-                            : 'hover:bg-[#EFE9D8] text-[#343B35]'
-                        }`}
-                      >
-                        <span className="flex items-center gap-1.5">
-                          {isCurrent && <Check className="w-3 h-3 text-white" />}
-                          {r.name}
-                        </span>
-                        <span className={`text-[10px] font-semibold ${isCurrent ? 'text-white' : 'text-[#78634B]'}`}>
-                          {r.isFull ? 'Penuh (10/10)' : `${r.userCount}/10 Warga`}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-              </>
-            )}
-          </div>
-
-          {/* Citizen Roster in Room Pill */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setShowRoster(!showRoster)
-                setShowRoomSwitcher(false)
-              }}
-              className="flex items-center space-x-1 bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 shadow-sm text-[10px] sm:text-xs font-semibold text-[#343B35] cursor-pointer transition-colors shrink-0"
-              title="Lihat warga di sekitar"
-            >
-              <Users className="w-3.5 h-3.5 text-[#668B65]" />
-              <span className="hidden sm:inline">Warga:</span>
-              <span className="text-[9px] sm:text-[11px] px-1 sm:px-1.5 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-bold">
-                {roomPlayers.length || roomUserCount}
-              </span>
-            </button>
-
-            {showRoster && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowRoster(false)}
-                />
-                <div className="absolute top-full mt-1.5 right-0 sm:left-1/2 sm:-translate-x-1/2 w-64 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2.5 shadow-xl z-50 text-xs">
-                <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-[#D8CEBE]">
-                  <span className="font-bold text-[11px] text-[#78634B] uppercase tracking-wide flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-[#668B65]" /> Warga di Ruang #{currentRoomId}
-                  </span>
-                  <button
-                    onClick={() => setShowRoster(false)}
-                    className="text-[#78634B] hover:text-[#343B35] p-0.5 rounded cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {roomPlayers.length === 0 ? (
-                    <div className="text-[11px] text-[#78634B] py-1 text-center">Menghubungkan warga...</div>
-                  ) : (
-                    roomPlayers.map((p) => {
-                      const isMe = p.id === myClientIdRef.current
-                      return (
-                        <div
-                          key={p.id}
-                          className={`flex items-center justify-between px-2 py-1.5 rounded-lg ${
-                            isMe ? 'bg-[#668B65]/15 font-bold text-[#343B35]' : 'bg-[#EFE9D8]/60 text-[#343B35]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 truncate">
-                            <span className="w-2 h-2 rounded-full bg-[#22C55E] shrink-0" />
-                            <span className="truncate">{p.name}</span>
-                            {isMe && (
-                              <span className="text-[9px] px-1 py-0.2 rounded bg-[#668B65] text-white uppercase shrink-0">
-                                Kamu
-                              </span>
-                            )}
-                          </div>
-                          {!isMe && (
-                            <span className="text-[10px] text-[#668B65] font-semibold shrink-0">
-                              🟢 Online
-                            </span>
-                          )}
-                        </div>
-                      )
-                    })
-                  )}
-                </div>
-              </div>
-              </>
-            )}
-          </div>
         </div>
       )}
 
@@ -1086,43 +873,45 @@ export default function GameCanvas() {
 
       {/* ============================================================ */}
       {/* VIRTUAL ANALOG JOYSTICK (Tugu, River & Stadium on Touch)    */}
+      {/* Lifted to bottom-20 on mobile to avoid cutoffs & overlaps    */}
       {/* ============================================================ */}
       {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium') && (
-        <div className="absolute bottom-5 sm:bottom-6 left-3 sm:left-6 z-30 pointer-events-auto">
+        <div className="absolute bottom-20 sm:bottom-8 left-4 sm:left-8 z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}
 
       {/* ============================================================ */}
       {/* 3D RIVER FISHING CONTROLS & HUD                              */}
+      {/* Compact centered layout that never collides with analog      */}
       {/* ============================================================ */}
       {viewMode === 'river' && (
-        <div className="absolute bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto font-sans flex flex-col items-center gap-2 w-full max-w-sm px-3">
-          {/* Active Auto-Fishing Notification Badge (Hidden when caught modal displays to prevent button collisions) */}
+        <div className="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto font-sans flex flex-col items-center gap-1.5 w-auto max-w-[280px] sm:max-w-sm px-2">
+          {/* Active Auto-Fishing Notification Badge */}
           {isAutoFishing && fishingState !== 'caught' && (
-            <div className="flex items-center space-x-2.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-xl border border-white/30 animate-pulse font-sans">
-              <span className="text-sm sm:text-base animate-spin">⚡</span>
-              <span className="text-xs sm:text-sm font-black tracking-wide">
-                Auto Mancing Aktif • {autoCatchCount} Ikan Terkumpul
+            <div className="flex items-center space-x-2 px-3 py-1 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-xl border border-white/30 animate-pulse font-sans">
+              <span className="text-xs animate-spin">⚡</span>
+              <span className="text-[11px] sm:text-xs font-black tracking-wide">
+                Auto Mancing • {autoCatchCount} Ikan
               </span>
               <button
                 type="button"
                 onClick={() => setIsAutoFishing(false)}
-                className="ml-1 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-black/25 hover:bg-black/40 rounded-xl text-[11px] font-bold text-white transition-all cursor-pointer shadow-xs"
+                className="ml-1 px-2 py-0.5 bg-black/25 hover:bg-black/40 rounded-lg text-[10px] font-bold text-white transition-all cursor-pointer"
               >
-                Berhenti ✕
+                Stop ✕
               </button>
             </div>
           )}
 
           {/* 1. IDLE STATE: Centered Action Controls */}
           {fishingState === 'idle' && (
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-[10px] sm:text-[11px] font-semibold text-[#343B35] bg-[#F7F4E9]/95 backdrop-blur-xs px-3 py-1 rounded-full border border-[#D8CEBE] shadow-xs">
-                💡 Sentuh air sungai atau klik tombol lempar kail
+            <div className="flex flex-col items-center gap-1.5">
+              <span className="text-[9px] sm:text-[10px] font-semibold text-[#343B35] bg-[#F7F4E9]/95 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-[#D8CEBE] shadow-xs">
+                💡 Tap air sungai atau tombol lempar
               </span>
 
-              <div className="flex items-center gap-2 flex-wrap justify-center">
+              <div className="flex items-center gap-1.5 justify-center">
                 {/* Main Centered Throw Button */}
                 <button
                   type="button"
@@ -1142,10 +931,10 @@ export default function GameCanvas() {
                     }
                     cityManagerRef.current?.castFishingLine()
                   }}
-                  className="flex items-center space-x-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-gradient-to-r from-[#267385] to-[#1E5D6C] text-white font-black text-xs sm:text-sm shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/30"
+                  className="flex items-center space-x-1.5 px-4 py-2 sm:px-6 sm:py-3 rounded-2xl bg-gradient-to-r from-[#267385] to-[#1E5D6C] text-white font-black text-xs sm:text-sm shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/30"
                 >
-                  <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-[#80DEEA] animate-pulse" />
-                  <span>Lempar Kail ke Air 🎣</span>
+                  <Fish className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#80DEEA] animate-pulse" />
+                  <span>Lempar Kail 🎣</span>
                 </button>
 
                 {/* Auto-Fishing Toggle Button */}
@@ -1168,18 +957,17 @@ export default function GameCanvas() {
                     const next = !isAutoFishing
                     setIsAutoFishing(next)
                     if (next) {
-                      setAutoCatchCount(0)
-                      setTimeout(() => cityManagerRef.current?.castFishingLine(), 350)
+                      cityManagerRef.current?.castFishingLine()
                     }
                   }}
-                  className={`flex items-center space-x-1.5 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer border ${
+                  className={`flex items-center space-x-1 px-3 py-2 sm:px-4 sm:py-3 rounded-2xl font-black text-xs sm:text-sm transition-all cursor-pointer border shadow-md active:scale-95 ${
                     isAutoFishing
-                      ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-300 ring-2 ring-amber-300/50'
+                      ? 'bg-amber-500 text-white border-amber-400 animate-pulse'
                       : 'bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] border-[#D8CEBE]'
                   }`}
                 >
-                  <span className="text-amber-500 font-black">⚡</span>
-                  <span>{isAutoFishing ? 'Auto: ON' : 'Mode Auto'}</span>
+                  <Zap className="w-3 h-3 text-amber-500" />
+                  <span>{isAutoFishing ? 'Auto On' : 'Auto'}</span>
                 </button>
               </div>
             </div>

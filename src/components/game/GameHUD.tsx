@@ -24,6 +24,8 @@ import {
   Vote,
   MoreHorizontal,
   Menu,
+  ChevronDown,
+  Check,
   X,
   User,
   Camera,
@@ -78,6 +80,14 @@ export default function GameHUD() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isTuguMode, setIsTuguMode] = useState(false)
+  const [showHudRoomSwitcher, setShowHudRoomSwitcher] = useState(false)
+  const [showHudRoster, setShowHudRoster] = useState(false)
+
+  const currentRoomId = useGameStore((s) => s.currentRoomId)
+  const setCurrentRoomId = useGameStore((s) => s.setCurrentRoomId)
+  const roomUserCount = useGameStore((s) => s.roomUserCount)
+  const allRooms = useGameStore((s) => s.allRooms)
+  const roomPlayers = useGameStore((s) => s.roomPlayers)
 
   useEffect(() => {
     const onMode = (e: any) => {
@@ -284,8 +294,8 @@ export default function GameHUD() {
           </div>
         )}
 
-        {/* B. City Statistics — Top Center (Hidden in Tugu mode to prevent overlapping with Room pills) */}
-        {!isTuguMode && (
+        {/* B. Center Pill: City Statistics in City mode, OR Multiplayer Room Pill in Tugu & River mode */}
+        {viewMode === 'city' ? (
           <>
             {/* Desktop View (md+) */}
             <div className="hidden md:flex items-center space-x-3 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl px-3 py-1.5 shadow-[0_3px_10px_rgba(52,59,53,0.08)] text-xs pointer-events-auto">
@@ -344,7 +354,7 @@ export default function GameHUD() {
             </div>
 
             {/* Mobile View: Micro summary badge */}
-            <div className="md:hidden flex items-center space-x-1.5 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl px-2 py-1 shadow-xs text-[10px] font-heading font-bold pointer-events-auto">
+            <div className="md:hidden flex items-center space-x-1.5 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl px-2 py-1 shadow-xs text-[10px] font-heading font-bold pointer-events-auto shrink-0">
               <span className="text-[#343B35]">{formatNumber(cityStats.officialPopulation)}</span>
               <span className="text-[#C6BBA8]">•</span>
               <span className="text-[#668B65] flex items-center gap-1">
@@ -353,7 +363,132 @@ export default function GameHUD() {
               </span>
             </div>
           </>
-        )}
+        ) : (viewMode === 'tugu' || viewMode === 'river') ? (
+          /* MULTIPLAYER ROOM PILL IN TUGU & RIVER INSTANCES (Desktop md+) */
+          <div className="hidden md:flex items-center space-x-1 sm:space-x-1.5 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-0.5 sm:p-1 shadow-[0_3px_10px_rgba(52,59,53,0.08)] text-xs pointer-events-auto relative shrink-0">
+            {/* Room Switcher Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowHudRoomSwitcher(!showHudRoomSwitcher)
+                setShowHudRoster(false)
+              }}
+              className="flex items-center space-x-1 px-1.5 sm:px-2 py-1 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] font-heading font-bold text-[10px] sm:text-xs transition-colors cursor-pointer shrink-0"
+              title="Pilih Server Ruangan (Maks 10 Warga)"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#668B65] animate-pulse" />
+              <span className="sm:hidden">{viewMode === 'river' ? 'D#' : 'R#'}{currentRoomId}</span>
+              <span className="hidden sm:inline">{viewMode === 'river' ? 'Dermaga' : 'Ruang'} #{currentRoomId}</span>
+              <span className="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-extrabold">
+                {roomUserCount}/10
+              </span>
+              <ChevronDown className="w-3 h-3 text-[#78634B]" />
+            </button>
+
+            {/* Room Citizen Roster Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowHudRoster(!showHudRoster)
+                setShowHudRoomSwitcher(false)
+              }}
+              className="flex items-center space-x-1 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[#EFE9D8] text-[#343B35] font-heading font-bold text-[10px] sm:text-xs transition-colors cursor-pointer shrink-0"
+              title="Lihat Warga yang Online di Ruangan Ini"
+            >
+              <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#668B65]" />
+              <span className="hidden sm:inline text-[11px] text-[#78634B]">Warga:</span>
+              <span className="text-[10px] sm:text-xs font-extrabold text-[#343B35]">
+                {roomPlayers.length || roomUserCount}
+              </span>
+            </button>
+
+            {/* Dropdown: Room Server Switcher */}
+            {showHudRoomSwitcher && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowHudRoomSwitcher(false)} />
+                <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-[#F7F4E9] border-2 border-[#D8CEBE] rounded-2xl p-2 shadow-2xl z-50 text-xs font-sans">
+                  <div className="font-heading font-black text-[10px] text-[#78634B] px-2 py-1 uppercase tracking-wide border-b border-[#D8CEBE] mb-1 flex items-center justify-between">
+                    <span>Pilih Server {viewMode === 'river' ? 'Dermaga' : 'Ruangan'} (Maks 10)</span>
+                    <button type="button" onClick={() => setShowHudRoomSwitcher(false)} className="text-[#78634B] hover:text-[#343B35] p-0.5">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {allRooms.map((r) => {
+                      const isCurrent = r.roomId === currentRoomId
+                      return (
+                        <button
+                          key={r.roomId}
+                          type="button"
+                          disabled={r.isFull && !isCurrent}
+                          onClick={() => {
+                            setCurrentRoomId(r.roomId)
+                            setShowHudRoomSwitcher(false)
+                          }}
+                          className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                            isCurrent
+                              ? 'bg-[#668B65] text-white font-bold'
+                              : r.isFull
+                              ? 'bg-[#EFE9D8]/50 text-[#78634B]/50 cursor-not-allowed'
+                              : 'hover:bg-[#EFE9D8] text-[#343B35]'
+                          }`}
+                        >
+                          <span className="flex items-center gap-1.5 font-heading text-xs">
+                            {isCurrent && <Check className="w-3 h-3 text-white" />}
+                            <span>{viewMode === 'river' ? `Dermaga #${r.roomId}` : r.name}</span>
+                          </span>
+                          <span className={`text-[10px] font-semibold ${isCurrent ? 'text-white' : 'text-[#78634B]'}`}>
+                            {r.isFull ? 'Penuh (10/10)' : `${r.userCount}/10 Warga`}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Dropdown: Citizen Roster */}
+            {showHudRoster && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowHudRoster(false)} />
+                <div className="absolute top-full mt-1.5 right-0 sm:left-1/2 sm:-translate-x-1/2 w-60 sm:w-64 bg-[#F7F4E9] border-2 border-[#D8CEBE] rounded-2xl p-2.5 shadow-2xl z-50 text-xs font-sans">
+                  <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-[#D8CEBE]">
+                    <span className="font-heading font-black text-[10px] text-[#78634B] uppercase tracking-wide flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-[#668B65]" />
+                      <span>Warga di {viewMode === 'river' ? 'Dermaga' : 'Ruang'} #{currentRoomId}</span>
+                    </span>
+                    <button type="button" onClick={() => setShowHudRoster(false)} className="text-[#78634B] hover:text-[#343B35] p-0.5 rounded cursor-pointer">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {roomPlayers.length === 0 ? (
+                      <div className="text-[11px] text-[#78634B] py-2 text-center">Menghubungkan warga...</div>
+                    ) : (
+                      roomPlayers.map((p) => {
+                        return (
+                          <div
+                            key={p.id}
+                            className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-[#EFE9D8]/60 text-[#343B35]"
+                          >
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className="w-2 h-2 rounded-full bg-[#22C55E] shrink-0" />
+                              <span className="truncate font-heading font-bold text-xs">{p.name}</span>
+                            </div>
+                            <span className="text-[9px] text-[#668B65] font-bold px-1.5 py-0.2 rounded bg-[#668B65]/15 shrink-0">
+                              🟢 Online
+                            </span>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        ) : null}
 
         {/* C. Main Action Bar — Top Right */}
         <div className="flex items-center space-x-1 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto shrink-0">
@@ -530,6 +665,158 @@ export default function GameHUD() {
           </button>
         </div>
       </header>
+
+      {/* Sub-bar below header: Back to City, Room Switcher (on mobile), & Location Badge */}
+      {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium') && (
+        <div className="pointer-events-auto flex items-center space-x-1.5 mt-1 self-start z-20 flex-wrap gap-y-1">
+          <button
+            type="button"
+            onClick={() => {
+              if (viewMode === 'tugu') {
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('exit-tugu-area'))
+              } else if (viewMode === 'river') {
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('exit-river-area'))
+              } else if (viewMode === 'stadium') {
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('exit-stadium-area'))
+              }
+            }}
+            className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-[#343B35] text-[11px] sm:text-xs font-heading font-bold shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            <span>← Kembali ke Kota</span>
+          </button>
+
+          {/* On Mobile screens (<md), show the Room Switcher right here in the sub-bar! */}
+          {(viewMode === 'tugu' || viewMode === 'river') && (
+            <div className="md:hidden flex items-center space-x-1 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-0.5 shadow-xs text-xs pointer-events-auto relative shrink-0">
+              {/* Room Switcher Toggle Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowHudRoomSwitcher(!showHudRoomSwitcher)
+                  setShowHudRoster(false)
+                }}
+                className="flex items-center space-x-1 px-1.5 py-0.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] font-heading font-bold text-[10px] transition-colors cursor-pointer shrink-0"
+                title="Pilih Server Ruangan (Maks 10 Warga)"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#668B65] animate-pulse" />
+                <span>{viewMode === 'river' ? 'D#' : 'R#'}{currentRoomId}</span>
+                <span className="text-[9px] px-1 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-extrabold">
+                  {roomUserCount}/10
+                </span>
+                <ChevronDown className="w-3 h-3 text-[#78634B]" />
+              </button>
+
+              {/* Citizen Roster Toggle Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowHudRoster(!showHudRoster)
+                  setShowHudRoomSwitcher(false)
+                }}
+                className="flex items-center space-x-1 px-1.5 py-0.5 rounded-lg hover:bg-[#EFE9D8] text-[#343B35] font-heading font-bold text-[10px] transition-colors cursor-pointer shrink-0"
+                title="Lihat Warga Online di Ruangan Ini"
+              >
+                <Users className="w-3 h-3 text-[#668B65]" />
+                <span className="text-[10px] font-extrabold text-[#343B35]">
+                  {roomPlayers.length || roomUserCount}
+                </span>
+              </button>
+
+              {/* Mobile Dropdown: Room Server Switcher */}
+              {showHudRoomSwitcher && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowHudRoomSwitcher(false)} />
+                  <div className="absolute top-full mt-1.5 left-0 w-56 bg-[#F7F4E9] border-2 border-[#D8CEBE] rounded-2xl p-2 shadow-2xl z-50 text-xs font-sans">
+                    <div className="font-heading font-black text-[10px] text-[#78634B] px-2 py-1 uppercase tracking-wide border-b border-[#D8CEBE] mb-1 flex items-center justify-between">
+                      <span>Pilih Server {viewMode === 'river' ? 'Dermaga' : 'Ruangan'} (Maks 10)</span>
+                      <button type="button" onClick={() => setShowHudRoomSwitcher(false)} className="text-[#78634B] hover:text-[#343B35] p-0.5">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {allRooms.map((r) => {
+                        const isCurrent = r.roomId === currentRoomId
+                        return (
+                          <button
+                            key={r.roomId}
+                            type="button"
+                            disabled={r.isFull && !isCurrent}
+                            onClick={() => {
+                              setCurrentRoomId(r.roomId)
+                              setShowHudRoomSwitcher(false)
+                            }}
+                            className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                              isCurrent
+                                ? 'bg-[#668B65] text-white font-bold'
+                                : r.isFull
+                                ? 'bg-[#EFE9D8]/50 text-[#78634B]/50 cursor-not-allowed'
+                                : 'hover:bg-[#EFE9D8] text-[#343B35]'
+                            }`}
+                          >
+                            <span className="flex items-center gap-1.5 font-heading text-xs">
+                              {isCurrent && <Check className="w-3 h-3 text-white" />}
+                              <span>{viewMode === 'river' ? `Dermaga #${r.roomId}` : r.name}</span>
+                            </span>
+                            <span className={`text-[10px] font-semibold ${isCurrent ? 'text-white' : 'text-[#78634B]'}`}>
+                              {r.isFull ? 'Penuh (10/10)' : `${r.userCount}/10 Warga`}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Mobile Dropdown: Citizen Roster */}
+              {showHudRoster && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowHudRoster(false)} />
+                  <div className="absolute top-full mt-1.5 left-0 w-60 bg-[#F7F4E9] border-2 border-[#D8CEBE] rounded-2xl p-2.5 shadow-2xl z-50 text-xs font-sans">
+                    <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-[#D8CEBE]">
+                      <span className="font-heading font-black text-[10px] text-[#78634B] uppercase tracking-wide flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-[#668B65]" />
+                        <span>Warga di {viewMode === 'river' ? 'Dermaga' : 'Ruang'} #{currentRoomId}</span>
+                      </span>
+                      <button type="button" onClick={() => setShowHudRoster(false)} className="text-[#78634B] hover:text-[#343B35] p-0.5 rounded cursor-pointer">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {roomPlayers.length === 0 ? (
+                        <div className="text-[11px] text-[#78634B] py-2 text-center">Menghubungkan warga...</div>
+                      ) : (
+                        roomPlayers.map((p) => (
+                          <div
+                            key={p.id}
+                            className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-[#EFE9D8]/60 text-[#343B35]"
+                          >
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className="w-2 h-2 rounded-full bg-[#22C55E] shrink-0" />
+                              <span className="truncate font-heading font-bold text-xs">{p.name}</span>
+                            </div>
+                            <span className="text-[9px] text-[#668B65] font-bold px-1.5 py-0.2 rounded bg-[#668B65]/15 shrink-0">
+                              🟢 Online
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-[#F7F4E9]/95 border border-[#D8CEBE] text-[#78634B] text-[10px] sm:text-[11px] font-heading font-bold shadow-xs">
+            <span>
+              {viewMode === 'river'
+                ? '🎣 Dermaga Sungai Kali Netizen'
+                : '🏛️ Alun-Alun Tugu Pusat'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================ */}
       {/* MOBILE ACTION DRAWER (Full Cozy Netizen City Experience)     */}
