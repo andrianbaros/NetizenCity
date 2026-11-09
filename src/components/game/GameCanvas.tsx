@@ -38,6 +38,8 @@ import {
   Waves,
   Trophy,
   Zap,
+  Flame,
+  RotateCcw,
 } from 'lucide-react'
 import {
   City3DManager,
@@ -185,6 +187,43 @@ export default function GameCanvas() {
     district: string
     type?: string
   } | null>(null)
+
+  // 3D Stadium Penalty Shootout Score & Feedback State
+  const [stadiumScore, setStadiumScore] = useState<{
+    goals: number
+    shots: number
+    streak: number
+    history: Array<'goal' | 'saved'>
+  }>({
+    goals: 0,
+    shots: 0,
+    streak: 0,
+    history: [],
+  })
+
+  const [stadiumFeedback, setStadiumFeedback] = useState<{
+    isGoal: boolean
+    title: string
+    subtitle: string
+    coinsAwarded?: number
+  } | null>(null)
+
+  const [isShootingFreekick, setIsShootingFreekick] = useState(false)
+
+  const handleResetStadiumScore = () => {
+    setStadiumScore({
+      goals: 0,
+      shots: 0,
+      streak: 0,
+      history: [],
+    })
+    cityManagerRef.current?.setStadiumScore3D(0, 0)
+    useUIStore.getState().addNotification({
+      title: 'Skor Direset ⚽',
+      message: 'Mulai sesi tantangan adu penalti baru!',
+      type: 'info',
+    })
+  }
 
   // Multiplayer Room State from Zustand Store (Alun-Alun Tugu & Sungai Dermaga Pancing)
   const currentRoomId = useGameStore((s) => s.currentRoomId)
@@ -472,6 +511,130 @@ export default function GameCanvas() {
       }
     }
 
+    const playStadiumSynthAudio = (type: 'kick' | 'goal' | 'save') => {
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+        if (!AudioCtx) return
+        const ctx = new AudioCtx()
+
+        if (type === 'kick') {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'triangle'
+          osc.frequency.setValueAtTime(140, ctx.currentTime)
+          osc.frequency.exponentialRampToValueAtTime(35, ctx.currentTime + 0.15)
+          gain.gain.setValueAtTime(0.35, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start()
+          osc.stop(ctx.currentTime + 0.15)
+        } else if (type === 'save') {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'sine'
+          osc.frequency.setValueAtTime(220, ctx.currentTime)
+          osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.2)
+          gain.gain.setValueAtTime(0.4, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start()
+          osc.stop(ctx.currentTime + 0.2)
+        } else if (type === 'goal') {
+          // Referee Whistle
+          const whistleOsc = ctx.createOscillator()
+          const whistleGain = ctx.createGain()
+          whistleOsc.type = 'sine'
+          whistleOsc.frequency.setValueAtTime(2400, ctx.currentTime)
+          whistleOsc.frequency.exponentialRampToValueAtTime(2600, ctx.currentTime + 0.25)
+          whistleGain.gain.setValueAtTime(0.22, ctx.currentTime)
+          whistleGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3)
+          whistleOsc.connect(whistleGain)
+          whistleGain.connect(ctx.destination)
+          whistleOsc.start()
+          whistleOsc.stop(ctx.currentTime + 0.3)
+
+          // Celebratory stadium chime chord (C, E, G, High C)
+          const freqs = [523.25, 659.25, 783.99, 1046.5]
+          freqs.forEach((freq, idx) => {
+            const chordOsc = ctx.createOscillator()
+            const chordGain = ctx.createGain()
+            chordOsc.type = 'triangle'
+            chordOsc.frequency.setValueAtTime(freq, ctx.currentTime + 0.08)
+            chordGain.gain.setValueAtTime(0.12, ctx.currentTime + 0.08)
+            chordGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.75 + idx * 0.1)
+            chordOsc.connect(chordGain)
+            chordGain.connect(ctx.destination)
+            chordOsc.start(ctx.currentTime + 0.08)
+            chordOsc.stop(ctx.currentTime + 0.75 + idx * 0.1)
+          })
+        }
+      } catch {}
+    }
+
+    const onStadiumBallKicked = () => {
+      setIsShootingFreekick(true)
+      playStadiumSynthAudio('kick')
+    }
+
+    const onStadiumFreekickResult = (e: any) => {
+      const { isGoal, saveType } = e.detail || {}
+      setIsShootingFreekick(false)
+
+      if (isGoal) {
+        playStadiumSynthAudio('goal')
+        useCitizenStore.getState().updateBalance(50)
+        useUIStore.getState().addNotification({
+          title: 'GOOOLLL!! ⚽🔥',
+          message: '+50 Koin Hadiah Gol Spektakuler!',
+          type: 'success',
+        })
+        setStadiumScore((prev) => {
+          const newGoals = prev.goals + 1
+          const newShots = prev.shots + 1
+          const newStreak = prev.streak + 1
+          cityManagerRef.current?.setStadiumScore3D(newGoals, newShots)
+          return {
+            goals: newGoals,
+            shots: newShots,
+            streak: newStreak,
+            history: [...prev.history.slice(-4), 'goal'],
+          }
+        })
+        setStadiumFeedback({
+          isGoal: true,
+          title: 'GOOOLLL!! ⚽🔥',
+          subtitle: 'Tendangan Spektakuler Membobol Gawang!',
+          coinsAwarded: 50,
+        })
+      } else {
+        playStadiumSynthAudio('save')
+        const isCatch = saveType === 'catch'
+        setStadiumScore((prev) => {
+          const newShots = prev.shots + 1
+          cityManagerRef.current?.setStadiumScore3D(prev.goals, newShots)
+          return {
+            ...prev,
+            shots: newShots,
+            streak: 0,
+            history: [...prev.history.slice(-4), 'saved'],
+          }
+        })
+        setStadiumFeedback({
+          isGoal: false,
+          title: isCatch ? 'DITANGKAP KIPER! 🧤' : 'DITEPAK KIPER! 🧤',
+          subtitle: isCatch
+            ? 'Kiper membaca arah bola dan menangkapnya dengan erat!'
+            : 'Penyelamatan akrobatik! Bola ditepak menjauhi gawang!',
+        })
+      }
+
+      setTimeout(() => {
+        setStadiumFeedback(null)
+      }, 2600)
+    }
+
     const onEnterBeach = () => {
       setSelectedLandmarkInfo(null)
       setIsTransitioning(true)
@@ -609,6 +772,8 @@ export default function GameCanvas() {
     window.addEventListener('enter-stadium-area', onEnterStadium)
     window.addEventListener('exit-stadium-area', onExitStadium)
     window.addEventListener('stadium-mode-changed', onStadiumModeChanged as EventListener)
+    window.addEventListener('stadium-ball-kicked', onStadiumBallKicked as EventListener)
+    window.addEventListener('stadium-freekick-result', onStadiumFreekickResult as EventListener)
 
     window.addEventListener('enter-beach-area', onEnterBeach)
     window.addEventListener('exit-beach-area', onExitBeach)
@@ -630,6 +795,8 @@ export default function GameCanvas() {
       window.removeEventListener('enter-stadium-area', onEnterStadium)
       window.removeEventListener('exit-stadium-area', onExitStadium)
       window.removeEventListener('stadium-mode-changed', onStadiumModeChanged as EventListener)
+      window.removeEventListener('stadium-ball-kicked', onStadiumBallKicked as EventListener)
+      window.removeEventListener('stadium-freekick-result', onStadiumFreekickResult as EventListener)
 
       window.removeEventListener('enter-beach-area', onEnterBeach)
       window.removeEventListener('exit-beach-area', onExitBeach)
@@ -1240,57 +1407,160 @@ export default function GameCanvas() {
       )}
 
       {/* ============================================================ */}
-      {/* 3D STADIUM FREEKICK CONTROLS & HUD                           */}
+      {/* 3D STADIUM FREEKICK SCOREBOARD & CELEBRATION HUD              */}
       {/* ============================================================ */}
       {viewMode === 'stadium' && (
-        <div className="absolute bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-28 z-30 pointer-events-auto font-sans flex flex-col items-center sm:items-end gap-2.5 max-w-sm">
-          <div className="flex flex-col items-center sm:items-end gap-1.5">
-            <span className="text-[10px] sm:text-[11px] font-semibold text-[#343B35] bg-[#F7F4E9]/90 backdrop-blur-xs px-2.5 py-1 rounded-full border border-[#D8CEBE] shadow-xs">
-              💡 Ketuk bola sepak atau tombol untuk menendang
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => cityManagerRef.current?.shootSoccerBall('top_left', 90)}
-                className="px-3 py-2 rounded-xl bg-[#2D7F36] hover:bg-[#23682B] text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer border border-white/20"
-                title="Tendang Pojok Kiri Atas"
-              >
-                ↖️ Kiri
-              </button>
-              <button
-                type="button"
-                onClick={() => cityManagerRef.current?.shootSoccerBall('center', 85)}
-                className="flex items-center space-x-1.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl bg-gradient-to-r from-[#2D7F36] to-[#1E5C25] text-white font-bold text-xs sm:text-sm shadow-lg hover:shadow-xl active:scale-95 transition-all cursor-pointer border border-white/20"
-              >
-                <span>Tendang Keras ⚽</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => cityManagerRef.current?.shootSoccerBall('top_right', 90)}
-                className="px-3 py-2 rounded-xl bg-[#2D7F36] hover:bg-[#23682B] text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer border border-white/20"
-                title="Tendang Pojok Kanan Atas"
-              >
-                ↗️ Kanan
-              </button>
-            </div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <button
-                type="button"
-                onClick={() => useUIStore.getState().openModal('freekick')}
-                className="px-3 py-1 rounded-lg bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-[11px] font-bold text-[#343B35] shadow-xs cursor-pointer"
-              >
-                🎮 Mini-Game Penalti
-              </button>
-              <button
-                type="button"
-                onClick={() => useUIStore.getState().openModal('photo_studio')}
-                className="px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 border border-amber-300 text-[11px] font-bold text-amber-900 shadow-xs cursor-pointer"
-              >
-                📸 Foto di Lapangan
-              </button>
+        <>
+          {/* Top-Center Digital Stadium Scoreboard */}
+          <div className="absolute top-16 sm:top-18 left-1/2 -translate-x-1/2 z-30 pointer-events-auto font-sans">
+            <div className="bg-[#0F172A]/90 backdrop-blur-md text-white border-2 border-emerald-400/50 rounded-2xl px-3.5 py-1.5 sm:px-5 sm:py-2 shadow-2xl flex items-center gap-3 sm:gap-5">
+              {/* Goals */}
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-wider">⚽ GOL</span>
+                <span className="text-lg sm:text-2xl font-black text-white leading-tight">{stadiumScore.goals}</span>
+              </div>
+              <div className="h-7 w-px bg-white/20" />
+              {/* Shots */}
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase tracking-wider">TEMBAKAN</span>
+                <span className="text-lg sm:text-2xl font-black text-slate-100 leading-tight">{stadiumScore.shots}</span>
+              </div>
+              <div className="h-7 w-px bg-white/20" />
+              {/* Accuracy */}
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] sm:text-[10px] font-bold text-amber-400 uppercase tracking-wider">AKURASI</span>
+                <span className="text-xs sm:text-sm font-bold text-amber-300 leading-tight">
+                  {stadiumScore.shots > 0 ? Math.round((stadiumScore.goals / stadiumScore.shots) * 100) : 0}%
+                </span>
+              </div>
+              {/* Streak Badge */}
+              {stadiumScore.streak >= 2 && (
+                <>
+                  <div className="h-7 w-px bg-white/20 hidden sm:block" />
+                  <div className="hidden sm:flex items-center gap-1 bg-amber-500/20 px-2 py-1 rounded-lg border border-amber-400/40 animate-pulse">
+                    <Flame className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-[11px] font-black text-amber-300">{stadiumScore.streak} Streak!</span>
+                  </div>
+                </>
+              )}
+              {/* History Dots */}
+              {stadiumScore.history.length > 0 && (
+                <div className="hidden sm:flex items-center gap-1 ml-1">
+                  {stadiumScore.history.map((res, i) => (
+                    <span
+                      key={i}
+                      className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                        res === 'goal' ? 'bg-emerald-500 text-white shadow-xs' : 'bg-rose-500 text-white'
+                      }`}
+                      title={res === 'goal' ? 'Gol' : 'Gagal'}
+                    >
+                      {res === 'goal' ? '✓' : '✗'}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Reset Score Button */}
+              {stadiumScore.shots > 0 && (
+                <button
+                  type="button"
+                  onClick={handleResetStadiumScore}
+                  className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer ml-1"
+                  title="Reset Skor Penalti"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
-        </div>
+
+          {/* Goal & Goalkeeper Save Celebration Overlay */}
+          {stadiumFeedback && (
+            <div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center px-4">
+              <div
+                className={`transform transition-all duration-300 scale-100 animate-in zoom-in-75 p-5 sm:p-7 rounded-3xl shadow-2xl border-2 flex flex-col items-center text-center max-w-sm ${
+                  stadiumFeedback.isGoal
+                    ? 'bg-gradient-to-b from-[#1E5C25]/95 to-[#0F3514]/95 border-emerald-400 text-white shadow-emerald-500/60'
+                    : 'bg-gradient-to-b from-[#1E293B]/95 to-[#0F172A]/95 border-amber-400/80 text-white shadow-amber-500/40'
+                }`}
+              >
+                <div className="text-5xl sm:text-6xl mb-2 animate-bounce">
+                  {stadiumFeedback.isGoal ? '⚽🔥' : '🧤'}
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-wider uppercase mb-1 drop-shadow-md">
+                  {stadiumFeedback.title}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium mb-3 max-w-xs">
+                  {stadiumFeedback.subtitle}
+                </p>
+                {stadiumFeedback.coinsAwarded && (
+                  <div className="flex items-center gap-1.5 bg-amber-400/20 border border-amber-400/50 px-3.5 py-1.5 rounded-xl font-black text-amber-300 text-sm animate-pulse">
+                    <span>🪙</span>
+                    <span>+{stadiumFeedback.coinsAwarded} Koin Hadiah Gol!</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Bottom Shootout Action Controls */}
+          <div className="absolute bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-28 z-30 pointer-events-auto font-sans flex flex-col items-center sm:items-end gap-2.5 max-w-sm">
+            <div className="flex flex-col items-center sm:items-end gap-1.5">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-[#343B35] bg-[#F7F4E9]/90 backdrop-blur-xs px-2.5 py-1 rounded-full border border-[#D8CEBE] shadow-xs">
+                {isShootingFreekick ? '⚽ Bola sedang meluncur...' : '💡 Ketuk bola sepak atau tombol untuk menendang'}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isShootingFreekick}
+                  onClick={() => cityManagerRef.current?.shootSoccerBall('top_left', 90)}
+                  className={`px-3 py-2 rounded-xl bg-[#2D7F36] hover:bg-[#23682B] text-white font-bold text-xs shadow-md active:scale-95 transition-all border border-white/20 ${
+                    isShootingFreekick ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                  title="Tendang Pojok Kiri Atas"
+                >
+                  ↖️ Kiri
+                </button>
+                <button
+                  type="button"
+                  disabled={isShootingFreekick}
+                  onClick={() => cityManagerRef.current?.shootSoccerBall('center', 85)}
+                  className={`flex items-center space-x-1.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl bg-gradient-to-r from-[#2D7F36] to-[#1E5C25] text-white font-bold text-xs sm:text-sm shadow-lg hover:shadow-xl active:scale-95 transition-all border border-white/20 ${
+                    isShootingFreekick ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                >
+                  <span>{isShootingFreekick ? 'Menendang... ⚽' : 'Tendang Keras ⚽'}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isShootingFreekick}
+                  onClick={() => cityManagerRef.current?.shootSoccerBall('top_right', 90)}
+                  className={`px-3 py-2 rounded-xl bg-[#2D7F36] hover:bg-[#23682B] text-white font-bold text-xs shadow-md active:scale-95 transition-all border border-white/20 ${
+                    isShootingFreekick ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                  title="Tendang Pojok Kanan Atas"
+                >
+                  ↗️ Kanan
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 mt-1">
+                <button
+                  type="button"
+                  onClick={() => useUIStore.getState().openModal('freekick')}
+                  className="px-3 py-1 rounded-lg bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-[11px] font-bold text-[#343B35] shadow-xs cursor-pointer"
+                >
+                  🎮 Mini-Game Penalti
+                </button>
+                <button
+                  type="button"
+                  onClick={() => useUIStore.getState().openModal('photo_studio')}
+                  className="px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 border border-amber-300 text-[11px] font-bold text-amber-900 shadow-xs cursor-pointer"
+                >
+                  📸 Foto di Lapangan
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* ============================================================ */}

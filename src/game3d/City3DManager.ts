@@ -849,6 +849,17 @@ export class City3DManager {
   }> = [];
   public stadiumGoalCheerTimer = 0;
   public defenderJumpTimer = 0;
+  public keeperArmL: THREE.Mesh | null = null;
+  public keeperArmR: THREE.Mesh | null = null;
+  public keeperGloveL: THREE.Group | null = null;
+  public keeperGloveR: THREE.Group | null = null;
+  public isBallCaught = false;
+  public hasResolvedPenaltyShot = false;
+  public penaltyOutcome: 'goal' | 'saved_catch' | 'saved_deflect' | null = null;
+  public stadiumScoreboardMesh: THREE.Mesh | null = null;
+  public stadiumScoreboardCanvas: HTMLCanvasElement | null = null;
+  public stadiumScoreboardTex: THREE.CanvasTexture | null = null;
+  public stadiumScore = { goals: 0, shots: 0 };
   public stadiumCornerFlags: THREE.Mesh[] = [];
   public stadiumLamps: Array<{
     root: THREE.Group;
@@ -2326,6 +2337,10 @@ export class City3DManager {
     // 10. Corner Flags at the 4 Pitch Corners
     this.createCornerFlags();
 
+    // 11. Large Electronic LED Stadium Scoreboard on North Stands
+    const scoreboardGroup = this.createStadiumScoreboard3D();
+    this.stadiumWorldGroup.add(scoreboardGroup);
+
     // 9. South Entrance Archway / Portal to City (Z = 54)
     const archPortal = new THREE.Group();
     const archMat = new THREE.MeshStandardMaterial({ color: '#D4C4AA', roughness: 0.8 });
@@ -2666,6 +2681,11 @@ export class City3DManager {
     gloveR.add(gBackR, gPalmR);
     gloveR.position.set(0.46, 0.78, 0.22);
     gloveR.rotation.set(-0.2, -0.3, -0.4);
+
+    this.keeperArmL = armL;
+    this.keeperArmR = armR;
+    this.keeperGloveL = gloveL;
+    this.keeperGloveR = gloveR;
 
     keeper.add(
       torso,
@@ -3054,6 +3074,96 @@ export class City3DManager {
       cornerGroup.position.set(c.x, 0, c.z);
       this.stadiumWorldGroup.add(cornerGroup);
     });
+  }
+
+  public setStadiumScore3D(goals: number, shots: number) {
+    this.stadiumScore = { goals, shots };
+    if (!this.stadiumScoreboardCanvas || !this.stadiumScoreboardTex) return;
+    const ctx = this.stadiumScoreboardCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // LED Scoreboard Background
+    ctx.fillStyle = '#080F1E';
+    ctx.fillRect(0, 0, 512, 256);
+
+    // Glowing Neon Border
+    ctx.strokeStyle = '#38BDF8';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(8, 8, 496, 240);
+
+    // Header Bar
+    ctx.fillStyle = '#0284C7';
+    ctx.fillRect(12, 12, 488, 52);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 26px "Lilita One", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('★ STADION NETIZEN CITY ★', 256, 38);
+
+    // Goals Column (Left)
+    ctx.fillStyle = '#10B981';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('GOL ⚽', 130, 100);
+    ctx.font = '900 74px "Lilita One", sans-serif';
+    ctx.fillText(String(goals), 130, 162);
+
+    // Vertical Divider
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(256, 80);
+    ctx.lineTo(256, 195);
+    ctx.stroke();
+
+    // Shots Column (Right)
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('TEMBAKAN', 382, 100);
+    ctx.fillStyle = '#F8FAFC';
+    ctx.font = '900 74px "Lilita One", sans-serif';
+    ctx.fillText(String(shots), 382, 162);
+
+    // Sub-banner with Accuracy
+    const acc = shots > 0 ? Math.round((goals / shots) * 100) : 0;
+    ctx.fillStyle = '#F59E0B';
+    ctx.font = 'bold 20px "Lilita One", sans-serif';
+    ctx.fillText(`AKURASI: ${acc}%  •  HADIAH +50 KOIN / GOL`, 256, 222);
+
+    this.stadiumScoreboardTex.needsUpdate = true;
+  }
+
+  private createStadiumScoreboard3D(): THREE.Group {
+    const group = new THREE.Group();
+
+    // 1. Dual Support Pillars mounted behind North Stands
+    const pillarMat = new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.6 });
+    const pillarL = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 6.0, 8), pillarMat);
+    pillarL.position.set(-3.2, 3.0, -23.5);
+    const pillarR = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 6.0, 8), pillarMat);
+    pillarR.position.set(3.2, 3.0, -23.5);
+    group.add(pillarL, pillarR);
+
+    // 2. Scoreboard Housing Backing
+    const housingMat = new THREE.MeshStandardMaterial({ color: '#0F172A', roughness: 0.7 });
+    const housing = new THREE.Mesh(new THREE.BoxGeometry(8.0, 3.4, 0.45), housingMat);
+    housing.position.set(0, 6.0, -23.5);
+    group.add(housing);
+
+    // 3. LED Screen Mesh with CanvasTexture
+    this.stadiumScoreboardCanvas = document.createElement('canvas');
+    this.stadiumScoreboardCanvas.width = 512;
+    this.stadiumScoreboardCanvas.height = 256;
+    this.stadiumScoreboardTex = new THREE.CanvasTexture(this.stadiumScoreboardCanvas);
+
+    const screenMat = new THREE.MeshBasicMaterial({ map: this.stadiumScoreboardTex });
+    this.stadiumScoreboardMesh = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 3.0), screenMat);
+    this.stadiumScoreboardMesh.position.set(0, 6.0, -23.25);
+    group.add(this.stadiumScoreboardMesh);
+
+    // Initial render with 0 - 0 score
+    this.setStadiumScore3D(0, 0);
+
+    return group;
   }
 
   private buildBeachMap() {
@@ -5700,25 +5810,27 @@ export class City3DManager {
   ) {
     if (this.viewMode !== 'stadium' || this.isBallKicked) return;
     this.isBallKicked = true;
+    this.isBallCaught = false;
+    this.hasResolvedPenaltyShot = false;
 
-    // Set initial ball trajectory toward North Goal (Z = -12.3)
+    // 1. Set initial ball trajectory toward North Goal (Z = -12.3)
     let targetX = 0;
     let targetY = 1.1;
     if (dir === 'left') {
-      targetX = -1.3;
-      targetY = 0.5;
+      targetX = -1.5;
+      targetY = 0.65;
     } else if (dir === 'right') {
-      targetX = 1.3;
-      targetY = 0.5;
+      targetX = 1.5;
+      targetY = 0.65;
     } else if (dir === 'top_left') {
-      targetX = -1.4;
-      targetY = 1.45;
+      targetX = -1.6;
+      targetY = 1.6;
     } else if (dir === 'top_right') {
-      targetX = 1.4;
-      targetY = 1.45;
+      targetX = 1.6;
+      targetY = 1.6;
     } else {
       targetX = 0;
-      targetY = 1.1;
+      targetY = 1.15;
     }
 
     const t = 0.44; // flight duration
@@ -5741,45 +5853,66 @@ export class City3DManager {
       }, 350);
     }
 
-    // Goalkeeper AI dive decision
-    const keeperChoices: Array<'idle' | 'dive_left' | 'dive_right' | 'jump'> = [
-      'dive_left',
-      'dive_right',
-      'jump',
-      'idle',
-    ];
-    this.goalkeeperState = keeperChoices[Math.floor(Math.random() * keeperChoices.length)];
+    // 2. Intelligent Goalkeeper AI dive decision & penalty outcome
+    let keeperDives: Array<'dive_left' | 'dive_right' | 'jump' | 'idle'>;
+    if (dir === 'left' || dir === 'top_left') {
+      keeperDives = ['dive_left', 'dive_left', 'jump', 'dive_right'];
+    } else if (dir === 'right' || dir === 'top_right') {
+      keeperDives = ['dive_right', 'dive_right', 'jump', 'dive_left'];
+    } else {
+      keeperDives = ['jump', 'jump', 'idle', 'dive_left', 'dive_right'];
+    }
+
+    this.goalkeeperState = keeperDives[Math.floor(Math.random() * keeperDives.length)];
     this.goalkeeperAnimTimer = 0;
 
-    // Check goal outcome after ball flight
+    // Determine if keeper guessed the shot direction
+    const keeperGuessedCorrectly =
+      (dir.includes('left') && this.goalkeeperState === 'dive_left') ||
+      (dir.includes('right') && this.goalkeeperState === 'dive_right') ||
+      (dir === 'center' && (this.goalkeeperState === 'jump' || this.goalkeeperState === 'idle'));
+
+    if (keeperGuessedCorrectly) {
+      if (dir === 'top_left' || dir === 'top_right') {
+        // High corner shot: 55% saved, 45% goal
+        if (Math.random() < 0.55) {
+          this.penaltyOutcome = Math.random() < 0.5 ? 'saved_catch' : 'saved_deflect';
+        } else {
+          this.penaltyOutcome = 'goal';
+        }
+      } else {
+        // Normal side shot: 80% saved
+        if (Math.random() < 0.8) {
+          this.penaltyOutcome = Math.random() < 0.65 ? 'saved_catch' : 'saved_deflect';
+        } else {
+          this.penaltyOutcome = 'goal';
+        }
+      }
+    } else {
+      // Keeper dived wrong way: GOAL!
+      this.penaltyOutcome = 'goal';
+    }
+
+    // Dispatch event indicating ball was kicked
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('stadium-ball-kicked', {
+          detail: { dir, power },
+        })
+      );
+    }
+
+    // Reset ball position after 2.4 seconds
     setTimeout(() => {
-      const isSaved =
-        (dir.includes('left') && this.goalkeeperState === 'dive_left') ||
-        (dir.includes('right') && this.goalkeeperState === 'dive_right');
-      const isGoal = !isSaved;
-
-      if (isGoal) {
-        // Trigger wild stadium crowd celebration!
-        this.stadiumGoalCheerTimer = 4.5;
-      }
-
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('stadium-freekick-result', {
-            detail: { isGoal, dir, power },
-          })
-        );
-      }
-
-      // Reset ball position after 2 seconds
-      setTimeout(() => {
-        this.resetSoccerBall();
-      }, 1800);
-    }, 850);
+      this.resetSoccerBall();
+    }, 2400);
   }
 
   public resetSoccerBall() {
     this.isBallKicked = false;
+    this.isBallCaught = false;
+    this.hasResolvedPenaltyShot = false;
+    this.penaltyOutcome = null;
     this.ballVelocity.set(0, 0, 0);
     if (this.soccerBall) {
       this.soccerBall.position.set(0, 0.2, -4.5);
@@ -5788,6 +5921,16 @@ export class City3DManager {
     if (this.goalkeeper) {
       this.goalkeeper.position.set(0, 0.08, -11.9);
       this.goalkeeper.rotation.set(0, 0, 0);
+    }
+    if (this.keeperArmL) this.keeperArmL.rotation.set(0.3, 0, 0.35);
+    if (this.keeperArmR) this.keeperArmR.rotation.set(0.3, 0, -0.35);
+    if (this.keeperGloveL) {
+      this.keeperGloveL.position.set(-0.46, 0.78, 0.22);
+      this.keeperGloveL.rotation.set(-0.2, 0.3, 0.4);
+    }
+    if (this.keeperGloveR) {
+      this.keeperGloveR.position.set(0.46, 0.78, 0.22);
+      this.keeperGloveR.rotation.set(-0.2, -0.3, -0.4);
     }
     this.goalkeeperState = 'idle';
     this.goalkeeperAnimTimer = 0;
@@ -5800,27 +5943,89 @@ export class City3DManager {
   private updateStadium(delta: number, elapsed: number) {
     // 1. Ball physics update
     if (this.soccerBall && this.isBallKicked) {
-      this.soccerBall.position.addScaledVector(this.ballVelocity, delta);
-      // Gravity
-      this.ballVelocity.y -= 9.8 * delta;
+      if (!this.isBallCaught) {
+        this.soccerBall.position.addScaledVector(this.ballVelocity, delta);
+        // Gravity
+        this.ballVelocity.y -= 9.8 * delta;
 
-      // Ground bounce
-      if (this.soccerBall.position.y < 0.2) {
-        this.soccerBall.position.y = 0.2;
-        this.ballVelocity.y = -this.ballVelocity.y * 0.45;
-        this.ballVelocity.x *= 0.8;
-        this.ballVelocity.z *= 0.8;
+        // Ground bounce
+        if (this.soccerBall.position.y < 0.2) {
+          this.soccerBall.position.y = 0.2;
+          this.ballVelocity.y = -this.ballVelocity.y * 0.45;
+          this.ballVelocity.x *= 0.8;
+          this.ballVelocity.z *= 0.8;
+        }
+
+        // Check Goalkeeper Save at Z <= -11.5
+        if (
+          !this.hasResolvedPenaltyShot &&
+          this.penaltyOutcome &&
+          this.penaltyOutcome.startsWith('saved') &&
+          this.soccerBall.position.z <= -11.5
+        ) {
+          this.hasResolvedPenaltyShot = true;
+          if (this.penaltyOutcome === 'saved_catch') {
+            this.isBallCaught = true;
+            this.ballVelocity.set(0, 0, 0);
+          } else {
+            // Deflected off goalkeeper gloves away from goal!
+            const bounceX = this.goalkeeper ? (this.goalkeeper.position.x > 0 ? 4.5 : -4.5) : 3.0;
+            this.ballVelocity.set(bounceX, 4.0, 8.5);
+          }
+
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('stadium-freekick-result', {
+                detail: {
+                  isGoal: false,
+                  saveType: this.penaltyOutcome === 'saved_catch' ? 'catch' : 'deflect',
+                },
+              })
+            );
+          }
+        }
+
+        // Check Goal when ball crosses goal line (Z <= -12.3)
+        if (
+          !this.hasResolvedPenaltyShot &&
+          this.penaltyOutcome === 'goal' &&
+          this.soccerBall.position.z <= -12.3
+        ) {
+          this.hasResolvedPenaltyShot = true;
+          this.stadiumGoalCheerTimer = 4.5;
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('stadium-freekick-result', {
+                detail: {
+                  isGoal: true,
+                  saveType: null,
+                },
+              })
+            );
+          }
+        }
+
+        // Net / goal back collision
+        if (this.soccerBall.position.z < -12.6) {
+          this.soccerBall.position.z = -12.6;
+          this.ballVelocity.set(0, -2.5, 0); // drops straight down
+        }
+
+        // Ball rotation while rolling / flying
+        this.soccerBall.rotation.x += this.ballVelocity.z * delta * 2;
+        this.soccerBall.rotation.z -= this.ballVelocity.x * delta * 2;
+      } else if (this.goalkeeper) {
+        // Ball is firmly caught in the goalkeeper's gloves!
+        const gX = this.goalkeeper.position.x;
+        const gY = this.goalkeeper.position.y + (this.goalkeeperState === 'jump' ? 0.9 : 0.68);
+        const gZ = this.goalkeeper.position.z + 0.32;
+        this.soccerBall.position.set(gX, gY, gZ);
+        this.soccerBall.rotation.set(0, 0, 0);
+
+        // Keeper gloves clutching the ball
+        if (this.keeperGloveL) this.keeperGloveL.position.set(-0.2, 0.72, 0.28);
+        if (this.keeperGloveR) this.keeperGloveR.position.set(0.2, 0.72, 0.28);
       }
-
-      // Net / goal back collision
-      if (this.soccerBall.position.z < -12.5) {
-        this.soccerBall.position.z = -12.5;
-        this.ballVelocity.set(0, 0, 0);
-      }
-
-      // Ball rotation while rolling / flying
-      this.soccerBall.rotation.x += this.ballVelocity.z * delta * 2;
-      this.soccerBall.rotation.z -= this.ballVelocity.x * delta * 2;
     }
 
     // 2. Goalkeeper dive & idle animation
