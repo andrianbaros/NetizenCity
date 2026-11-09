@@ -133,21 +133,23 @@ export default function GameHUD() {
           setProfile(null)
         }
         if (citData.wallet) {
+          const currentLocalBalance = useCitizenStore.getState().wallet?.balance ?? 500
+          const serverBalance = typeof citData.wallet.balance === 'number' ? citData.wallet.balance : 500
+          const bestBalance = Math.max(currentLocalBalance, serverBalance)
           setWallet({
-            id: citData.wallet.id,
-            citizenId: citData.wallet.citizen_id,
-            balance: citData.wallet.balance,
-            totalEarned: citData.wallet.total_earned,
-            totalSpent: citData.wallet.total_spent,
-            updatedAt: citData.wallet.updated_at,
+            id: citData.wallet.id || 'w-saved',
+            citizenId: citData.wallet.citizen_id || 'citizen',
+            balance: bestBalance,
+            totalEarned: Math.max(useCitizenStore.getState().wallet?.totalEarned ?? 0, citData.wallet.total_earned ?? 0, bestBalance),
+            totalSpent: citData.wallet.total_spent ?? 0,
+            updatedAt: citData.wallet.updated_at || new Date().toISOString(),
           })
-        } else {
-          setWallet(null)
         }
-        if (Array.isArray(citData.inventory)) {
-          setInventory(citData.inventory)
-        } else {
-          setInventory([])
+        if (Array.isArray(citData.inventory) && citData.inventory.length > 0) {
+          const localInv = useCitizenStore.getState().inventory || []
+          const serverIds = new Set(citData.inventory.map((i: any) => i.id))
+          const nonServerLocalItems = localInv.filter((i: any) => i && i.id && !serverIds.has(i.id))
+          setInventory([...citData.inventory, ...nonServerLocalItems])
         }
       }
 

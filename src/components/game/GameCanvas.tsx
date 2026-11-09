@@ -331,7 +331,7 @@ export default function GameCanvas() {
       } finally {
         isSyncingRef.current = false
         if (isMounted) {
-          syncTimeout = setTimeout(syncRoom, 200)
+          syncTimeout = setTimeout(syncRoom, 110)
         }
       }
     }
@@ -521,8 +521,11 @@ export default function GameCanvas() {
         })
           .then((res) => (res.ok ? res.json() : null))
           .then((data) => {
-            if (data?.inventory) {
-              setInventory(data.inventory)
+            if (data?.inventory && Array.isArray(data.inventory) && data.inventory.length > 0) {
+              const currentInv = useCitizenStore.getState().inventory || []
+              const serverIds = new Set(data.inventory.map((i: any) => i.id))
+              const remainingLocal = currentInv.filter((i: any) => i && i.id && !serverIds.has(i.id) && i.id !== tempId)
+              setInventory([...data.inventory, ...remainingLocal])
             }
           })
           .catch(() => {})

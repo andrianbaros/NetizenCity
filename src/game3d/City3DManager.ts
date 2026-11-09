@@ -2780,27 +2780,35 @@ export class City3DManager {
   }
 
   private updateRemotePlayersAnimation(delta: number, elapsed: number) {
+    const isRiver = this.viewMode === 'river';
     for (const [, remote] of this.remotePlayers.entries()) {
+      // 1. Dead Reckoning: Extrapolate targetPos forward between network packets while moving
+      if (remote.isMoving) {
+        const extrapolateSpeed = 4.2;
+        remote.targetPos.x += Math.sin(remote.targetFacing) * extrapolateSpeed * delta;
+        remote.targetPos.z += Math.cos(remote.targetFacing) * extrapolateSpeed * delta;
+
+        // Keep extrapolated target within safe bounds
+        if (isRiver) {
+          remote.targetPos.x = Math.max(-3.5, Math.min(3.5, remote.targetPos.x));
+          remote.targetPos.z = Math.max(-18.0, Math.min(4.0, remote.targetPos.z));
+        } else {
+          remote.targetPos.x = Math.max(-35.0, Math.min(35.0, remote.targetPos.x));
+          remote.targetPos.z = Math.max(-35.0, Math.min(35.0, remote.targetPos.z));
+        }
+      }
+
       const cur = remote.root.position;
       const target = remote.targetPos;
       const dist = cur.distanceTo(target);
 
-      // 1. Natural, steady walking movement (eliminates "ngedash ngedash stop ngedash")
-      // Player walking speed in NetizenCity is ~4.2 units/second.
-      // If lag causes distance to build up (>1.2 units), smoothly catch up.
-      const isPlayerWalking = Boolean(remote.isMoving) || dist > 0.08;
+      // Smooth exponential damping towards target position (silky smooth, no dashing or stopping)
+      const smoothFactor = Math.min(1.0, delta * 9.0);
+      cur.x += (target.x - cur.x) * smoothFactor;
+      cur.y += (target.y - cur.y) * smoothFactor;
+      cur.z += (target.z - cur.z) * smoothFactor;
 
-      if (dist > 0.02) {
-        const baseSpeed = 4.2;
-        const speed = dist > 1.2 ? baseSpeed * (dist / 1.0) : baseSpeed;
-        const step = Math.min(dist, speed * delta);
-
-        cur.x += ((target.x - cur.x) / dist) * step;
-        cur.y += ((target.y - cur.y) / dist) * step;
-        cur.z += ((target.z - cur.z) / dist) * step;
-      } else {
-        cur.copy(target);
-      }
+      const isPlayerWalking = Boolean(remote.isMoving) || dist > 0.06;
 
       // 2. Smooth shortest-arc rotation towards movement direction or target facing
       let targetAngle = remote.targetFacing;

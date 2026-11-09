@@ -816,7 +816,20 @@ export function getActiveCitizen(citizenId?: string) {
 
 export function getCitizenWallet(citizenId: string) {
   const db = readLocalDB()
-  return db.wallets.find((w) => w.citizen_id === citizenId) || null
+  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) {
+    wallet = {
+      id: 'w-' + citizenId,
+      citizen_id: citizenId,
+      balance: 500,
+      total_earned: 500,
+      total_spent: 0,
+      updated_at: new Date().toISOString(),
+    }
+    db.wallets.push(wallet)
+    writeLocalDB(db)
+  }
+  return wallet
 }
 
 export function updateWalletBalance(
@@ -826,8 +839,18 @@ export function updateWalletBalance(
   description: string
 ) {
   const db = readLocalDB()
-  const wallet = db.wallets.find((w) => w.citizen_id === citizenId)
-  if (!wallet) return null
+  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) {
+    wallet = {
+      id: 'w-' + citizenId,
+      citizen_id: citizenId,
+      balance: 500,
+      total_earned: 500,
+      total_spent: 0,
+      updated_at: new Date().toISOString(),
+    }
+    db.wallets.push(wallet)
+  }
 
   const prev = wallet.balance
   let next = prev
@@ -1052,77 +1075,103 @@ export function addCaughtFishToInventory(
   }
 }
 
-export function sellInventoryItem(citizenId: string, inventoryId: string) {
+export function sellInventoryItem(citizenId: string, inventoryId: string, fallbackItem?: any) {
   const db = readLocalDB()
-  const index = db.inventory.findIndex(
-    (inv) => inv.id === inventoryId && inv.citizen_id === citizenId
-  )
-  if (index === -1) {
-    return { success: false, error: 'Barang tidak ditemukan di inventori' }
-  }
-
-  const inv = db.inventory[index]
-  const meta = inv.metadata || {}
-
-  // Protection: Favorited items cannot be sold!
-  if (meta.isFavorite) {
-    return {
-      success: false,
-      error: 'Ikan atau barang ini bertanda bintang favorit! Buka favorit terlebih dahulu untuk menjualnya.',
-    }
-  }
-
-  // Protection: Cannot sell starter wooden rod
-  if (inv.item_id === 'rod_wooden') {
-    return { success: false, error: 'Joran kayu warisan warga tidak dapat dijual.' }
-  }
-
-  const item = db.items.find((it) => it.id === inv.item_id)
-  const sellPrice =
-    typeof meta.sellPrice === 'number'
-      ? meta.sellPrice
-      : item
-      ? Math.round(item.price * 0.7)
-      : 50
-
-  const itemName = meta.name || item?.name || 'Barang'
-
-  // Remove from inventory
-  db.inventory.splice(index, 1)
-
-  // Credit wallet
-  const wallet = db.wallets.find((w) => w.citizen_id === citizenId)
-  if (wallet) {
-    wallet.balance += sellPrice
-    wallet.total_earned += sellPrice
-    wallet.updated_at = new Date().toISOString()
-
-    db.transactions.unshift({
-      id: 'tx-' + Math.random().toString(36).substring(2, 9),
+  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) {
+    wallet = {
+      id: 'w-' + citizenId,
       citizen_id: citizenId,
-      type: 'earn',
-      amount: sellPrice,
-      previous_balance: wallet.balance - sellPrice,
-      new_balance: wallet.balance,
-      description: `Menjual ${itemName} ke Pasar Kota`,
-      reference_type: 'inventory_sale',
-      reference_id: inventoryId,
-      created_at: new Date().toISOString(),
-    })
+      balance: 500,
+      total_earned: 500,
+      total_spent: 0,
+      updated_at: new Date().toISOString(),
+    }
+    db.wallets.push(wallet)
   }
+
+  const index = db.inventory.findIndex(
+    (inv) => (inv.id === inventoryId || inv.item_id === inventoryId) && inv.citizen_id === citizenId
+  )
+
+  let itemName = fallbackItem?.name || 'Ikan Tangkapan'
+  let sellPrice = Number(fallbackItem?.sellPrice) || 50
+
+  if (index !== -1) {
+    const inv = db.inventory[index]
+    const meta = inv.metadata || {}
+
+    // Protection: Favorited items cannot be sold!
+    if (meta.isFavorite) {
+      return {
+        success: false,
+        error: 'Ikan atau barang ini bertanda bintang favorit! Buka favorit terlebih dahulu untuk menjualnya.',
+      }
+    }
+
+    // Protection: Cannot sell starter wooden rod
+    if (inv.item_id === 'rod_wooden') {
+      return { success: false, error: 'Joran kayu warisan warga tidak dapat dijual.' }
+    }
+
+    const item = db.items.find((it) => it.id === inv.item_id)
+    sellPrice =
+      typeof meta.sellPrice === 'number'
+        ? meta.sellPrice
+        : item
+        ? Math.round(item.price * 0.7)
+        : sellPrice
+
+    itemName = meta.name || item?.name || itemName
+
+    // Remove from inventory
+    db.inventory.splice(index, 1)
+  }
+
+  // Credit wallet permanently
+  wallet.balance += sellPrice
+  wallet.total_earned += sellPrice
+  wallet.updated_at = new Date().toISOString()
+
+  db.transactions.unshift({
+    id: 'tx-' + Math.random().toString(36).substring(2, 9),
+    citizen_id: citizenId,
+    type: 'earn',
+    amount: sellPrice,
+    previous_balance: wallet.balance - sellPrice,
+    new_balance: wallet.balance,
+    description: `Menjual ${itemName} ke Pasar Kota`,
+    reference_type: 'inventory_sale',
+    reference_id: inventoryId,
+    created_at: new Date().toISOString(),
+  })
 
   writeLocalDB(db)
   return {
     success: true,
     soldItem: { id: inventoryId, name: itemName, sellPrice },
-    newBalance: wallet ? wallet.balance : 0,
+    newBalance: wallet.balance,
   }
 }
 
-export function batchSellInventoryItems(citizenId: string, inventoryIds: string[]) {
+export function batchSellInventoryItems(
+  citizenId: string,
+  inventoryIds: string[],
+  fallbackItems?: Array<{ id: string; name?: string; sellPrice?: number }>
+) {
   const db = readLocalDB()
-  const wallet = db.wallets.find((w) => w.citizen_id === citizenId)
-  if (!wallet) return { success: false, error: 'Dompet warga tidak ditemukan.' }
+  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) {
+    wallet = {
+      id: 'w-' + citizenId,
+      citizen_id: citizenId,
+      balance: 500,
+      total_earned: 500,
+      total_spent: 0,
+      updated_at: new Date().toISOString(),
+    }
+    db.wallets.push(wallet)
+  }
 
   const idSet = new Set(inventoryIds)
   let totalCoins = 0
@@ -1149,10 +1198,27 @@ export function batchSellInventoryItems(citizenId: string, inventoryIds: string[
         name: meta.name || item?.name || 'Barang',
         price: sellPrice,
       })
+      idSet.delete(inv.id)
       return false // delete from inventory
     }
     return true
   })
+
+  // Credit any remaining items from fallbackItems (e.g. catches in this session)
+  if (Array.isArray(fallbackItems)) {
+    for (const fb of fallbackItems) {
+      if (idSet.has(fb.id)) {
+        const price = Number(fb.sellPrice) || 50
+        totalCoins += price
+        soldList.push({
+          id: fb.id,
+          name: fb.name || 'Ikan Tangkapan',
+          price,
+        })
+        idSet.delete(fb.id)
+      }
+    }
+  }
 
   if (soldList.length === 0) {
     return {

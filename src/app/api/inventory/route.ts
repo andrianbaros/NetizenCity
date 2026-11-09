@@ -62,12 +62,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'sell') {
-      const { inventoryId } = body
+      const { inventoryId, item } = body
       if (!inventoryId) {
         return NextResponse.json({ error: 'ID barang tidak valid' }, { status: 400 })
       }
 
-      const result = sellInventoryItem(citizen.id, inventoryId)
+      const result = sellInventoryItem(citizen.id, inventoryId, item)
       if (!result.success) {
         return NextResponse.json(result, { status: 400 })
       }
@@ -77,12 +77,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'batch_sell') {
-      const { inventoryIds } = body
+      const { inventoryIds, items } = body
       if (!Array.isArray(inventoryIds) || inventoryIds.length === 0) {
         return NextResponse.json({ error: 'Pilih setidaknya 1 ikan untuk dijual.' }, { status: 400 })
       }
 
-      const result = batchSellInventoryItems(citizen.id, inventoryIds)
+      const result = batchSellInventoryItems(citizen.id, inventoryIds, items)
       if (!result.success) {
         return NextResponse.json(result, { status: 400 })
       }
