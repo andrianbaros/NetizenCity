@@ -817,6 +817,8 @@ export class City3DManager {
   }> = [];
   private beachWaveFoams: THREE.Mesh[] = [];
   private beachBuoys: THREE.Group[] = [];
+  private separateBeachFlag: THREE.Mesh | null = null;
+  private separateLighthouseBeam: THREE.Group | null = null;
   private handleEnterBeachEvent?: () => void;
   private handleExitBeachEvent?: () => void;
 
@@ -2430,35 +2432,36 @@ export class City3DManager {
     this.beachLamps = [];
     this.beachWaveFoams = [];
     this.beachBuoys = [];
+    this.separateBeachFlag = null;
+    this.separateLighthouseBeam = null;
 
-    // 1. Underwater Seabed / Sand Bottom (Pasir Bawah Laut)
-    const seabedGeom = new THREE.PlaneGeometry(240, 100, 1, 1).rotateX(-Math.PI / 2);
+    // 1. Underwater Seabed / Sand Bottom (Pasir Bawah Laut Samudra)
+    const seabedGeom = new THREE.PlaneGeometry(80, 100, 1, 1).rotateX(-Math.PI / 2);
     const seabedMat = new THREE.MeshStandardMaterial({
       color: '#D4B376',
       roughness: 0.95,
     });
     const seabed = new THREE.Mesh(seabedGeom, seabedMat);
-    seabed.position.set(0, -2.4, -36);
+    seabed.position.set(-35, -2.5, 6);
     this.beachWorldGroup.add(seabed);
 
     // Underwater Colorful Coral Clusters & Sea Stones
     const coralColors = ['#F97316', '#EF4444', '#10B981', '#EC4899', '#8B5CF6'];
     const coralMat = (c: string) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75 });
-    for (let i = 0; i < 22; i++) {
-      const cx = (Math.random() - 0.5) * 60;
-      if (Math.abs(cx) < 3.5) continue;
-      const cz = -7.0 - Math.random() * 28.0;
+    for (let i = 0; i < 28; i++) {
+      const cx = -6.0 - Math.random() * 45.0;
+      const cz = -28.0 + Math.random() * 70.0;
       const coral = new THREE.Mesh(
         new THREE.DodecahedronGeometry(0.35 + Math.random() * 0.45, 1),
         coralMat(coralColors[i % coralColors.length])
       );
-      coral.position.set(cx, -1.8, cz);
+      coral.position.set(cx, -1.9, cz);
       coral.scale.set(1.2, 0.8, 1.2);
       this.beachWorldGroup.add(coral);
     }
 
     // 2. Translucent Tropical Turquoise Ocean Surface (Air Laut Tropis)
-    const oceanGeom = new THREE.PlaneGeometry(240, 80, 1, 1).rotateX(-Math.PI / 2);
+    const oceanGeom = new THREE.PlaneGeometry(80, 100, 1, 1).rotateX(-Math.PI / 2);
     const oceanMat = new THREE.MeshLambertMaterial({
       color: '#0284C7',
       transparent: true,
@@ -2466,45 +2469,46 @@ export class City3DManager {
       depthWrite: false,
     });
     const ocean = new THREE.Mesh(oceanGeom, oceanMat);
-    ocean.position.set(0, -0.05, -34);
+    ocean.position.set(-35, -0.05, 6);
     this.beachWorldGroup.add(ocean);
 
-    // 3. Dynamic Beach Wave Foams (Ombak Garis Buih Putih)
+    // 3. Dynamic Beach Wave Foams (Ombak Garis Buih Putih Panjang Mengikuti Garis Pantai)
     for (let f = 0; f < 3; f++) {
-      const foamGeom = new THREE.PlaneGeometry(140 + f * 20, 0.9 + f * 0.3, 1, 1).rotateX(-Math.PI / 2);
+      const foamGeom = new THREE.PlaneGeometry(0.85 + f * 0.35, 86, 1, 1).rotateX(-Math.PI / 2);
       const foamMat = new THREE.MeshBasicMaterial({
         color: '#FFFFFF',
         transparent: true,
         opacity: 0.65 - f * 0.15,
+        depthWrite: false,
       });
       const foamMesh = new THREE.Mesh(foamGeom, foamMat);
-      foamMesh.position.set(0, 0.01 + f * 0.005, -0.2 + f * 1.0);
+      foamMesh.position.set(-0.35 - f * 0.7, 0.01 + f * 0.005, 6);
       this.beachWaveFoams.push(foamMesh);
       this.beachWorldGroup.add(foamMesh);
     }
 
-    // 4. Wet Sand Shoreline (Tideline ribbon)
+    // 4. Wet Sand Shoreline (Tideline ribbon di tepi air pasang)
     const wetSand = new THREE.Mesh(
-      new THREE.BoxGeometry(240, 0.35, 2.5),
+      new THREE.BoxGeometry(2.5, 0.35, 86),
       new THREE.MeshStandardMaterial({ color: '#D2B079', roughness: 0.95 })
     );
-    wetSand.position.set(0, -0.15, 1.6);
+    wetSand.position.set(1.25, -0.15, 6);
     this.beachWorldGroup.add(wetSand);
 
-    // 5. Fine Creamy Sand Beach (Hamparan Pasir Putih Bersih)
+    // 5. Fine Golden Creamy Sand Beach (Hamparan Pasir Putih Bersih)
     const sandBeach = new THREE.Mesh(
-      new THREE.BoxGeometry(240, 1.4, 48.0),
+      new THREE.BoxGeometry(14.0, 1.4, 86),
       new THREE.MeshStandardMaterial({ color: '#F7E7C4', roughness: 0.98 })
     );
-    sandBeach.position.set(0, -0.65, 26.0);
+    sandBeach.position.set(9.5, -0.65, 6);
     this.beachWorldGroup.add(sandBeach);
 
     // Scattered Seashells on the Sand
     const shellMat1 = new THREE.MeshStandardMaterial({ color: '#FFF5EB', roughness: 0.6 });
     const shellMat2 = new THREE.MeshStandardMaterial({ color: '#FFE4E6', roughness: 0.6 });
-    for (let i = 0; i < 35; i++) {
-      const sx = (Math.random() - 0.5) * 65;
-      const sz = 3.5 + Math.random() * 20.0;
+    for (let i = 0; i < 40; i++) {
+      const sx = 2.8 + Math.random() * 11.5;
+      const sz = -22.0 + Math.random() * 55.0;
       const shell = new THREE.Mesh(
         new THREE.ConeGeometry(0.12, 0.18, 5),
         i % 2 === 0 ? shellMat1 : shellMat2
@@ -2514,64 +2518,252 @@ export class City3DManager {
       this.beachWorldGroup.add(shell);
     }
 
-    // 6. Wooden Ocean Pier & Angling Boardwalk (Dermaga Pancing Samudra)
+    // 6. Inland Green Grassy Bank & Promenade (Kawasan Rumput Hijau Pedalaman)
+    const greenBank = new THREE.Mesh(
+      new THREE.BoxGeometry(10.0, 1.6, 86),
+      new THREE.MeshStandardMaterial({ color: '#76B055', roughness: 0.9 })
+    );
+    greenBank.position.set(21.5, -0.55, 6);
+    this.beachWorldGroup.add(greenBank);
+
+    // 7. North River Channel & Arched Road Bridge (Muara Sungai Kali Netizen & Jembatan Lengkung)
+    const riverChannel = new THREE.Mesh(
+      new THREE.BoxGeometry(26.0, 0.4, 6.2),
+      new THREE.MeshStandardMaterial({ color: '#38BDF8', roughness: 0.3 })
+    );
+    riverChannel.position.set(13.0, -0.04, -28.0);
+    this.beachWorldGroup.add(riverChannel);
+
+    const riverBridge = this.makeRiverBridge();
+    riverBridge.position.set(9.5, 0, -28.0);
+    this.beachWorldGroup.add(riverBridge);
+
+    // 8. Pantai Netizen Beach Zone: Swimming Buoy Boundary (Pelampung Area Berenang)
+    const buoyPerimeter: Array<[number, number]> = [];
+    // North edge (Z = -14)
+    for (let bx = -18; bx <= -2; bx += 2.2) buoyPerimeter.push([bx, -14]);
+    // South edge (Z = 8)
+    for (let bx = -18; bx <= -2; bx += 2.2) buoyPerimeter.push([bx, 8]);
+    // West deep edge (X = -18)
+    for (let bz = -12; bz < 8; bz += 2.2) buoyPerimeter.push([-18, bz]);
+    // East shoreline edge (X = -2)
+    for (let bz = -12; bz < 8; bz += 2.2) buoyPerimeter.push([-2, bz]);
+
+    buoyPerimeter.forEach(([bx, bz], i) => {
+      const buoy = new THREE.Group();
+      const isRed = i % 2 === 0;
+      const sphereMat = new THREE.MeshStandardMaterial({
+        color: isRed ? '#F28C7A' : '#FFFFFF',
+        roughness: 0.4,
+      });
+      const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), sphereMat);
+      sphere.position.set(0, 0.12, 0);
+      buoy.add(sphere);
+
+      const ringMat = new THREE.MeshStandardMaterial({
+        color: isRed ? '#FFFFFF' : '#F28C7A',
+        roughness: 0.5,
+      });
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 8), ringMat);
+      ring.position.set(0, 0.02, 0);
+      buoy.add(ring);
+
+      buoy.position.set(bx, 0.05, bz);
+      this.beachBuoys.push(buoy);
+      this.beachWorldGroup.add(buoy);
+    });
+
+    // 9. Two Neat Rows of Striped Beach Umbrellas & Loungers (Deretan Payung & Kursi Pantai)
+    const umbrellaColors = ['#F2A88A', '#A8DCC8', '#F7D772', '#C9B8E8', '#F2B8C6', '#A9C8EC'];
+    const loungerColors = ['#F7ECD6', '#A9C8EC', '#F2B8C6', '#F7D772', '#A8DCC8'];
+
+    // Row 1 (Closer to shoreline, X = 5.2)
+    const row1Z = [-13.0, -9.0, -5.0, -1.0, 3.0, 7.0, 11.0];
+    row1Z.forEach((z, i) => {
+      const uGroup = new THREE.Group();
+      uGroup.position.set(5.2, 0, z);
+
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 2.0, 6),
+        new THREE.MeshStandardMaterial({ color: '#E8E2D5', roughness: 0.5 })
+      );
+      pole.position.set(0, 1.0, 0);
+      pole.rotation.z = -0.06;
+      uGroup.add(pole);
+
+      const canopy = this.makeStripedCanopy(umbrellaColors[i % umbrellaColors.length], 1.45, 0.65);
+      canopy.position.set(-0.06, 1.95, 0);
+      uGroup.add(canopy);
+
+      const lounger = this.makeSunLounger(loungerColors[i % loungerColors.length]);
+      lounger.position.set(0.95, 0, 0.15);
+      lounger.rotation.y = Math.PI / 2 + 0.1;
+      uGroup.add(lounger);
+
+      this.beachWorldGroup.add(uGroup);
+    });
+
+    // Row 2 (Staggered inland, X = 8.8)
+    const row2Z = [-11.0, -7.0, -3.0, 1.0, 5.0, 9.0];
+    row2Z.forEach((z, i) => {
+      const uGroup = new THREE.Group();
+      uGroup.position.set(8.8, 0, z);
+
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 2.0, 6),
+        new THREE.MeshStandardMaterial({ color: '#E8E2D5', roughness: 0.5 })
+      );
+      pole.position.set(0, 1.0, 0);
+      pole.rotation.z = -0.05;
+      uGroup.add(pole);
+
+      const canopy = this.makeStripedCanopy(umbrellaColors[(i + 3) % umbrellaColors.length], 1.45, 0.65);
+      canopy.position.set(-0.05, 1.95, 0);
+      uGroup.add(canopy);
+
+      const lounger = this.makeSunLounger(loungerColors[(i + 2) % loungerColors.length]);
+      lounger.position.set(0.95, 0, 0.15);
+      lounger.rotation.y = Math.PI / 2 + 0.1;
+      uGroup.add(lounger);
+
+      this.beachWorldGroup.add(uGroup);
+    });
+
+    // 10. Lifeguard Watchtower (Menara Penjaga Pantai Netizen - Coral & Cream)
+    const lifeguardTower = this.makeLifeguardTower();
+    lifeguardTower.position.set(12.0, 0, -2.0);
+    lifeguardTower.rotation.y = -Math.PI / 2; // Facing West towards sea
+    this.beachWorldGroup.add(lifeguardTower);
+
+    // 11. Safety Warning Board ("HATI-HATI! BERENANG DI AREA YANG DIJAGA")
+    const safetyBoard = this.makeSafetyBoard();
+    safetyBoard.position.set(12.0, 0, -7.5);
+    safetyBoard.rotation.y = -Math.PI / 2;
+    this.beachWorldGroup.add(safetyBoard);
+
+    // 12. Wooden Entrance Gate ("NETIZEN BEACH" Berpita Pink)
+    const beachGate = this.makeBeachGate();
+    beachGate.position.set(15.2, 0, -11.0);
+    beachGate.rotation.y = -Math.PI / 2;
+    this.beachWorldGroup.add(beachGate);
+
+    // 13. Pelabuhan / Port Zone (Quay Concrete Apron - Dermaga Pelabuhan)
+    const quay = new THREE.Mesh(
+      new THREE.BoxGeometry(15.0, 0.45, 28.0),
+      new THREE.MeshStandardMaterial({ color: '#E6DED0', roughness: 0.92 })
+    );
+    quay.position.set(8.0, 0.1, 30.0);
+    quay.castShadow = true;
+    quay.receiveShadow = true;
+    this.beachWorldGroup.add(quay);
+
+    const quayCurb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.35, 0.25, 28.0),
+      new THREE.MeshStandardMaterial({ color: '#CFC6B8', roughness: 0.85 })
+    );
+    quayCurb.position.set(0.65, 0.4, 30.0);
+    this.beachWorldGroup.add(quayCurb);
+
+    // 14. Stacked Pastel Cargo Containers (Tumpukan Peti Kemas Pastel Pelabuhan)
+    const contCols = ['#F2A88A', '#A8DCC8', '#C9B8E8', '#F7D772', '#A9C8EC', '#F2B8C6'];
+    const containerLayout: Array<{ x: number; y: number; z: number; c: string }> = [
+      // Block 1 (North of Pier, Z in 18..24)
+      { x: 7.0, y: 0.35, z: 19.0, c: contCols[0] },
+      { x: 7.0, y: 1.55, z: 19.0, c: contCols[1] },
+      { x: 8.5, y: 0.35, z: 19.0, c: contCols[2] },
+      { x: 10.0, y: 0.35, z: 19.0, c: contCols[3] },
+      { x: 7.0, y: 0.35, z: 22.2, c: contCols[4] },
+      { x: 8.5, y: 0.35, z: 22.2, c: contCols[5] },
+      { x: 8.5, y: 1.55, z: 22.2, c: contCols[0] },
+      { x: 10.0, y: 0.35, z: 22.2, c: contCols[1] },
+      { x: 11.5, y: 0.35, z: 22.2, c: contCols[2] },
+      { x: 8.5, y: 0.35, z: 24.8, c: contCols[3] },
+      { x: 10.0, y: 0.35, z: 24.8, c: contCols[4] },
+
+      // Block 2 (South of Pier, Z in 32..40)
+      { x: 7.0, y: 0.35, z: 32.5, c: contCols[5] },
+      { x: 8.5, y: 0.35, z: 32.5, c: contCols[0] },
+      { x: 8.5, y: 1.55, z: 32.5, c: contCols[1] },
+      { x: 10.0, y: 0.35, z: 32.5, c: contCols[2] },
+      { x: 7.0, y: 0.35, z: 35.5, c: contCols[3] },
+      { x: 8.5, y: 0.35, z: 35.5, c: contCols[4] },
+      { x: 10.0, y: 0.35, z: 35.5, c: contCols[5] },
+      { x: 10.0, y: 1.55, z: 35.5, c: contCols[0] },
+      { x: 11.5, y: 0.35, z: 35.5, c: contCols[1] },
+      { x: 8.5, y: 0.35, z: 38.5, c: contCols[2] },
+      { x: 10.0, y: 0.35, z: 38.5, c: contCols[3] },
+      { x: 8.5, y: 1.55, z: 38.5, c: contCols[4] },
+      { x: 11.5, y: 0.35, z: 38.5, c: contCols[5] },
+    ];
+
+    containerLayout.forEach((pos) => {
+      const box = this.makeContainer(pos.c);
+      box.position.set(pos.x, pos.y + 0.6, pos.z);
+      this.beachWorldGroup.add(box);
+    });
+
+    // 15. Harbour Cargo Crane (Derek Bongkar Muat Pelabuhan)
+    const crane = this.makeHarbourCrane();
+    crane.position.set(4.0, 0.35, 20.5);
+    crane.rotation.y = 0;
+    this.beachWorldGroup.add(crane);
+
+    // 16. Wooden Ocean Angling Pier (Dermaga Pancing Samudra Menjorok ke Laut di Z = 28.0)
     const pierDeckGroup = new THREE.Group();
     const woodPlankMat1 = new THREE.MeshStandardMaterial({ color: '#7A4B26', roughness: 0.85 });
     const woodPlankMat2 = new THREE.MeshStandardMaterial({ color: '#8C562E', roughness: 0.85 });
 
-    // Transition steps from Sand (Y = 0.0) up to Pier (Y = 0.35)
-    for (let step = 0; step < 3; step++) {
+    // Transition ramp from Sand/Quay (X = 2.2, Y = 0.1) up to Pier deck (X = 1.0, Y = 0.35)
+    for (let step = 0; step < 4; step++) {
       const stepPlank = new THREE.Mesh(
-        new THREE.BoxGeometry(4.4, 0.12, 0.4),
+        new THREE.BoxGeometry(0.32, 0.12, 3.6),
         step % 2 === 0 ? woodPlankMat1 : woodPlankMat2
       );
-      stepPlank.position.set(0, 0.08 + step * 0.1, 2.9 - step * 0.35);
+      stepPlank.position.set(2.0 - step * 0.3, 0.12 + step * 0.07, 28.0);
       pierDeckGroup.add(stepPlank);
     }
 
-    // Pier Main Wooden Planks (Z = -12.5 to 2.0)
-    const pierLength = 14.5;
-    const plankCount = Math.floor(pierLength / 0.38);
+    // Pier main wooden planks spanning X from -16.4 to 1.0
+    const plankWidth = 0.36;
+    const pierSpan = 17.4;
+    const plankCount = Math.floor(pierSpan / plankWidth);
     for (let i = 0; i < plankCount; i++) {
-      const pz = -12.4 + i * 0.38;
+      const px = -16.3 + i * plankWidth;
       const plank = new THREE.Mesh(
-        new THREE.BoxGeometry(4.4, 0.14, 0.34),
+        new THREE.BoxGeometry(0.32, 0.14, 3.6),
         i % 2 === 0 ? woodPlankMat1 : woodPlankMat2
       );
-      plank.position.set(0, 0.35, pz);
+      plank.position.set(px, 0.35, 28.0);
       pierDeckGroup.add(plank);
     }
 
-    // Pier Heavy Timber Support Pilings (Tiang Kayu Penyangga di Laut)
+    // Heavy timber pilings anchored into sea bottom
     const pilingMat = new THREE.MeshStandardMaterial({ color: '#4E2F17', roughness: 0.9 });
-    [-1.9, 1.9].forEach((px) => {
-      for (let pz = -12.0; pz <= 1.0; pz += 3.0) {
-        const piling = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.16, 0.18, 3.2, 8),
-          pilingMat
-        );
-        piling.position.set(px, -0.9, pz);
+    for (let px = -16.0; px <= 0.5; px += 2.8) {
+      [-1.6, 1.6].forEach((pzOffset) => {
+        const piling = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 3.4, 8), pilingMat);
+        piling.position.set(px, -1.0, 28.0 + pzOffset);
         pierDeckGroup.add(piling);
-      }
-    });
+      });
+    }
 
-    // Pier Railing Posts & Nautical Lanterns (beachLamps)
+    // Pier railing posts & nautical brass lanterns
     const postMat = new THREE.MeshStandardMaterial({ color: '#5A351B', roughness: 0.8 });
     const lampBrassMat = new THREE.MeshStandardMaterial({ color: '#D4AF37', metalness: 0.7, roughness: 0.3 });
     const lampGlowMat = new THREE.MeshStandardMaterial({
       color: '#FFF8E7',
       emissive: '#FFB84D',
-      emissiveIntensity: 0.2,
+      emissiveIntensity: 0.25,
       roughness: 0.3,
     });
 
-    [-2.1, 2.1].forEach((px) => {
-      for (let pz = -12.2; pz <= 1.5; pz += 3.2) {
-        const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.1, 0.18), postMat);
+    for (let px = -16.2; px <= 0.8; px += 3.2) {
+      [-1.75, 1.75].forEach((pzOffset) => {
+        const pz = 28.0 + pzOffset;
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.1, 0.16), postMat);
         post.position.set(px, 0.85, pz);
         pierDeckGroup.add(post);
 
-        // Brass Lantern on Post Top
         const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.24), lampBrassMat);
         lantern.position.set(px, 1.45, pz);
         pierDeckGroup.add(lantern);
@@ -2583,156 +2775,593 @@ export class City3DManager {
         const pLight = new THREE.PointLight('#FFD180', 0.0, 7.0, 1.5);
         pLight.position.set(px, 1.5, pz);
         pierDeckGroup.add(pLight);
-
         this.beachLamps.push({ root: lantern, headMat: lampGlowMat, light: pLight });
-      }
-    });
+      });
+    }
 
-    // Pier Props: Bait barrels, fishing tackle box, coiled rope
+    // Pier props: bait barrel, tackle box, lifebuoy
     const barrelMat = new THREE.MeshStandardMaterial({ color: '#5B371B', roughness: 0.85 });
-    const barrel1 = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.85, 10), barrelMat);
-    barrel1.position.set(-1.45, 0.78, -4.5);
-    pierDeckGroup.add(barrel1);
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.4, 0.82, 10), barrelMat);
+    barrel.position.set(-14.5, 0.76, 26.8);
+    pierDeckGroup.add(barrel);
 
     const crateMat = new THREE.MeshStandardMaterial({ color: '#A06E3B', roughness: 0.85 });
-    const crate = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.5, 0.6), crateMat);
-    crate.position.set(1.4, 0.62, -7.0);
-    crate.rotation.y = 0.25;
-    pierDeckGroup.add(crate);
+    const tackleBox = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.45, 0.55), crateMat);
+    tackleBox.position.set(-11.5, 0.6, 29.2);
+    pierDeckGroup.add(tackleBox);
 
-    // Lifebuoy ring hanging on front-left pier post
     const buoyRingMat = new THREE.MeshStandardMaterial({ color: '#EF4444', roughness: 0.5 });
     const lifebuoy = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.07, 8, 16), buoyRingMat);
-    lifebuoy.position.set(-2.0, 0.95, -12.1);
+    lifebuoy.position.set(-16.3, 0.95, 26.3);
     lifebuoy.rotation.y = Math.PI / 2;
     pierDeckGroup.add(lifebuoy);
 
     this.beachWorldGroup.add(pierDeckGroup);
 
-    // 7. Lifeguard Watchtower (Menara Penjaga Pantai Netizen - Sesuai Request Deskripsi Modal)
-    const towerGroup = new THREE.Group();
-    towerGroup.position.set(-14.0, 0, 9.0);
+    // 17. Docked Cargo Ship / Ferry ("KOTA NETIZEN" Sandar di Dermaga)
+    const cargoShip = this.makeCargoShip();
+    cargoShip.position.set(-9.5, 0, 34.0);
+    cargoShip.rotation.y = 0;
+    this.beachWorldGroup.add(cargoShip);
 
-    const stiltMat = new THREE.MeshStandardMaterial({ color: '#784E2D', roughness: 0.85 });
-    [
-      { x: -1.6, z: -1.6 },
-      { x: 1.6, z: -1.6 },
-      { x: -1.6, z: 1.6 },
-      { x: 1.6, z: 1.6 },
-    ].forEach((pos) => {
-      const stilt = new THREE.Mesh(new THREE.BoxGeometry(0.22, 4.2, 0.22), stiltMat);
-      stilt.position.set(pos.x, 2.1, pos.z);
-      towerGroup.add(stilt);
-    });
+    // 18. Striped Stone Lighthouse (Mercusuar Karang Laut dengan Sorot Lampu Berputar)
+    const lighthouse = this.makeLighthouse();
+    lighthouse.position.set(-5.0, 0, 44.0);
+    this.beachWorldGroup.add(lighthouse);
 
-    const deckMat = new THREE.MeshStandardMaterial({ color: '#A57343', roughness: 0.8 });
-    const tDeck = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.2, 4.2), deckMat);
-    tDeck.position.set(0, 4.2, 0);
-    towerGroup.add(tDeck);
-
-    const cabinWallMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.8 });
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.2, 2.8), cabinWallMat);
-    cabin.position.set(0, 5.3, 0);
-    towerGroup.add(cabin);
-
-    const roofMatRed = new THREE.MeshStandardMaterial({ color: '#DC2626', roughness: 0.6 });
-    const tRoof = new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.2, 4), roofMatRed);
-    tRoof.position.set(0, 7.0, 0);
-    tRoof.rotation.y = Math.PI / 4;
-    towerGroup.add(tRoof);
-
-    for (let r = 0; r < 8; r++) {
-      const rung = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.08), stiltMat);
-      rung.position.set(0, 0.5 + r * 0.48, 1.7);
-      towerGroup.add(rung);
-    }
-    this.beachWorldGroup.add(towerGroup);
-
-    // 8. Tropical Parasols / Beach Umbrellas & Sunbeds (Payung & Kursi Pantai)
-    const umbrellaColors = ['#F43F5E', '#0EA5E9', '#F59E0B', '#10B981'];
-    const umbrellaSpots = [
-      { x: -8.0, z: 7.0 },
-      { x: 8.5, z: 7.5 },
-      { x: 16.0, z: 9.0 },
-      { x: -22.0, z: 12.0 },
-      { x: 25.0, z: 13.0 },
+    // 19. Lush Coconut Palms & Coastal Pines along Inland Bank
+    const palmPositions = [
+      { x: 18.0, z: -18.0, tilt: 0.16 },
+      { x: 22.0, z: -8.0, tilt: -0.15 },
+      { x: 19.0, z: 4.0, tilt: 0.14 },
+      { x: 23.0, z: 14.0, tilt: -0.16 },
+      { x: 18.0, z: 26.0, tilt: 0.15 },
+      { x: 22.0, z: 38.0, tilt: -0.14 },
+      { x: 20.0, z: 45.0, tilt: 0.12 },
     ];
-
-    umbrellaSpots.forEach((spot, i) => {
-      const uGroup = new THREE.Group();
-      uGroup.position.set(spot.x, 0, spot.z);
-
-      const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.06, 0.06, 2.8, 8),
-        new THREE.MeshStandardMaterial({ color: '#D4AF37', roughness: 0.4 })
-      );
-      pole.position.set(0, 1.4, 0);
-      pole.rotation.z = -0.08;
-      uGroup.add(pole);
-
-      const color = umbrellaColors[i % umbrellaColors.length];
-      const canopy = new THREE.Mesh(
-        new THREE.ConeGeometry(1.85, 0.85, 8),
-        new THREE.MeshStandardMaterial({ color, roughness: 0.7 })
-      );
-      canopy.position.set(-0.1, 2.7, 0);
-      uGroup.add(canopy);
-
-      const lounger = new THREE.Mesh(
-        new THREE.BoxGeometry(1.0, 0.22, 2.2),
-        new THREE.MeshStandardMaterial({ color: '#F1F5F9', roughness: 0.9 })
-      );
-      lounger.position.set(1.2, 0.15, 0);
-      lounger.rotation.y = 0.2;
-      uGroup.add(lounger);
-
-      this.beachWorldGroup.add(uGroup);
-    });
-
-    // 9. Lush Coconut Palm Trees (Pohon Kelapa Pantai Tropis)
-    const palmSpots = [
-      { x: -28.0, z: 16.0, tilt: 0.18 },
-      { x: -18.0, z: 22.0, tilt: -0.15 },
-      { x: 12.0, z: 18.0, tilt: 0.12 },
-      { x: 22.0, z: 22.0, tilt: -0.16 },
-      { x: 32.0, z: 15.0, tilt: 0.14 },
-    ];
-
-    palmSpots.forEach((ps) => {
-      const palm = this.createPalmTree(ps.tilt);
-      palm.position.set(ps.x, 0, ps.z);
+    palmPositions.forEach((pos) => {
+      const palm = this.createPalmTree(pos.tilt);
+      palm.position.set(pos.x, 0, pos.z);
       this.beachWorldGroup.add(palm);
     });
 
-    // 10. Gapura Berpita Pink (Entrance / Exit Portal Gate - Usulan @njemaa_28)
+    // 20. Exit Portal Gate ("← KEMBALI KE KOTA UTAMA")
     const portalArch = this.createBeachExitPortal();
-    portalArch.position.set(0, 0, 24.8);
+    portalArch.position.set(16.5, 0, 0);
+    portalArch.rotation.y = -Math.PI / 2;
     this.beachWorldGroup.add(portalArch);
 
-    // 11. Swimming Tropical Marine Life (Ikan Laut Tropis Renang)
+    // 21. Swimming Marine Fish Schools (Kawanan Ikan Samudra Renang)
     this.setupBeachFish();
+  }
 
-    // 12. Ocean Demarcation Buoys (Pelampung Penanda Laut)
-    [-18.0, 18.0, -32.0, 32.0].forEach((bx) => {
-      const buoy = new THREE.Group();
-      const topSphere = new THREE.Mesh(
-        new THREE.SphereGeometry(0.35, 8, 8),
-        new THREE.MeshStandardMaterial({ color: '#EF4444', roughness: 0.5 })
-      );
-      topSphere.position.set(0, 0.25, 0);
-      buoy.add(topSphere);
+  private makeStripedCanopy(colorHex: string, radius = 1.4, height = 0.65): THREE.Group {
+    const group = new THREE.Group();
+    const matColor = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.7, side: THREE.DoubleSide });
+    const matWhite = new THREE.MeshStandardMaterial({ color: '#FFFDF9', roughness: 0.7, side: THREE.DoubleSide });
 
-      const ring = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.42, 0.42, 0.2, 8),
-        new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.5 })
-      );
-      ring.position.set(0, 0.05, 0);
-      buoy.add(ring);
+    const segs = 8;
+    for (let k = 0; k < segs; k++) {
+      const a0 = (k * Math.PI * 2) / segs;
+      const a1 = ((k + 1) * Math.PI * 2) / segs;
 
-      buoy.position.set(bx, 0, -22.0);
-      this.beachBuoys.push(buoy);
-      this.beachWorldGroup.add(buoy);
+      const p0 = new THREE.Vector3(0, height, 0);
+      const p1 = new THREE.Vector3(Math.cos(a0) * radius, 0, Math.sin(a0) * radius);
+      const p2 = new THREE.Vector3(Math.cos(a1) * radius, 0, Math.sin(a1) * radius);
+
+      const geom = new THREE.BufferGeometry();
+      const vertices = new Float32Array([
+        p0.x, p0.y, p0.z,
+        p1.x, p1.y, p1.z,
+        p2.x, p2.y, p2.z,
+      ]);
+      geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      geom.computeVertexNormals();
+
+      const mesh = new THREE.Mesh(geom, k % 2 === 0 ? matColor : matWhite);
+      mesh.castShadow = true;
+      group.add(mesh);
+    }
+    return group;
+  }
+
+  private makeSunLounger(towelColor: string): THREE.Group {
+    const group = new THREE.Group();
+    const whiteMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.85 });
+    const woodLegMat = new THREE.MeshStandardMaterial({ color: '#E2D5C3', roughness: 0.85 });
+    const towelMat = new THREE.MeshStandardMaterial({ color: towelColor, roughness: 0.7 });
+
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 1.4), whiteMat);
+    bed.position.set(0, 0.22, 0);
+    bed.castShadow = true;
+    group.add(bed);
+
+    const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.09, 0.55), whiteMat);
+    headrest.position.set(0, 0.36, -0.85);
+    headrest.rotation.x = 0.45;
+    headrest.castShadow = true;
+    group.add(headrest);
+
+    [-0.3, 0.3].forEach((lx) => {
+      [-0.45, 0.45].forEach((lz) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.08), woodLegMat);
+        leg.position.set(lx, 0.11, lz);
+        group.add(leg);
+      });
     });
+
+    const towel = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.03, 1.0), towelMat);
+    towel.position.set(0, 0.28, 0.05);
+    group.add(towel);
+
+    return group;
+  }
+
+  private makeLifeguardTower(): THREE.Group {
+    const tower = new THREE.Group();
+    const coralMat = new THREE.MeshStandardMaterial({ color: '#F28C7A', roughness: 0.6 });
+    const creamMat = new THREE.MeshStandardMaterial({ color: '#FFF6E6', roughness: 0.7 });
+    const woodMat = new THREE.MeshStandardMaterial({ color: '#8C562E', roughness: 0.85 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: '#8FB7D8', roughness: 0.2 });
+
+    [
+      [-0.8, -0.8],
+      [0.8, -0.8],
+      [-0.8, 0.8],
+      [0.8, 0.8],
+    ].forEach(([x, z]) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.8, 0.16), creamMat);
+      leg.position.set(x, 1.4, z);
+      leg.castShadow = true;
+      tower.add(leg);
+    });
+
+    [-0.8, 0.8].forEach((z) => {
+      const diag1 = new THREE.Mesh(new THREE.BoxGeometry(0.09, 2.2, 0.09), creamMat);
+      diag1.position.set(0, 1.3, z);
+      diag1.rotation.z = 0.58;
+      const diag2 = new THREE.Mesh(new THREE.BoxGeometry(0.09, 2.2, 0.09), creamMat);
+      diag2.position.set(0, 1.3, z);
+      diag2.rotation.z = -0.58;
+      tower.add(diag1, diag2);
+    });
+
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.16, 2.3), coralMat);
+    deck.position.set(0, 2.85, 0);
+    deck.castShadow = true;
+    tower.add(deck);
+
+    const railF = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.08, 0.08), coralMat);
+    railF.position.set(0, 3.4, 1.1);
+    const railL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 2.3), coralMat);
+    railL.position.set(-1.1, 3.4, 0);
+    const railR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 2.3), coralMat);
+    railR.position.set(1.1, 3.4, 0);
+    tower.add(railF, railL, railR);
+
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.1, 1.4), creamMat);
+    cabin.position.set(0, 3.5, -0.3);
+    cabin.castShadow = true;
+    tower.add(cabin);
+
+    [-0.4, 0.4].forEach((wx) => {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.48, 0.04), glassMat);
+      win.position.set(wx, 3.6, 0.42);
+      tower.add(win);
+    });
+
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.6, 0.9, 4), coralMat);
+    roof.position.set(0, 4.5, -0.2);
+    roof.rotation.y = Math.PI / 4;
+    roof.castShadow = true;
+    tower.add(roof);
+
+    const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 6), creamMat);
+    flagPole.position.set(0, 5.2, 0);
+    tower.add(flagPole);
+
+    const flag = new THREE.Mesh(
+      new THREE.BoxGeometry(0.7, 0.42, 0.02),
+      new THREE.MeshStandardMaterial({ color: '#F7D772', roughness: 0.6 })
+    );
+    flag.position.set(0.35, 5.5, 0);
+    tower.add(flag);
+    this.separateBeachFlag = flag;
+
+    for (let r = 0; r < 6; r++) {
+      const rung = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.06, 0.09), woodMat);
+      rung.position.set(0, 0.4 + r * 0.48, -1.25);
+      tower.add(rung);
+    }
+    [-0.35, 0.35].forEach((lx) => {
+      const ladderPost = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.9, 0.08), woodMat);
+      ladderPost.position.set(lx, 1.45, -1.25);
+      tower.add(ladderPost);
+    });
+
+    const lanternMat = new THREE.MeshStandardMaterial({
+      color: '#FFF8E7',
+      emissive: '#FFB84D',
+      emissiveIntensity: 0.3,
+    });
+    const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), lanternMat);
+    lantern.position.set(0, 4.1, 0.85);
+    tower.add(lantern);
+
+    const guardBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.42, 6, 12), coralMat);
+    guardBody.position.set(0, 3.25, 0.5);
+    guardBody.castShadow = true;
+    tower.add(guardBody);
+
+    const whistleMat = new THREE.MeshStandardMaterial({ color: '#F7D772', metalness: 0.5, roughness: 0.3 });
+    const whistle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.045, 0.05, 0.16, 8).rotateX(Math.PI / 2),
+      whistleMat
+    );
+    whistle.position.set(0, 3.32, 0.78);
+    tower.add(whistle);
+
+    return tower;
+  }
+
+  private makeSafetyBoard(): THREE.Group {
+    const boardGroup = new THREE.Group();
+    const woodMat = new THREE.MeshStandardMaterial({ color: '#5A351B', roughness: 0.85 });
+
+    [-0.7, 0.7].forEach((px) => {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 0.1), woodMat);
+      post.position.set(px, 0.9, 0);
+      post.castShadow = true;
+      boardGroup.add(post);
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#FFF4DA';
+      ctx.fillRect(0, 0, 512, 300);
+      ctx.strokeStyle = '#F28C7A';
+      ctx.lineWidth = 18;
+      ctx.strokeRect(9, 9, 512 - 18, 300 - 18);
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#E2604F';
+      ctx.font = 'bold 78px sans-serif';
+      ctx.fillText('HATI-HATI!', 256, 95);
+
+      ctx.fillStyle = '#4B3A36';
+      ctx.font = 'bold 40px sans-serif';
+      ctx.fillText('BERENANG DI AREA', 256, 185);
+      ctx.fillText('YANG DIJAGA', 256, 240);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    const sideMat = new THREE.MeshStandardMaterial({ color: '#F7ECD6', roughness: 0.8 });
+    const faceMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 });
+    const signPlate = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.18, 0.08), [
+      sideMat, sideMat, sideMat, sideMat, faceMat, sideMat
+    ]);
+    signPlate.position.set(0, 1.55, 0.06);
+    signPlate.castShadow = true;
+    boardGroup.add(signPlate);
+
+    return boardGroup;
+  }
+
+  private makeBeachGate(): THREE.Group {
+    const gateGroup = new THREE.Group();
+    const woodMat = new THREE.MeshStandardMaterial({ color: '#8C562E', roughness: 0.85 });
+    const darkWoodMat = new THREE.MeshStandardMaterial({ color: '#5A351B', roughness: 0.85 });
+    const mintCapMat = new THREE.MeshStandardMaterial({ color: '#A8DCC8', roughness: 0.6 });
+    const lampGlowMat = new THREE.MeshStandardMaterial({
+      color: '#FFF4D8',
+      emissive: '#FFD58A',
+      emissiveIntensity: 0.3,
+    });
+    const ribbonMat = new THREE.MeshStandardMaterial({ color: '#F2A0B4', roughness: 0.5 });
+
+    const half = 2.45;
+    [-1, 1].forEach((s) => {
+      const p = new THREE.Mesh(new THREE.BoxGeometry(0.38, 3.4, 0.38), woodMat);
+      p.position.set(s * half, 1.7, 0);
+      p.castShadow = true;
+      gateGroup.add(p);
+
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.4, 4), mintCapMat);
+      cap.position.set(s * half, 3.6, 0);
+      cap.rotation.y = Math.PI / 4;
+      gateGroup.add(cap);
+
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), lampGlowMat);
+      lamp.position.set(s * half, 3.25, 0.3);
+      gateGroup.add(lamp);
+    });
+
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(half * 2 + 1.0, 0.28, 0.34), darkWoodMat);
+    beam.position.set(0, 3.15, 0);
+    gateGroup.add(beam);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 220;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#FFF4DA';
+      ctx.fillRect(0, 0, 1024, 220);
+      ctx.strokeStyle = '#F2A0B4';
+      ctx.lineWidth = 16;
+      ctx.strokeRect(8, 8, 1024 - 16, 220 - 16);
+
+      ctx.fillStyle = '#4B3A36';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 110px sans-serif';
+      ctx.fillText('NETIZEN BEACH', 512, 118);
+
+      ctx.fillStyle = '#7FC3E8';
+      for (const sx of [70, 1024 - 70]) {
+        ctx.beginPath();
+        ctx.arc(sx, 110, 26, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    const sideMat = new THREE.MeshStandardMaterial({ color: '#FFF4DA' });
+    const faceMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 });
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.98, 0.12), [
+      sideMat, sideMat, sideMat, sideMat, faceMat, faceMat
+    ]);
+    plate.position.set(0, 2.55, 0);
+    gateGroup.add(plate);
+
+    for (const s of [-1, 1]) {
+      const r = new THREE.Mesh(new THREE.BoxGeometry(half - 0.2, 0.2, 0.03), ribbonMat);
+      r.position.set(s * (half - 0.2) / 2, 1.1, 0.25);
+      gateGroup.add(r);
+    }
+    const bow = new THREE.Group();
+    bow.position.set(0, 1.1, 0.27);
+    for (const s of [-1, 1]) {
+      const loop = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.055, 6, 12), ribbonMat);
+      loop.position.x = s * 0.19;
+      loop.scale.set(1.1, 0.8, 0.6);
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.03), ribbonMat);
+      tail.position.set(s * 0.08, -0.2, 0);
+      tail.rotation.z = s * 0.35;
+      bow.add(loop, tail);
+    }
+    bow.add(new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), ribbonMat));
+    gateGroup.add(bow);
+
+    return gateGroup;
+  }
+
+  private makeCargoShip(): THREE.Group {
+    const ship = new THREE.Group();
+    const hullMat = new THREE.MeshStandardMaterial({ color: '#F2A88A', roughness: 0.5 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: '#FFF9F1', roughness: 0.7 });
+    const windowMat = new THREE.MeshStandardMaterial({ color: '#5E7CA6', roughness: 0.2 });
+    const mintMat = new THREE.MeshStandardMaterial({ color: '#A8DCC8', roughness: 0.6 });
+    const yellowMat = new THREE.MeshStandardMaterial({ color: '#F7D772', roughness: 0.6 });
+    const blackMat = new THREE.MeshStandardMaterial({ color: '#2B2B2B', roughness: 0.8 });
+
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.3, 9.6), hullMat);
+    hull.position.set(0, 0.25, 0);
+    hull.castShadow = true;
+    ship.add(hull);
+
+    const bow = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 1.3, 14, 1, false, 0, Math.PI), hullMat);
+    bow.position.set(0, 0.25, -4.8);
+    bow.rotation.y = Math.PI;
+    bow.castShadow = true;
+    ship.add(bow);
+
+    const trim = new THREE.Mesh(new THREE.BoxGeometry(3.25, 0.22, 9.65), whiteMat);
+    trim.position.set(0, 0.95, 0);
+    ship.add(trim);
+
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.25, 4.8), whiteMat);
+    cabin.position.set(0, 1.65, 0.6);
+    cabin.castShadow = true;
+    ship.add(cabin);
+
+    for (let i = 0; i < 5; i++) {
+      [-1, 1].forEach((s) => {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.42, 0.55), windowMat);
+        win.position.set(s * 1.27, 1.75, 2.2 - i * 0.85);
+        ship.add(win);
+      });
+    }
+
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.85, 1.8), mintMat);
+    bridge.position.set(0, 2.65, 1.2);
+    bridge.castShadow = true;
+    ship.add(bridge);
+
+    const funnel = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 1.3, 10), yellowMat);
+    funnel.position.set(0, 3.5, 2.2);
+    funnel.castShadow = true;
+    ship.add(funnel);
+
+    const funnelBand = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.28, 10), blackMat);
+    funnelBand.position.set(0, 3.95, 2.2);
+    ship.add(funnelBand);
+
+    return ship;
+  }
+
+  private makeHarbourCrane(): THREE.Group {
+    const crane = new THREE.Group();
+    const yellowMat = new THREE.MeshStandardMaterial({ color: '#F7D772', roughness: 0.6 });
+    const pinkMat = new THREE.MeshStandardMaterial({ color: '#F2A88A', roughness: 0.6 });
+    const cabinMat = new THREE.MeshStandardMaterial({ color: '#FFF9F1', roughness: 0.8 });
+    const cableMat = new THREE.MeshStandardMaterial({ color: '#6A6670', metalness: 0.7, roughness: 0.4 });
+    const containerMat = new THREE.MeshStandardMaterial({ color: '#A8DCC8', roughness: 0.7 });
+
+    [
+      [-1.4, -1.4],
+      [-1.4, 1.4],
+      [1.4, -1.4],
+      [1.4, 1.4],
+    ].forEach(([x, z]) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.28, 6.8, 0.28), yellowMat);
+      leg.position.set(x, 3.4, z);
+      leg.castShadow = true;
+      crane.add(leg);
+    });
+
+    const boom = new THREE.Mesh(new THREE.BoxGeometry(12.5, 0.5, 0.5), pinkMat);
+    boom.position.set(-3.5, 6.9, 0);
+    boom.castShadow = true;
+    crane.add(boom);
+
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.1, 1.4), cabinMat);
+    cab.position.set(0.8, 7.6, 0);
+    cab.castShadow = true;
+    crane.add(cab);
+
+    const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3.6, 4), cableMat);
+    cable.position.set(-7.5, 5.0, 0);
+    crane.add(cable);
+
+    const suspendedContainer = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.2, 2.7), containerMat);
+    suspendedContainer.position.set(-7.5, 2.6, 0);
+    suspendedContainer.castShadow = true;
+    crane.add(suspendedContainer);
+
+    return crane;
+  }
+
+  private makeLighthouse(): THREE.Group {
+    const lh = new THREE.Group();
+    const stoneMat = new THREE.MeshStandardMaterial({ color: '#BFB7A8', roughness: 0.9 });
+    const baseMat = new THREE.MeshStandardMaterial({ color: '#CFC6B8', roughness: 0.85 });
+    const creamMat = new THREE.MeshStandardMaterial({ color: '#FFF4E2', roughness: 0.7 });
+    const pinkMat = new THREE.MeshStandardMaterial({ color: '#F2A0B4', roughness: 0.6 });
+    const balconyMat = new THREE.MeshStandardMaterial({ color: '#F2A88A', roughness: 0.6 });
+    const lampGlowMat = new THREE.MeshStandardMaterial({
+      color: '#FFF7D6',
+      emissive: '#FFE7A0',
+      emissiveIntensity: 0.6,
+      roughness: 0.2,
+    });
+
+    for (let i = 0; i < 10; i++) {
+      const angle = (i / 10) * Math.PI * 2;
+      const dist = 2.4 + (i % 3) * 0.4;
+      const rock = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.85 + ((i * 7) % 5) * 0.12, 0),
+        stoneMat
+      );
+      rock.position.set(Math.cos(angle) * dist, 0.35, Math.sin(angle) * dist);
+      rock.scale.set(1.1, 0.75, 1.1);
+      rock.castShadow = true;
+      lh.add(rock);
+    }
+
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.5, 1.0, 12), baseMat);
+    base.position.set(0, 0.5, 0);
+    base.castShadow = true;
+    lh.add(base);
+
+    for (let k = 0; k < 6; k++) {
+      const rTop = 1.25 - (k + 1) * 0.08;
+      const rBottom = 1.25 - k * 0.08;
+      const tier = new THREE.Mesh(
+        new THREE.CylinderGeometry(rTop, rBottom, 1.4, 14),
+        k % 2 === 0 ? creamMat : pinkMat
+      );
+      tier.position.set(0, 1.0 + 0.7 + k * 1.4, 0);
+      tier.castShadow = true;
+      lh.add(tier);
+    }
+
+    const balcony = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.2, 14), balconyMat);
+    balcony.position.set(0, 9.8, 0);
+    balcony.castShadow = true;
+    lh.add(balcony);
+
+    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 1.0, 12), lampGlowMat);
+    lamp.position.set(0, 10.4, 0);
+    lh.add(lamp);
+
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.95, 0.85, 12), pinkMat);
+    roof.position.set(0, 11.3, 0);
+    roof.castShadow = true;
+    lh.add(roof);
+
+    const beamM = new THREE.MeshBasicMaterial({
+      color: '#FFF3C4',
+      transparent: true,
+      opacity: 0.24,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    });
+    const beamGroup = new THREE.Group();
+    beamGroup.position.set(0, 10.4, 0);
+
+    [-1, 1].forEach((s) => {
+      const b = new THREE.Mesh(
+        new THREE.ConeGeometry(2.4, 32, 16, 1, true).rotateZ(s * Math.PI / 2).translate(s * 16, 0, 0),
+        beamM
+      );
+      beamGroup.add(b);
+    });
+    lh.add(beamGroup);
+    this.separateLighthouseBeam = beamGroup;
+
+    return lh;
+  }
+
+  private makeRiverBridge(): THREE.Group {
+    const bridgeGroup = new THREE.Group();
+    const stoneMat = new THREE.MeshStandardMaterial({ color: '#CFC6B8', roughness: 0.85 });
+    const asphaltMat = new THREE.MeshStandardMaterial({ color: '#64748B', roughness: 0.9 });
+    const railMat = new THREE.MeshStandardMaterial({ color: '#F8FAFC', roughness: 0.7 });
+    const stripeMat = new THREE.MeshBasicMaterial({ color: '#FFFFFF' });
+
+    [-3.4, 3.4].forEach((pz) => {
+      const pier = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.6, 1.2), stoneMat);
+      pier.position.set(0, 0.8, pz);
+      pier.castShadow = true;
+      bridgeGroup.add(pier);
+    });
+
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.35, 7.6), asphaltMat);
+    deck.position.set(0, 1.6, 0);
+    deck.castShadow = true;
+    bridgeGroup.add(deck);
+
+    for (let i = -2; i <= 2; i++) {
+      const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.9).rotateX(-Math.PI / 2), stripeMat);
+      dash.position.set(0, 1.79, i * 1.5);
+      bridgeGroup.add(dash);
+    }
+
+    [-3.45, 3.45].forEach((rx) => {
+      const topRail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 7.6), railMat);
+      topRail.position.set(rx, 2.2, 0);
+      bridgeGroup.add(topRail);
+
+      for (let z = -3.5; z <= 3.5; z += 1.2) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.08), railMat);
+        post.position.set(rx, 1.85, z);
+        bridgeGroup.add(post);
+      }
+    });
+
+    return bridgeGroup;
+  }
+
+  private makeContainer(colorHex: string): THREE.Mesh {
+    const geom = new THREE.BoxGeometry(1.3, 1.2, 2.7);
+    const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.7 });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.castShadow = true;
+    return mesh;
   }
 
   private createPalmTree(tilt = 0.15): THREE.Group {
@@ -2822,12 +3451,16 @@ export class City3DManager {
     this.beachFishList = [];
     const fishColors = ['#F97316', '#38BDF8', '#FBBF24', '#EF4444', '#A855F7', '#34D399'];
     const swimCenters = [
-      new THREE.Vector3(-5.5, -0.75, -8.0),
-      new THREE.Vector3(5.5, -0.8, -9.5),
-      new THREE.Vector3(0, -0.9, -14.0),
-      new THREE.Vector3(-8.0, -0.7, -15.0),
-      new THREE.Vector3(8.0, -0.85, -16.0),
-      new THREE.Vector3(1.8, -0.7, -6.5),
+      new THREE.Vector3(-8.0, -0.75, 22.0),
+      new THREE.Vector3(-12.0, -0.8, 30.0),
+      new THREE.Vector3(-18.0, -0.9, 28.0),
+      new THREE.Vector3(-8.0, -0.7, 4.0),
+      new THREE.Vector3(-12.0, -0.85, -6.0),
+      new THREE.Vector3(-6.0, -0.7, -12.0),
+      new THREE.Vector3(-10.0, -0.8, 42.0),
+      new THREE.Vector3(-14.0, -0.75, 14.0),
+      new THREE.Vector3(-22.0, -0.9, 10.0),
+      new THREE.Vector3(-6.0, -0.75, 34.0),
     ];
 
     swimCenters.forEach((center, i) => {
@@ -4250,9 +4883,9 @@ export class City3DManager {
     if (this.fishingLine) this.beachWorldGroup.add(this.fishingLine);
     if (this.caughtFishMesh) this.beachWorldGroup.add(this.caughtFishMesh);
 
-    // Spawn player avatar on the beach pier facing North towards open sea
-    this.playerPos.set(0, 0.35, -5.5);
-    this.playerFacing = Math.PI;
+    // Spawn player avatar on the wooden angling pier facing West towards open ocean
+    this.playerPos.set(-8.0, 0.35, 28.0);
+    this.playerFacing = -Math.PI / 2;
 
     if (this.playerCitizen) {
       this.beachWorldGroup.add(this.playerCitizen.root);
@@ -4282,7 +4915,7 @@ export class City3DManager {
     }
     if (this.cat) {
       this.beachWorldGroup.add(this.cat.root);
-      this.cat.root.position.set(1.2, 0.35, -5.2);
+      this.cat.root.position.set(-6.8, 0.35, 28.8);
       this.cat.root.visible = true;
     }
 
@@ -4607,24 +5240,13 @@ export class City3DManager {
 
     // 1. Determine landing spot on water surface (River vs Beach open water)
     const isBeach = this.viewMode === 'beach';
-    let targetX = 0;
-    let targetZ = isBeach ? -15.5 : -13.0;
+    let targetX = isBeach ? -12.0 : 0;
+    let targetZ = isBeach ? 28.0 : -13.0;
 
     if (targetWaterPos) {
       if (isBeach) {
-        const isSideWater = Math.abs(targetWaterPos.x) >= 2.85 && targetWaterPos.z <= 2.0 && targetWaterPos.z >= -35.0;
-        const isFrontWater = targetWaterPos.z <= -12.5 && Math.abs(targetWaterPos.x) <= 35.0;
-
-        if (isSideWater) {
-          targetX = THREE.MathUtils.clamp(targetWaterPos.x, -32.0, 32.0);
-          targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -30.0, 1.0);
-        } else if (isFrontWater) {
-          targetX = THREE.MathUtils.clamp(targetWaterPos.x, -32.0, 32.0);
-          targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -32.0, -13.0);
-        } else {
-          targetX = THREE.MathUtils.clamp((Math.random() - 0.5) * 2.0, -1.8, 1.8);
-          targetZ = -15.5 - Math.random() * 3.5;
-        }
+        targetX = THREE.MathUtils.clamp(targetWaterPos.x, -35.0, -2.5);
+        targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -30.0, 42.0);
       } else {
         const isSideWater = Math.abs(targetWaterPos.x) >= 3.0 && targetWaterPos.z <= 0.0 && targetWaterPos.z >= -25.0;
         const isFrontWater = targetWaterPos.z <= -10.2 && Math.abs(targetWaterPos.x) <= 25.0;
@@ -4641,8 +5263,15 @@ export class City3DManager {
         }
       }
     } else {
-      targetX = THREE.MathUtils.clamp((Math.random() - 0.5) * 2.0, -1.8, 1.8);
-      targetZ = (isBeach ? -15.5 : -13.5) - Math.random() * 3.0;
+      if (isBeach) {
+        targetX = this.playerPos.x - (5.0 + Math.random() * 4.0);
+        targetZ = this.playerPos.z + (Math.random() - 0.5) * 3.5;
+        targetX = THREE.MathUtils.clamp(targetX, -35.0, -2.5);
+        targetZ = THREE.MathUtils.clamp(targetZ, -30.0, 42.0);
+      } else {
+        targetX = THREE.MathUtils.clamp((Math.random() - 0.5) * 2.0, -1.8, 1.8);
+        targetZ = -13.5 - Math.random() * 3.0;
+      }
     }
 
     this.targetBobberPos.set(targetX, -0.05, targetZ);
@@ -4923,16 +5552,23 @@ export class City3DManager {
 
       this.beachWaveFoams.forEach((foam, idx) => {
         const wave = Math.sin(elapsed * 2.2 + idx * 1.4);
-        foam.position.z = -0.2 + idx * 1.0 + wave * 0.65;
-        foam.scale.x = 1.0 + wave * 0.08;
+        foam.position.x = -0.35 - idx * 0.7 - wave * 0.45;
+        foam.scale.z = 1.0 + wave * 0.06;
         (foam.material as THREE.MeshBasicMaterial).opacity = 0.4 + Math.max(0, wave) * 0.35;
       });
 
       this.beachBuoys.forEach((buoy, idx) => {
-        buoy.position.y = Math.sin(elapsed * 2.8 + idx * 1.5) * 0.12;
+        buoy.position.y = 0.05 + Math.sin(elapsed * 2.8 + idx * 1.5) * 0.06;
         buoy.rotation.z = Math.sin(elapsed * 2.0 + idx) * 0.1;
         buoy.rotation.x = Math.cos(elapsed * 2.0 + idx) * 0.1;
       });
+
+      if (this.separateBeachFlag) {
+        this.separateBeachFlag.rotation.y = 0.3 * Math.sin(elapsed * 3);
+      }
+      if (this.separateLighthouseBeam) {
+        this.separateLighthouseBeam.rotation.y = elapsed * 1.1;
+      }
     } else {
       this.riverFishList.forEach((fish) => {
         fish.angle += fish.speed * delta;
@@ -5796,10 +6432,14 @@ private setupAirplanes() {
           // Differentiate between open water vs pier deck vs shore
           const isBeach = this.viewMode === 'beach';
           const isPier = isBeach
-            ? Math.abs(target.x) <= 2.85 && target.z >= -12.5 && target.z <= 2.5
+            ? target.x >= -16.5 && target.x <= 2.2 && target.z >= 26.0 && target.z <= 30.0
             : Math.abs(target.x) <= 2.85 && target.z >= -9.8 && target.z <= 2.5;
-          const isShore = isBeach ? target.z > 2.5 : target.z > 0.0;
-          const isWater = !isPier && !isShore && (isBeach ? (target.z < -12.5 || Math.abs(target.x) > 2.85) : (target.z < -9.8 || Math.abs(target.x) > 2.85));
+          const isShore = isBeach
+            ? target.x >= 1.2 && target.x <= 16.8 && target.z >= -30.0 && target.z <= 46.0
+            : target.z > 0.0;
+          const isWater = isBeach
+            ? target.x < 1.2 && !isPier
+            : !isPier && !isShore && (target.z < -9.8 || Math.abs(target.x) > 2.85);
 
           // If tap in water area and fishing state is idle, directly cast!
           if (isWater && this.fishingState === 'idle') {
@@ -6273,17 +6913,21 @@ private setupAirplanes() {
           nextPos.y = 0.0;
         }
       } else if (this.viewMode === 'beach') {
-        if (nextPos.z < 2.0) {
-          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
-          nextPos.z = THREE.MathUtils.clamp(nextPos.z, -12.0, 2.0);
+        const onPier = nextPos.x <= 1.2 && nextPos.z >= 26.2 && nextPos.z <= 29.8;
+        const onRamp = nextPos.x > 1.2 && nextPos.x <= 2.2 && nextPos.z >= 26.2 && nextPos.z <= 29.8;
+
+        if (onPier) {
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -16.0, 1.2);
+          nextPos.z = THREE.MathUtils.clamp(nextPos.z, 26.4, 29.6);
           nextPos.y = 0.35;
-        } else if (nextPos.z <= 3.2) {
-          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
-          const t = (nextPos.z - 2.0) / (3.2 - 2.0);
+        } else if (onRamp) {
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, 1.2, 2.2);
+          nextPos.z = THREE.MathUtils.clamp(nextPos.z, 26.4, 29.6);
+          const t = (nextPos.x - 1.2) / (2.2 - 1.2);
           nextPos.y = THREE.MathUtils.lerp(0.35, 0.0, t);
         } else {
-          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -36.0, 36.0);
-          nextPos.z = THREE.MathUtils.clamp(nextPos.z, 3.2, 26.0);
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, 1.2, 16.5);
+          nextPos.z = THREE.MathUtils.clamp(nextPos.z, -28.0, 44.0);
           nextPos.y = 0.0;
         }
       } else if (this.viewMode === 'stadium') {
@@ -6337,17 +6981,21 @@ private setupAirplanes() {
             nextPos.y = 0.0;
           }
         } else if (this.viewMode === 'beach') {
-          if (nextPos.z < 2.0) {
-            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
-            nextPos.z = THREE.MathUtils.clamp(nextPos.z, -12.0, 2.0);
+          const onPier = nextPos.x <= 1.2 && nextPos.z >= 26.2 && nextPos.z <= 29.8;
+          const onRamp = nextPos.x > 1.2 && nextPos.x <= 2.2 && nextPos.z >= 26.2 && nextPos.z <= 29.8;
+
+          if (onPier) {
+            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -16.0, 1.2);
+            nextPos.z = THREE.MathUtils.clamp(nextPos.z, 26.4, 29.6);
             nextPos.y = 0.35;
-          } else if (nextPos.z <= 3.2) {
-            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
-            const t = (nextPos.z - 2.0) / (3.2 - 2.0);
+          } else if (onRamp) {
+            nextPos.x = THREE.MathUtils.clamp(nextPos.x, 1.2, 2.2);
+            nextPos.z = THREE.MathUtils.clamp(nextPos.z, 26.4, 29.6);
+            const t = (nextPos.x - 1.2) / (2.2 - 1.2);
             nextPos.y = THREE.MathUtils.lerp(0.35, 0.0, t);
           } else {
-            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -36.0, 36.0);
-            nextPos.z = THREE.MathUtils.clamp(nextPos.z, 3.2, 26.0);
+            nextPos.x = THREE.MathUtils.clamp(nextPos.x, 1.2, 16.5);
+            nextPos.z = THREE.MathUtils.clamp(nextPos.z, -28.0, 44.0);
             nextPos.y = 0.0;
           }
         } else if (this.viewMode === 'stadium') {
@@ -6418,7 +7066,7 @@ private setupAirplanes() {
         }
       }
     } else if (this.viewMode === 'beach') {
-      if (Math.hypot(this.playerPos.x - 0, this.playerPos.z - 24.8) <= 2.2) {
+      if (Math.hypot(this.playerPos.x - 16.5, this.playerPos.z - 0) <= 2.2) {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('exit-beach-area'));
         }
