@@ -1517,6 +1517,8 @@ export default function GameCanvas() {
               ? 'Mempersiapkan alat pancing & dermaga kayu sungai...'
               : transitionMessage.includes('Pantai')
               ? 'Menghubungkan ke server ruangan Pantai Netizen Beach & ombak laut...'
+              : transitionMessage.includes('Stadion')
+              ? 'Menyiapkan rumput lapangan hijau & tribun warna-warni Stadion Gelora Netizen...'
               : 'Memuat peta diorama 3D kota utama...'}
           </p>
           <div className="w-36 h-1 bg-white/20 rounded-full mt-3 overflow-hidden">

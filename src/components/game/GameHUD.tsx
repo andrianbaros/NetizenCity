@@ -820,6 +820,8 @@ export default function GameHUD() {
                 ? '🏖️ Pantai Netizen Beach'
                 : viewMode === 'river'
                 ? '🎣 Dermaga Sungai Kali Netizen'
+                : viewMode === 'stadium'
+                ? '⚽ Stadion Gelora Netizen'
                 : '🏛️ Alun-Alun Tugu Pusat'}
             </span>
           </div>

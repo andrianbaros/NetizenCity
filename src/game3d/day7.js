@@ -195,8 +195,15 @@ function makeFerry() {
 export const SPORT = { x: 24, z: 88, gor: new THREE.Vector3(17, 0, 124), court: new THREE.Vector3(35, 0, 124) };
 const TIERS = 5, AX = 12.6, AZ = 17.6;                                    // the inner edge of the stands (ellipse radii, x and z)
 export const seatAt = (k, th, x0 = SPORT.x, z0 = SPORT.z) => new THREE.Vector3(x0 + Math.cos(th) * (AX + .5 + k * 1.15), .62 + k * .78, z0 + Math.sin(th) * (AZ + .5 + k * 1.15));
-export function makeSports() {
-  const P = parts(), { x: X, z: Z } = SPORT;
+export function makeSports(opts = {}) {
+  const P = parts();
+  const X = opts.x !== undefined ? opts.x : SPORT.x;
+  const Z = opts.z !== undefined ? opts.z : SPORT.z;
+  const gorX = opts.gor ? opts.gor.x : (opts.x !== undefined ? opts.x + (SPORT.gor.x - SPORT.x) : SPORT.gor.x);
+  const gorZ = opts.gor ? opts.gor.z : (opts.z !== undefined ? opts.z + (SPORT.gor.z - SPORT.z) : SPORT.gor.z);
+  const courtX = opts.court ? opts.court.x : (opts.x !== undefined ? opts.x + (SPORT.court.x - SPORT.x) : SPORT.court.x);
+  const courtZ = opts.court ? opts.court.z : (opts.z !== undefined ? opts.z + (SPORT.court.z - SPORT.z) : SPORT.court.z);
+
   const field = canvasTex(256, 400, (x, w, h) => { for (let i = 0; i < 10; i++) { x.fillStyle = i % 2 ? '#8FCB7E' : '#9AD389'; x.fillRect(0, i * h / 10, w, h / 10); }
     x.strokeStyle = '#FFFFFF'; x.lineWidth = 4; x.strokeRect(10, 10, w - 20, h - 20); x.beginPath(); x.moveTo(10, h / 2); x.lineTo(w - 10, h / 2); x.stroke(); x.beginPath(); x.arc(w / 2, h / 2, 34, 0, TAU); x.stroke();
     for (const y of [10, h - 10]) { x.strokeRect(w / 2 - 60, y === 10 ? 10 : h - 70, 120, 60); } });
@@ -205,7 +212,7 @@ export function makeSports() {
   const lanes = new THREE.Mesh(new THREE.RingGeometry(1.155, 1.165, 64).rotateX(-Math.PI / 2), mat('#FFFFFF')); lanes.scale.set(9.3, 1, 13.1); P.add(lanes, X, .075, Z, 0);
   // the stands: tiers of pastel blocks round an ellipse, colours by sector
   const n = 84, cols = ['#F2A88A', '#A9C8EC', '#F7D772', '#A8DCC8', '#C9B8E8', '#F2B8C6'], st = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), mat('#ffffff', { roughness: .8 }), n * TIERS), c = new THREE.Color();
-  for (let k = 0; k < TIERS; k++) for (let i = 0; i < n; i++) { const th = i / n * TAU, p = seatAt(k, th), L = TAU * Math.hypot(AX + k * 1.15, AZ + k * 1.15) / Math.SQRT2 / n * 1.12;
+  for (let k = 0; k < TIERS; k++) for (let i = 0; i < n; i++) { const th = i / n * TAU, p = seatAt(k, th, X, Z), L = TAU * Math.hypot(AX + k * 1.15, AZ + k * 1.15) / Math.SQRT2 / n * 1.12;
     setM(st, k * n + i, p.x, 0, p.z, -th + Math.PI / 2, [L, .62 + k * .78, 1.2]); st.setColorAt(k * n + i, c.set(cols[Math.floor(i / n * 12) % 6]).offsetHSL(0, 0, -k * .015)); }
   st.geometry.translate(0, .5, 0); st.instanceColor.needsUpdate = true; st.frustumCulled = false;
   const sg = new THREE.Group(); sg.add(st); P.add(sg, 0, 0, 0, 2);
@@ -219,17 +226,17 @@ export function makeSports() {
   const sign = billboard('STADION NETIZEN CITY', 8, 1.0, '#3E8C78', '#A8DCC8'); P.add(sign.mesh, X, .62 + TIERS * .78 + 1.4, Z + AZ + TIERS * 1.15 + .3, 4);
   // the GOR: a hall with a curved lavender roof, a glass front, its name over the door
   const gw = 14, gd = 10, gm = cityMat('#FBEFE0', { fh: 1.2, base: .6, sx: 1.4, box: [.15, .85, .2, .8], glass: '#BFD6EE', lit: .8 });
-  P.add(new THREE.Mesh(new THREE.BoxGeometry(gw, 3.0, gd).translate(0, 1.5, 0), gm), SPORT.gor.x, 0, SPORT.gor.z, 5);
+  P.add(new THREE.Mesh(new THREE.BoxGeometry(gw, 3.0, gd).translate(0, 1.5, 0), gm), gorX, 0, gorZ, 5);
   const gr = new THREE.Mesh(new THREE.CylinderGeometry(gd / 2 + .3, gd / 2 + .3, gw + .4, 24, 1, false, -Math.PI / 2, Math.PI).rotateZ(Math.PI / 2), mat('#C9B8E8', { side: THREE.DoubleSide })); gr.scale.set(1, .5, 1);
-  P.add(gr, SPORT.gor.x, 3.0, SPORT.gor.z, 6);
-  P.add(new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.0, .08), mat('#CFE6F2', { roughness: .1, metalness: .2 })), SPORT.gor.x, 1.0, SPORT.gor.z - gd / 2 - .02, 5);
-  const gs = billboard('GOR', 2.6, 1.0, '#7A5BB0', '#C9B8E8'); gs.mesh.rotation.y = Math.PI; P.add(gs.mesh, SPORT.gor.x, 2.55, SPORT.gor.z - gd / 2 - .1, 6);
+  P.add(gr, gorX, 3.0, gorZ, 6);
+  P.add(new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.0, .08), mat('#CFE6F2', { roughness: .1, metalness: .2 })), gorX, 1.0, gorZ - gd / 2 - .02, 5);
+  const gs = billboard('GOR', 2.6, 1.0, '#7A5BB0', '#C9B8E8'); gs.mesh.rotation.y = Math.PI; P.add(gs.mesh, gorX, 2.55, gorZ - gd / 2 - .1, 6);
   // the open basketball court beside it
   const court = canvasTex(200, 340, (x, w, h) => { x.fillStyle = '#F2A86E'; x.fillRect(0, 0, w, h); x.fillStyle = '#A9C8EC'; x.fillRect(w / 2 - 34, 0, 68, 70); x.fillRect(w / 2 - 34, h - 70, 68, 70);
     x.strokeStyle = '#FFFFFF'; x.lineWidth = 4; x.strokeRect(6, 6, w - 12, h - 12); x.beginPath(); x.moveTo(6, h / 2); x.lineTo(w - 6, h / 2); x.stroke(); x.beginPath(); x.arc(w / 2, h / 2, 26, 0, TAU); x.stroke(); });
-  P.add(new THREE.Mesh(new THREE.PlaneGeometry(7, 12).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: court, roughness: .9 })), SPORT.court.x, .06, SPORT.court.z, 1);
+  P.add(new THREE.Mesh(new THREE.PlaneGeometry(7, 12).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: court, roughness: .9 })), courtX, .06, courtZ, 1);
   for (const s of [-1, 1]) { const h = new THREE.Group(); h.add(new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, 2.4, 6).translate(0, 1.2, 0), mat('#7F7A86')), new THREE.Mesh(new THREE.BoxGeometry(1.1, .7, .06).translate(0, 2.4, .25), mat('#FFFFFF')));
-    h.add(new THREE.Mesh(new THREE.TorusGeometry(.2, .025, 6, 16).rotateX(Math.PI / 2).translate(0, 2.15, .52), mat('#F2737B'))); h.rotation.y = s > 0 ? Math.PI : 0; P.add(h, SPORT.court.x, 0, SPORT.court.z + s * 6.3, 3); }
+    h.add(new THREE.Mesh(new THREE.TorusGeometry(.2, .025, 6, 16).rotateX(Math.PI / 2).translate(0, 2.15, .52), mat('#F2737B'))); h.rotation.y = s > 0 ? Math.PI : 0; P.add(h, courtX, 0, courtZ + s * 6.3, 3); }
   sh(P.root);
   return { ...P, flM, sign: sign.m, gs: gs.m, gm, fl,
     night(k) { flM.emissiveIntensity = 2.4 * k; sign.m.emissiveIntensity = k; gs.m.emissiveIntensity = k; gm.userData.U.uNight.value = k; } };

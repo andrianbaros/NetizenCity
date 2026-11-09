@@ -682,6 +682,7 @@ export class City3DManager {
   private airport: any;
   private port: any;
   private sports: any;
+  private separateSports: any = null;
   private lab: any;
   private tower: any;
   private zoo: any;
@@ -2071,315 +2072,283 @@ export class City3DManager {
   private buildStadiumMap() {
     this.stadiumLamps = [];
 
-    // 1. Surrounding Ground (Warm concrete stadium apron)
-    const apronGeom = new THREE.PlaneGeometry(160, 160, 1, 1).rotateX(-Math.PI / 2);
-    const apronMat = new THREE.MeshStandardMaterial({ color: '#556059', roughness: 0.95 });
-    const apron = new THREE.Mesh(apronGeom, apronMat);
-    apron.position.set(0, -0.05, 0);
-    this.stadiumWorldGroup.add(apron);
+    // 1. Lush Green Diorama Base Ground
+    // Generous warm lawn matching Netizen City green diorama palette (#76B055 / #7DB85C)
+    const groundGeom = new THREE.BoxGeometry(92, 1.2, 128);
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: '#76B055',
+      roughness: 0.88,
+    });
+    const ground = new THREE.Mesh(groundGeom, groundMat);
+    ground.position.set(0, -0.6, 16);
+    this.stadiumWorldGroup.add(ground);
 
-    // 2. Tartan Athletic Running Track (Red-orange running track encircling the pitch)
-    const trackGeom = new THREE.BoxGeometry(86, 0.08, 62);
-    const trackMat = new THREE.MeshStandardMaterial({ color: '#C84B31', roughness: 0.9 });
-    const track = new THREE.Mesh(trackGeom, trackMat);
-    track.position.set(0, 0.02, 0);
-    this.stadiumWorldGroup.add(track);
+    // Warm stone curb wrapping the diorama perimeter
+    const curbMat = new THREE.MeshStandardMaterial({ color: '#D8CEBE', roughness: 0.8 });
+    const curb = new THREE.Mesh(new THREE.BoxGeometry(93.6, 0.45, 129.6), curbMat);
+    curb.position.set(0, -0.9, 16);
+    this.stadiumWorldGroup.add(curb);
 
-    // 3. Green Pitch (Lapangan Sepakbola 68m x 44m)
-    // Striped turf pattern (14 stripes alternating dark & light lush green)
-    const pitchGroup = new THREE.Group();
-    const turfMat1 = new THREE.MeshStandardMaterial({ color: '#276E2F', roughness: 0.85 });
-    const turfMat2 = new THREE.MeshStandardMaterial({ color: '#33883C', roughness: 0.85 });
-    const stripeCount = 14;
-    const stripeLength = 68 / stripeCount; // ~4.85m each
-    for (let i = 0; i < stripeCount; i++) {
-      const zPos = -34 + (i + 0.5) * stripeLength;
-      const stripe = new THREE.Mesh(
-        new THREE.BoxGeometry(44, 0.1, stripeLength),
-        i % 2 === 0 ? turfMat1 : turfMat2
+    // 2. The Iconic Oval Sports Complex from Day 7 (makeSports)
+    // Centered at (0, 0, 0): includes oval running track, rainbow pastel stands,
+    // green striped football pitch, cream rim, billboard "STADION NETIZEN CITY",
+    // 4 floodlight towers, GOR with lavender roof, and outdoor basketball court!
+    this.separateSports = makeSports({ x: 0, z: 0 });
+    this.stadiumWorldGroup.add(this.separateSports.root);
+    this.separateSports.build(1);
+
+    // 3. Paved Plaza and Pathways
+    // Connecting the stadium south exit, GOR hall, basketball court, and entrance portal
+    const pathMat = new THREE.MeshStandardMaterial({ color: '#EFE9D8', roughness: 0.85 });
+    // Central connecting plaza between stadium, GOR, and court
+    const plaza = new THREE.Mesh(new THREE.BoxGeometry(36, 0.05, 32), pathMat);
+    plaza.position.set(2, 0.02, 34);
+    this.stadiumWorldGroup.add(plaza);
+
+    // South entrance access road / walkway
+    const accessRoad = new THREE.Mesh(new THREE.BoxGeometry(10, 0.05, 18), pathMat);
+    accessRoad.position.set(2, 0.02, 49);
+    this.stadiumWorldGroup.add(accessRoad);
+
+    // 4. Perimeter Low-Poly Trees and Benches
+    const treeTrunkMat = new THREE.MeshStandardMaterial({ color: '#78634B', roughness: 0.9 });
+    const treeFoliageColors = ['#4F7F4B', '#5E935A', '#6DA768', '#42703E'];
+    const createTree = (tx: number, tz: number, scale = 1.0) => {
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.25 * scale, 0.35 * scale, 1.8 * scale, 6),
+        treeTrunkMat
       );
-      stripe.position.set(0, 0.05, zPos);
-      pitchGroup.add(stripe);
-    }
-    this.stadiumWorldGroup.add(pitchGroup);
+      trunk.position.y = 0.9 * scale;
+      tree.add(trunk);
 
-    // 4. White Pitch Markings (Raised slightly at Y = 0.11 to prevent Z-fighting)
-    const lineMat = new THREE.MeshBasicMaterial({ color: '#FFFFFF' });
-    const createLine = (w: number, d: number, x: number, z: number) => {
-      const line = new THREE.Mesh(new THREE.BoxGeometry(w, 0.02, d), lineMat);
-      line.position.set(x, 0.11, z);
-      this.stadiumWorldGroup.add(line);
-      return line;
+      const fCol = treeFoliageColors[Math.floor(Math.abs(tx * 3 + tz * 7)) % treeFoliageColors.length];
+      const foliageMat = new THREE.MeshStandardMaterial({ color: fCol, roughness: 0.85, flatShading: true });
+      for (let t = 0; t < 3; t++) {
+        const cone = new THREE.Mesh(
+          new THREE.ConeGeometry((1.8 - t * 0.35) * scale, 1.6 * scale, 7),
+          foliageMat
+        );
+        cone.position.y = (1.8 + t * 0.9) * scale;
+        tree.add(cone);
+      }
+      tree.position.set(tx, 0, tz);
+      this.stadiumWorldGroup.add(tree);
     };
 
-    // Touchlines & Goal lines
-    createLine(0.18, 68, -22, 0); // West sideline
-    createLine(0.18, 68, 22, 0);  // East sideline
-    createLine(44, 0.18, 0, -34); // North goal line
-    createLine(44, 0.18, 0, 34);  // South goal line
-    createLine(44, 0.18, 0, 0);   // Halfway line
-
-    // Center circle & center spot
-    const circleGeom = new THREE.RingGeometry(5.85, 6.05, 32).rotateX(-Math.PI / 2);
-    const centerCircle = new THREE.Mesh(circleGeom, lineMat);
-    centerCircle.position.set(0, 0.11, 0);
-    this.stadiumWorldGroup.add(centerCircle);
-
-    const centerSpot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 12), lineMat);
-    centerSpot.position.set(0, 0.11, 0);
-    this.stadiumWorldGroup.add(centerSpot);
-
-    // North Penalty Box (Z = -34 to -18, X = [-14, 14])
-    createLine(28, 0.18, 0, -18);   // Front penalty box line
-    createLine(0.18, 16, -14, -26); // Left penalty box line
-    createLine(0.18, 16, 14, -26);  // Right penalty box line
-
-    // North 6-yard Goal Box (Z = -34 to -28.5, X = [-7, 7])
-    createLine(14, 0.18, 0, -28.5);  // Front 6-yard line
-    createLine(0.18, 5.5, -7, -31.25);
-    createLine(0.18, 5.5, 7, -31.25);
-
-    // Penalty Spot (11m from goal line: Z = -23, X = 0)
-    const penSpot = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 12), lineMat);
-    penSpot.position.set(0, 0.11, -23);
-    this.stadiumWorldGroup.add(penSpot);
-
-    // Penalty D Arc at top of box (Z = -18, radius 6)
-    const arcGeom = new THREE.RingGeometry(5.85, 6.05, 24, 1, 0, Math.PI).rotateX(-Math.PI / 2);
-    const arc = new THREE.Mesh(arcGeom, lineMat);
-    arc.position.set(0, 0.11, -23);
-    this.stadiumWorldGroup.add(arc);
-
-    // Corner Flags (4 corners)
-    const flagMat = new THREE.MeshStandardMaterial({ color: '#FFD700', roughness: 0.4 });
-    const poleMat = new THREE.MeshStandardMaterial({ color: '#E0E0E0', roughness: 0.3 });
-    [
-      { x: -22, z: -34 },
-      { x: 22, z: -34 },
-      { x: -22, z: 34 },
-      { x: 22, z: 34 },
-    ].forEach((pos) => {
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 6), poleMat);
-      pole.position.set(pos.x, 0.75, pos.z);
-      const flag = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 0.02), flagMat);
-      flag.position.set(pos.x + 0.18, 1.3, pos.z);
-      this.stadiumWorldGroup.add(pole, flag);
+    // Tree border along west, east, and north perimeter
+    [-38, -32, -26, 26, 32, 38].forEach((tx) => {
+      createTree(tx, -30 + (Math.abs(tx) % 5));
+      createTree(tx, -10 + (Math.abs(tx) % 4));
+      createTree(tx, 14 + (Math.abs(tx) % 6));
+      createTree(tx, 38 + (Math.abs(tx) % 3));
     });
+    for (let tz = -34; tz <= -26; tz += 6) {
+      createTree(-14, tz);
+      createTree(0, tz - 4);
+      createTree(14, tz);
+    }
 
-    // 5. 3D Goal Post (Gawang Sepakbola 7.32m x 2.44m)
+    // Cozy wooden benches in the plaza
+    const benchWoodMat = new THREE.MeshStandardMaterial({ color: '#B4865C', roughness: 0.8 });
+    const benchIronMat = new THREE.MeshStandardMaterial({ color: '#4A4650', roughness: 0.6 });
+    const createBench = (bx: number, bz: number, rotY = 0) => {
+      const bench = new THREE.Group();
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.1, 0.6), benchWoodMat);
+      seat.position.y = 0.45;
+      const back = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.45, 0.08), benchWoodMat);
+      back.position.set(0, 0.75, -0.26);
+      for (const lx of [-0.85, 0.85]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.55), benchIronMat);
+        leg.position.set(lx, 0.22, 0);
+        bench.add(leg);
+      }
+      bench.add(seat, back);
+      bench.position.set(bx, 0, bz);
+      bench.rotation.y = rotY;
+      this.stadiumWorldGroup.add(bench);
+    };
+    createBench(-12, 28, Math.PI / 2);
+    createBench(16, 28, -Math.PI / 2);
+    createBench(-12, 40, Math.PI / 2);
+
+    // 5. 3D Soccer Goal at North Pitch End (Z = -12.3)
+    // Pitch is 16m wide x 25m long (Z from -12.5 to +12.5)
     const goalGroup = new THREE.Group();
-    const postMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.25 });
-    // Left post, right post, crossbar
-    const leftPost = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.5, 10), postMat);
-    leftPost.position.set(-3.66, 1.25, -34);
-    const rightPost = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.5, 10), postMat);
-    rightPost.position.set(3.66, 1.25, -34);
-    const crossbar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 7.5, 10).rotateZ(Math.PI / 2), postMat);
-    crossbar.position.set(0, 2.48, -34);
-    goalGroup.add(leftPost, rightPost, crossbar);
+    const postMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.3 });
+    const postRadius = 0.06;
+    const goalWidth = 4.2;
+    const goalHeight = 1.9;
+    const goalDepth = 1.3;
 
-    // Goal net support frame & net
+    // Posts & Crossbar
+    const postL = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 10), postMat);
+    postL.position.set(-goalWidth / 2, goalHeight / 2, -12.3);
+    const postR = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 10), postMat);
+    postR.position.set(goalWidth / 2, goalHeight / 2, -12.3);
+    const crossbar = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius, postRadius, goalWidth + postRadius * 2, 10).rotateZ(Math.PI / 2),
+      postMat
+    );
+    crossbar.position.set(0, goalHeight, -12.3);
+
+    // Depth supports
+    const depthTopL = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalDepth, 8).rotateX(Math.PI / 2),
+      postMat
+    );
+    depthTopL.position.set(-goalWidth / 2, goalHeight, -12.3 - goalDepth / 2);
+    const depthTopR = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalDepth, 8).rotateX(Math.PI / 2),
+      postMat
+    );
+    depthTopR.position.set(goalWidth / 2, goalHeight, -12.3 - goalDepth / 2);
+    const depthBack = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalWidth, 8).rotateZ(Math.PI / 2),
+      postMat
+    );
+    depthBack.position.set(0, goalHeight, -12.3 - goalDepth);
+
+    goalGroup.add(postL, postR, crossbar, depthTopL, depthTopR, depthBack);
+
+    // Translucent net wireframe
     const netMat = new THREE.MeshBasicMaterial({
       color: '#FFFFFF',
       wireframe: true,
       transparent: true,
       opacity: 0.45,
     });
-    const netBox = new THREE.Mesh(new THREE.BoxGeometry(7.32, 2.44, 2.2), netMat);
-    netBox.position.set(0, 1.22, -35.1);
+    const netBox = new THREE.Mesh(new THREE.BoxGeometry(goalWidth, goalHeight, goalDepth), netMat);
+    netBox.position.set(0, goalHeight / 2, -12.3 - goalDepth / 2);
     goalGroup.add(netBox);
     this.stadiumWorldGroup.add(goalGroup);
 
-    // 6. 3D Soccer Ball (Bola Sepak)
+    // Matching South Goal for full stadium realism
+    const southGoalGroup = new THREE.Group();
+    const sPostL = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 10), postMat);
+    sPostL.position.set(-goalWidth / 2, goalHeight / 2, 12.3);
+    const sPostR = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 10), postMat);
+    sPostR.position.set(goalWidth / 2, goalHeight / 2, 12.3);
+    const sCrossbar = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius, postRadius, goalWidth + postRadius * 2, 10).rotateZ(Math.PI / 2),
+      postMat
+    );
+    sCrossbar.position.set(0, goalHeight, 12.3);
+    const sNetBox = new THREE.Mesh(new THREE.BoxGeometry(goalWidth, goalHeight, goalDepth), netMat);
+    sNetBox.position.set(0, goalHeight / 2, 12.3 + goalDepth / 2);
+    southGoalGroup.add(sPostL, sPostR, sCrossbar, sNetBox);
+    this.stadiumWorldGroup.add(southGoalGroup);
+
+    // 6. 3D Soccer Ball at Penalty Spot (Z = -4.5)
     const ballMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.35 });
-    this.soccerBall = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), ballMat);
-    this.soccerBall.position.set(0, 0.22, -18); // Default freekick spot (18m out from goal)
+    this.soccerBall = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), ballMat);
+    this.soccerBall.position.set(0, 0.2, -4.5);
     this.soccerBall.castShadow = true;
     this.stadiumWorldGroup.add(this.soccerBall);
 
-    // Ball drop shadow blob
+    // Ball drop shadow
     const shadowMat = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.35 });
-    const ballShadow = new THREE.Mesh(new THREE.CircleGeometry(0.24, 16).rotateX(-Math.PI / 2), shadowMat);
-    ballShadow.position.set(0, 0.11, -18);
+    const ballShadow = new THREE.Mesh(new THREE.CircleGeometry(0.22, 16).rotateX(-Math.PI / 2), shadowMat);
+    ballShadow.position.set(0, 0.09, -4.5);
     this.stadiumWorldGroup.add(ballShadow);
 
-    // 7. 3D Goalkeeper NPC (Kiper Siap Tangkap)
+    // 7. 3D Goalkeeper NPC at North Goal Line (Z = -11.9)
     const keeper = new THREE.Group();
     const jerseyMat = new THREE.MeshStandardMaterial({ color: '#00E5FF', roughness: 0.6 });
     const skinMat = new THREE.MeshStandardMaterial({ color: '#F5C6A5', roughness: 0.7 });
     const shortsMat = new THREE.MeshStandardMaterial({ color: '#1A237E', roughness: 0.7 });
     const gloveMat = new THREE.MeshStandardMaterial({ color: '#FF3D00', roughness: 0.4 });
 
-    // Body & Head
-    const keeperBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.7, 0.3), jerseyMat);
-    keeperBody.position.y = 1.05;
-    const keeperHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 10), skinMat);
-    keeperHead.position.y = 1.6;
-    // Shorts & Legs
-    const keeperShorts = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.35, 0.32), shortsMat);
-    keeperShorts.position.y = 0.58;
-    // Left & Right Arms (extended in athletic diving ready stance)
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.55, 0.16), jerseyMat);
-    armL.position.set(-0.38, 1.0, 0);
+    const keeperBody = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.6, 0.26), jerseyMat);
+    keeperBody.position.y = 0.95;
+    const keeperHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), skinMat);
+    keeperHead.position.y = 1.45;
+    const keeperShorts = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.28), shortsMat);
+    keeperShorts.position.y = 0.52;
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.48, 0.14), jerseyMat);
+    armL.position.set(-0.34, 0.9, 0);
     armL.rotation.z = 0.45;
-    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.55, 0.16), jerseyMat);
-    armR.position.set(0.38, 1.0, 0);
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.48, 0.14), jerseyMat);
+    armR.position.set(0.34, 0.9, 0);
     armR.rotation.z = -0.45;
-    // Gloves
-    const gloveL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), gloveMat);
-    gloveL.position.set(-0.54, 0.75, 0);
-    const gloveR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), gloveMat);
-    gloveR.position.set(0.54, 0.75, 0);
+    const gloveL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.16), gloveMat);
+    gloveL.position.set(-0.48, 0.68, 0);
+    const gloveR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.16), gloveMat);
+    gloveR.position.set(0.48, 0.68, 0);
 
     keeper.add(keeperBody, keeperHead, keeperShorts, armL, armR, gloveL, gloveR);
-    keeper.position.set(0, 0.1, -33.6);
+    keeper.position.set(0, 0.08, -11.9);
     this.goalkeeper = keeper;
     this.stadiumWorldGroup.add(keeper);
 
-    // 8. Freekick Defender Wall Dummies (3 mannequin defenders at Z = -26.5)
+    // 8. Freekick Defender Wall Dummies (3 mannequins at Z = -7.5)
     const wallGroup = new THREE.Group();
     const wallJerseyMat = new THREE.MeshStandardMaterial({ color: '#E53935', roughness: 0.7 });
-    [-0.7, 0, 0.7].forEach((wx) => {
+    [-0.6, 0, 0.6].forEach((wx) => {
       const dummy = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.75, 0.28), wallJerseyMat);
-      body.position.y = 1.0;
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), skinMat);
-      head.position.y = 1.55;
-      const legs = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.65, 0.26), shortsMat);
-      legs.position.y = 0.35;
-      dummy.add(body, head, legs);
-      dummy.position.set(wx, 0.1, -26.5);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.65, 0.24), wallJerseyMat);
+      b.position.y = 0.88;
+      const h = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), skinMat);
+      h.position.y = 1.35;
+      const l = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.55, 0.22), shortsMat);
+      l.position.y = 0.3;
+      dummy.add(b, h, l);
+      dummy.position.set(wx, 0.08, -7.5);
       wallGroup.add(dummy);
     });
     this.stadiumWorldGroup.add(wallGroup);
 
-    // 9. Grandstands / Stadium Tribunes Surrounding Pitch
-    const concreteMat = new THREE.MeshStandardMaterial({ color: '#A0A7A3', roughness: 0.9 });
-    const seatMatRed = new THREE.MeshStandardMaterial({ color: '#D32F2F', roughness: 0.7 });
-    const seatMatBlue = new THREE.MeshStandardMaterial({ color: '#1976D2', roughness: 0.7 });
-    const seatMatYellow = new THREE.MeshStandardMaterial({ color: '#FBC02D', roughness: 0.7 });
+    // 9. South Entrance Archway / Portal to City (Z = 54)
+    const archPortal = new THREE.Group();
+    const archMat = new THREE.MeshStandardMaterial({ color: '#D4C4AA', roughness: 0.8 });
+    const post1 = new THREE.Mesh(new THREE.BoxGeometry(0.7, 4.0, 0.7), archMat);
+    post1.position.set(-3.2, 2.0, 54);
+    const post2 = new THREE.Mesh(new THREE.BoxGeometry(0.7, 4.0, 0.7), archMat);
+    post2.position.set(3.2, 2.0, 54);
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.7, 0.7), archMat);
+    beam.position.set(0, 4.0, 54);
 
-    // North Tribune (Behind goal, Z = -45)
-    const northStand = new THREE.Group();
-    for (let tier = 0; tier < 8; tier++) {
-      const tierStep = new THREE.Mesh(
-        new THREE.BoxGeometry(76, 0.8, 1.6),
-        concreteMat
-      );
-      tierStep.position.set(0, 0.4 + tier * 0.8, -39 - tier * 1.5);
-      northStand.add(tierStep);
-
-      // Colorful seats on step
-      const seatRow = new THREE.Mesh(
-        new THREE.BoxGeometry(72, 0.25, 0.6),
-        tier % 3 === 0 ? seatMatRed : tier % 3 === 1 ? seatMatBlue : seatMatYellow
-      );
-      seatRow.position.set(0, 0.9 + tier * 0.8, -39 - tier * 1.5);
-      northStand.add(seatRow);
+    // Canvas banner "← KEMBALI KE KOTA UTAMA"
+    const bannerCanvas = document.createElement('canvas');
+    bannerCanvas.width = 512;
+    bannerCanvas.height = 128;
+    const bCtx = bannerCanvas.getContext('2d');
+    if (bCtx) {
+      bCtx.fillStyle = '#267385';
+      bCtx.fillRect(0, 0, 512, 128);
+      bCtx.strokeStyle = '#FFFFFF';
+      bCtx.lineWidth = 6;
+      bCtx.strokeRect(6, 6, 500, 116);
+      bCtx.fillStyle = '#FFFFFF';
+      bCtx.font = 'bold 36px "Lilita One", sans-serif';
+      bCtx.textAlign = 'center';
+      bCtx.textBaseline = 'middle';
+      bCtx.fillText('← KEMBALI KE KOTA UTAMA', 256, 64);
     }
-    this.stadiumWorldGroup.add(northStand);
+    const bannerTex = new THREE.CanvasTexture(bannerCanvas);
+    const bannerMat = new THREE.MeshBasicMaterial({ map: bannerTex });
+    const bannerMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 1.4), bannerMat);
+    bannerMesh.position.set(0, 2.8, 53.9);
+    bannerMesh.rotation.y = Math.PI;
 
-    // South Tribune (Behind penalty kicker, Z = 45)
-    const southStand = new THREE.Group();
-    for (let tier = 0; tier < 8; tier++) {
-      const tierStep = new THREE.Mesh(
-        new THREE.BoxGeometry(76, 0.8, 1.6),
-        concreteMat
-      );
-      tierStep.position.set(0, 0.4 + tier * 0.8, 39 + tier * 1.5);
-      southStand.add(tierStep);
+    archPortal.add(post1, post2, beam, bannerMesh);
+    this.stadiumWorldGroup.add(archPortal);
 
-      const seatRow = new THREE.Mesh(
-        new THREE.BoxGeometry(72, 0.25, 0.6),
-        tier % 2 === 0 ? seatMatBlue : seatMatRed
-      );
-      seatRow.position.set(0, 0.9 + tier * 0.8, 39 + tier * 1.5);
-      southStand.add(seatRow);
-    }
-    this.stadiumWorldGroup.add(southStand);
-
-    // East & West Tribunes (Sidelines, X = ±30)
-    [-30, 30].forEach((sx) => {
-      const sideStand = new THREE.Group();
-      const dir = sx > 0 ? 1 : -1;
-      for (let tier = 0; tier < 7; tier++) {
-        const tierStep = new THREE.Mesh(
-          new THREE.BoxGeometry(1.6, 0.8, 70),
-          concreteMat
-        );
-        tierStep.position.set(sx + dir * tier * 1.5, 0.4 + tier * 0.8, 0);
-        sideStand.add(tierStep);
-      }
-      this.stadiumWorldGroup.add(sideStand);
-    });
-
-    // 10. Cantilevered Stadium Canopy Roofs (Above North & South Stands)
-    const roofMat = new THREE.MeshStandardMaterial({ color: '#E8ECF0', metalness: 0.3, roughness: 0.4 });
-    const northRoof = new THREE.Mesh(new THREE.BoxGeometry(82, 0.45, 18), roofMat);
-    northRoof.position.set(0, 11.5, -45);
-    northRoof.rotation.x = 0.12;
-    const southRoof = new THREE.Mesh(new THREE.BoxGeometry(82, 0.45, 18), roofMat);
-    southRoof.position.set(0, 11.5, 45);
-    southRoof.rotation.x = -0.12;
-    this.stadiumWorldGroup.add(northRoof, southRoof);
-
-    // 11. Giant Stadium Scoreboard (Papan Skor Raksasa)
-    const boardGroup = new THREE.Group();
-    const boardBack = new THREE.Mesh(
-      new THREE.BoxGeometry(16, 5.5, 0.5),
-      new THREE.MeshStandardMaterial({ color: '#1B2022', roughness: 0.8 })
-    );
-    boardBack.position.set(0, 15, -49);
-    boardGroup.add(boardBack);
-
-    const screenMat = new THREE.MeshStandardMaterial({
-      color: '#0D1117',
-      emissive: '#161B22',
-      emissiveIntensity: 0.5,
-    });
-    const screen = new THREE.Mesh(new THREE.BoxGeometry(15.2, 4.8, 0.2), screenMat);
-    screen.position.set(0, 15, -48.7);
-    boardGroup.add(screen);
-    this.stadiumWorldGroup.add(boardGroup);
-
-    // 12. Four Corner Floodlight Towers (Menara Lampu Sorot Stadion)
-    const towerMat = new THREE.MeshStandardMaterial({ color: '#4B5563', metalness: 0.6, roughness: 0.4 });
-    const lampMat = new THREE.MeshStandardMaterial({
-      color: '#FFFFFF',
-      emissive: '#FFF9E6',
-      emissiveIntensity: 1.0,
-      roughness: 0.2,
-    });
-
-    [
-      { x: -32, z: -38 },
-      { x: 32, z: -38 },
-      { x: -32, z: 38 },
-      { x: 32, z: 38 },
-    ].forEach((pos) => {
-      const tower = new THREE.Group();
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.7, 24, 8), towerMat);
-      post.position.set(pos.x, 12, pos.z);
-      tower.add(post);
-
-      const head = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 0.8), towerMat);
-      head.position.set(pos.x, 24, pos.z);
-      head.lookAt(0, 2, 0);
-      tower.add(head);
-
-      const bulb = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.4, 0.2), lampMat);
-      bulb.position.set(pos.x, 24, pos.z);
-      bulb.lookAt(0, 2, 0);
-      tower.add(bulb);
-
-      const light = new THREE.SpotLight('#FFF8E7', 1.4, 90, Math.PI / 4, 0.5, 1.2);
-      light.position.set(pos.x, 24, pos.z);
-      light.target.position.set(0, 0, pos.z > 0 ? 10 : -15);
+    // 10. Floodlight Lighting for Stadium Map
+    // Four high floodlights angled directly into the oval pitch
+    const flCoords = [
+      { x: -(12.6 + 7), z: -(17.6 + 5) },
+      { x: (12.6 + 7), z: -(17.6 + 5) },
+      { x: -(12.6 + 7), z: (17.6 + 5) },
+      { x: (12.6 + 7), z: (17.6 + 5) },
+    ];
+    flCoords.forEach((pos) => {
+      const light = new THREE.SpotLight('#FFF8E7', 1.6, 60, Math.PI / 3.5, 0.5, 1.2);
+      light.position.set(pos.x, 14, pos.z);
+      light.target.position.set(0, 0, pos.z > 0 ? 5 : -5);
       this.stadiumWorldGroup.add(light.target);
-      tower.add(light);
-
-      this.stadiumLamps.push({ root: tower, light });
-      this.stadiumWorldGroup.add(tower);
+      this.stadiumWorldGroup.add(light);
+      this.stadiumLamps.push({ root: new THREE.Group(), light });
     });
   }
 
@@ -3871,8 +3840,8 @@ export class City3DManager {
     this.riverWorldGroup.visible = false;
     this.stadiumWorldGroup.visible = true;
 
-    // Spawn player avatar at the freekick penalty spot (Z = -16.5) facing North toward goal (Z = -34)
-    this.playerPos.set(0, 0.1, -16.5);
+    // Spawn player avatar at the freekick penalty kick spot (Z = -3.2) facing North toward goal (Z = -12.3)
+    this.playerPos.set(0, 0.1, -3.2);
     this.playerFacing = Math.PI;
 
     if (this.playerCitizen) {
@@ -3900,8 +3869,8 @@ export class City3DManager {
     // Camera in sports follow perspective behind player looking at goal
     this.cameraMode = 'follow';
     this.onCameraModeChange?.('follow');
-    this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.4, 0));
-    this.spherical.radius = 16;
+    this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.2, 0));
+    this.spherical.radius = 12;
     this.spherical.phi = Math.PI / 3.4;
     this.spherical.theta = this.playerFacing + Math.PI;
     this.updateCameraTransform();
@@ -3956,28 +3925,31 @@ export class City3DManager {
     if (this.viewMode !== 'stadium' || this.isBallKicked) return;
     this.isBallKicked = true;
 
-    // Set initial ball trajectory
+    // Set initial ball trajectory toward North Goal (Z = -12.3)
     let targetX = 0;
-    let targetY = 1.8;
+    let targetY = 1.1;
     if (dir === 'left') {
-      targetX = -2.8;
+      targetX = -1.3;
       targetY = 0.5;
     } else if (dir === 'right') {
-      targetX = 2.8;
+      targetX = 1.3;
       targetY = 0.5;
     } else if (dir === 'top_left') {
-      targetX = -2.6;
-      targetY = 2.1;
+      targetX = -1.4;
+      targetY = 1.45;
     } else if (dir === 'top_right') {
-      targetX = 2.6;
-      targetY = 2.1;
+      targetX = 1.4;
+      targetY = 1.45;
     } else {
       targetX = 0;
-      targetY = 1.4;
+      targetY = 1.1;
     }
 
-    const speed = (power / 100) * 32 + 10;
-    this.ballVelocity.set(targetX * 0.8, targetY * 1.2, -speed);
+    const t = 0.44; // flight duration
+    const vz = -7.8 / t; // distance from -4.5 to -12.3 is 7.8m -> ~ -17.7 m/s
+    const vx = targetX / t;
+    const vy = (targetY - 0.2) / t + 0.5 * 9.8 * t;
+    this.ballVelocity.set(vx, vy, vz);
 
     // Kicking avatar arm & leg swing animation
     if (this.playerCitizen) {
@@ -4026,11 +3998,11 @@ export class City3DManager {
     this.isBallKicked = false;
     this.ballVelocity.set(0, 0, 0);
     if (this.soccerBall) {
-      this.soccerBall.position.set(0, 0.22, -18);
+      this.soccerBall.position.set(0, 0.2, -4.5);
       this.soccerBall.rotation.set(0, 0, 0);
     }
     if (this.goalkeeper) {
-      this.goalkeeper.position.set(0, 0.1, -33.6);
+      this.goalkeeper.position.set(0, 0.08, -11.9);
       this.goalkeeper.rotation.set(0, 0, 0);
     }
     this.goalkeeperState = 'idle';
@@ -4045,16 +4017,16 @@ export class City3DManager {
       this.ballVelocity.y -= 9.8 * delta;
 
       // Ground bounce
-      if (this.soccerBall.position.y < 0.22) {
-        this.soccerBall.position.y = 0.22;
-        this.ballVelocity.y = -this.ballVelocity.y * 0.55;
-        this.ballVelocity.x *= 0.85;
-        this.ballVelocity.z *= 0.85;
+      if (this.soccerBall.position.y < 0.2) {
+        this.soccerBall.position.y = 0.2;
+        this.ballVelocity.y = -this.ballVelocity.y * 0.45;
+        this.ballVelocity.x *= 0.8;
+        this.ballVelocity.z *= 0.8;
       }
 
       // Net / goal back collision
-      if (this.soccerBall.position.z < -35.2) {
-        this.soccerBall.position.z = -35.2;
+      if (this.soccerBall.position.z < -12.5) {
+        this.soccerBall.position.z = -12.5;
         this.ballVelocity.set(0, 0, 0);
       }
 
@@ -4069,15 +4041,15 @@ export class City3DManager {
       const t = Math.min(this.goalkeeperAnimTimer / 0.45, 1.0);
 
       if (this.goalkeeperState === 'dive_left') {
-        this.goalkeeper.position.x = THREE.MathUtils.lerp(0, -2.2, t);
-        this.goalkeeper.position.y = THREE.MathUtils.lerp(0.1, 0.6, Math.sin(t * Math.PI));
+        this.goalkeeper.position.x = THREE.MathUtils.lerp(0, -1.3, t);
+        this.goalkeeper.position.y = THREE.MathUtils.lerp(0.08, 0.45, Math.sin(t * Math.PI));
         this.goalkeeper.rotation.z = THREE.MathUtils.lerp(0, -0.65, t);
       } else if (this.goalkeeperState === 'dive_right') {
-        this.goalkeeper.position.x = THREE.MathUtils.lerp(0, 2.2, t);
-        this.goalkeeper.position.y = THREE.MathUtils.lerp(0.1, 0.6, Math.sin(t * Math.PI));
+        this.goalkeeper.position.x = THREE.MathUtils.lerp(0, 1.3, t);
+        this.goalkeeper.position.y = THREE.MathUtils.lerp(0.08, 0.45, Math.sin(t * Math.PI));
         this.goalkeeper.rotation.z = THREE.MathUtils.lerp(0, 0.65, t);
       } else if (this.goalkeeperState === 'jump') {
-        this.goalkeeper.position.y = THREE.MathUtils.lerp(0.1, 1.2, Math.sin(t * Math.PI));
+        this.goalkeeper.position.y = THREE.MathUtils.lerp(0.08, 0.85, Math.sin(t * Math.PI));
       }
     }
   }
@@ -4914,6 +4886,7 @@ private setupAirplanes() {
     this.airport?.night(lk, 0);
     this.port?.night(lk, 0);
     this.sports?.night(lk, 0);
+    this.separateSports?.night(lk, 0);
     this.vet?.night(lk);
     this.uni?.night(lk);
     this.zoo?.night(lk);
@@ -4978,6 +4951,13 @@ private setupAirplanes() {
         }
         if (lamp.light) {
           lamp.light.intensity = nightAmount > 0.3 ? 0.75 : 0.0;
+        }
+      });
+    }
+    if (this.stadiumLamps) {
+      this.stadiumLamps.forEach((lamp) => {
+        if (lamp.light) {
+          lamp.light.intensity = nightAmount > 0.3 ? 2.5 : 0.0;
         }
       });
     }
@@ -5339,9 +5319,9 @@ private setupAirplanes() {
         const target = new THREE.Vector3();
         if (this.raycaster.ray.intersectPlane(plane, target)) {
           // If tap near ball (distance < 2.5m) and not kicked yet, shoot toward target!
-          const ballSpot = new THREE.Vector3(0, 0.22, -18);
+          const ballSpot = new THREE.Vector3(0, 0.2, -4.5);
           const distToBall = target.distanceTo(ballSpot);
-          if (distToBall < 3.0 && !this.isBallKicked) {
+          if (distToBall < 2.5 && !this.isBallKicked) {
             let shootDir: 'left' | 'center' | 'right' = 'center';
             if (target.x < -1.0) shootDir = 'left';
             else if (target.x > 1.0) shootDir = 'right';
@@ -5792,9 +5772,14 @@ private setupAirplanes() {
           nextPos.y = 0.0;
         }
       } else if (this.viewMode === 'stadium') {
-        nextPos.x = THREE.MathUtils.clamp(nextPos.x, -21.0, 21.0);
-        nextPos.z = THREE.MathUtils.clamp(nextPos.z, -33.0, 33.0);
+        nextPos.x = THREE.MathUtils.clamp(nextPos.x, -34.0, 34.0);
+        nextPos.z = THREE.MathUtils.clamp(nextPos.z, -22.0, 56.0);
         nextPos.y = 0.1;
+        if (nextPos.z > 53.5 && Math.abs(nextPos.x) < 3.5) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('exit-stadium-area'));
+          }
+        }
       }
 
       this.playerPos.copy(nextPos);
@@ -5851,9 +5836,14 @@ private setupAirplanes() {
             nextPos.y = 0.0;
           }
         } else if (this.viewMode === 'stadium') {
-          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -21.0, 21.0);
-          nextPos.z = THREE.MathUtils.clamp(nextPos.z, -33.0, 33.0);
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -34.0, 34.0);
+          nextPos.z = THREE.MathUtils.clamp(nextPos.z, -22.0, 56.0);
           nextPos.y = 0.1;
+          if (nextPos.z > 53.5 && Math.abs(nextPos.x) < 3.5) {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('exit-stadium-area'));
+            }
+          }
         }
 
         this.playerPos.copy(nextPos);
@@ -6406,7 +6396,7 @@ private setupAirplanes() {
     distance?: number
   ) {
     if (preset === 'selfie') {
-      if (this.viewMode === 'tugu') {
+      if (this.viewMode !== 'city') {
         this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.2, 0));
         this.spherical.radius = 4.0;
         this.spherical.phi = Math.PI / 2.25;
@@ -6418,7 +6408,7 @@ private setupAirplanes() {
         this.spherical.theta = 0;
       }
     } else if (preset === 'normal') {
-      if (this.viewMode === 'tugu') {
+      if (this.viewMode !== 'city') {
         this.target.copy(this.playerPos).add(new THREE.Vector3(0, 0.8, 0));
         this.spherical.radius = 12.0;
         this.spherical.phi = Math.PI / 3.2;
@@ -6430,7 +6420,7 @@ private setupAirplanes() {
         this.spherical.theta = Math.PI * 0.75;
       }
     } else if (preset === 'drone') {
-      if (this.viewMode === 'tugu') {
+      if (this.viewMode !== 'city') {
         this.target.copy(this.playerPos);
         this.spherical.radius = 26.0;
         this.spherical.phi = Math.PI / 6.5;
@@ -6440,7 +6430,7 @@ private setupAirplanes() {
         this.spherical.phi = Math.PI / 6.5;
       }
     } else if (preset === 'wide') {
-      if (this.viewMode === 'tugu') {
+      if (this.viewMode !== 'city') {
         this.target.copy(this.playerPos).add(new THREE.Vector3(0, 0.6, 0));
         this.spherical.radius = 8.0;
         this.spherical.phi = Math.PI / 2.05;
