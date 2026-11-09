@@ -198,6 +198,7 @@ export default function GameCanvas() {
 
   const myClientIdRef = useRef<string>('')
   const lastSentChatRef = useRef<string | null>(null)
+  const fastSyncTriggerRef = useRef<(() => void) | null>(null)
   const isSyncingRef = useRef(false)
   const lastSyncReqTimeRef = useRef(0)
 
@@ -222,11 +223,14 @@ export default function GameCanvas() {
     myClientIdRef.current = getClientSessionId()
   }, [])
 
-  // Listen to chat sent by local player to broadcast in Tugu room
+  // Listen to chat sent by local player to broadcast in Tugu & River rooms
   useEffect(() => {
     const onChatSent = (e: any) => {
       if (e.detail?.text) {
         lastSentChatRef.current = e.detail.text
+        if (fastSyncTriggerRef.current) {
+          fastSyncTriggerRef.current()
+        }
       }
     }
     window.addEventListener('player-chat-sent', onChatSent)
@@ -265,9 +269,9 @@ export default function GameCanvas() {
           isFishing: isRiver ? fishingState !== 'idle' : undefined,
         }
 
-        if (lastSentChatRef.current) {
-          body.chatText = lastSentChatRef.current
-          lastSentChatRef.current = null
+        const chatToSend = lastSentChatRef.current
+        if (chatToSend) {
+          body.chatText = chatToSend
         }
 
         const res = await fetch(syncEndpoint, {
@@ -279,6 +283,10 @@ export default function GameCanvas() {
         if (!isMounted) return
 
         if (res.ok) {
+          if (chatToSend && lastSentChatRef.current === chatToSend) {
+            lastSentChatRef.current = null
+          }
+
           if (reqStart < lastSyncReqTimeRef.current) {
             // Discard out-of-order response
             return
@@ -308,8 +316,18 @@ export default function GameCanvas() {
       } finally {
         isSyncingRef.current = false
         if (isMounted) {
-          syncTimeout = setTimeout(syncRoom, 450)
+          syncTimeout = setTimeout(syncRoom, 200)
         }
+      }
+    }
+
+    fastSyncTriggerRef.current = () => {
+      if (syncTimeout) {
+        clearTimeout(syncTimeout)
+        syncTimeout = null
+      }
+      if (!isSyncingRef.current && isMounted) {
+        syncRoom()
       }
     }
 
@@ -318,6 +336,7 @@ export default function GameCanvas() {
 
     return () => {
       isMounted = false
+      fastSyncTriggerRef.current = null
       if (syncTimeout) clearTimeout(syncTimeout)
       isSyncingRef.current = false
       // Leave room on exit

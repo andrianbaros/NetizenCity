@@ -618,6 +618,7 @@ export class City3DManager {
       lastChatTime?: number;
       lastServerTime?: number;
       moveSpeed?: number;
+      missingSince?: number;
     }
   >();
 
@@ -2534,6 +2535,7 @@ export class City3DManager {
 
     const activeIds = new Set<string>();
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const nowMs = Date.now();
     const isRiver = this.viewMode === 'river';
     const activeGroup = isRiver ? this.riverWorldGroup : this.tuguWorldGroup;
 
@@ -2543,39 +2545,40 @@ export class City3DManager {
 
       const existing = this.remotePlayers.get(p.id);
       if (existing) {
+        existing.missingSince = 0; // Reset missing timer
         const targetY = isRiver && p.z < 2.5 ? 0.35 : 0;
         const targetV = new THREE.Vector3(p.x, targetY, p.z);
         const dist = existing.root.position.distanceTo(targetV);
         existing.lastServerTime = now;
 
-        // If distance is large (e.g. initial spawn or teleport > 8 units), snap immediately
-        if (dist > 8.0) {
+        // If distance is large (e.g. initial spawn or teleport > 6.0 units), snap immediately
+        if (dist > 6.0) {
           existing.root.position.copy(targetV);
           existing.targetPos.copy(targetV);
           existing.root.rotation.y = p.facing;
           existing.targetFacing = p.facing;
-          existing.moveSpeed = 0;
         } else {
           existing.targetPos.copy(targetV);
           existing.targetFacing = p.facing;
-          // Calculate natural walking speed based on distance and polling window (~0.45s)
-          const idealSpeed = dist / 0.45;
-          existing.moveSpeed = THREE.MathUtils.clamp(idealSpeed, 2.8, 6.8);
         }
 
-        // Check if there is new chat to display
-        if (p.lastChat && p.lastChat.time > (existing.lastChatTime || 0)) {
-          existing.lastChatTime = p.lastChat.time;
-          if (Date.now() - p.lastChat.time < 8000) {
-            if (existing.bubble) {
-              existing.root.remove(existing.bubble);
-              existing.bubble = null;
+        // Check if there is new chat to display (allowing for mobile clock skew up to 25s)
+        if (p.lastChat && p.lastChat.text) {
+          const chatTime = p.lastChat.time || 0;
+          if (chatTime > (existing.lastChatTime || 0)) {
+            existing.lastChatTime = chatTime;
+            const ageMs = Math.abs(nowMs - chatTime);
+            if (ageMs < 25000) {
+              if (existing.bubble) {
+                existing.root.remove(existing.bubble);
+                existing.bubble = null;
+              }
+              const bubble = makeSpeechBubbleSprite(p.lastChat.text, '#FFFDF9', '#343B35');
+              bubble.position.set(0, 2.15, 0);
+              existing.root.add(bubble);
+              existing.bubble = bubble;
+              existing.bubbleTimer = 6.0;
             }
-            const bubble = makeSpeechBubbleSprite(p.lastChat.text, '#FFFDF9', '#343B35');
-            bubble.position.set(0, 2.15, 0);
-            existing.root.add(bubble);
-            existing.bubble = bubble;
-            existing.bubbleTimer = 6.0;
           }
         }
       } else {
@@ -2601,6 +2604,17 @@ export class City3DManager {
           citizen.leftArm.rotation.set(-0.45, 0.3, 0);
         }
 
+        // Check if newly spawned player has an active recent speech bubble!
+        let initialBubble: THREE.Sprite | null = null;
+        let initialBubbleTimer = 0;
+        const chatTime = p.lastChat?.time || 0;
+        if (p.lastChat && p.lastChat.text && Math.abs(nowMs - chatTime) < 20000) {
+          initialBubble = makeSpeechBubbleSprite(p.lastChat.text, '#FFFDF9', '#343B35');
+          initialBubble.position.set(0, 2.15, 0);
+          citizen.root.add(initialBubble);
+          initialBubbleTimer = Math.max(1.5, 6.0 - Math.max(0, (nowMs - chatTime) / 1000));
+        }
+
         activeGroup.add(citizen.root);
 
         this.remotePlayers.set(p.id, {
@@ -2609,19 +2623,28 @@ export class City3DManager {
           targetPos: new THREE.Vector3(p.x, targetY, p.z),
           targetFacing: p.facing,
           nameTag,
-          lastChatTime: p.lastChat?.time || 0,
+          bubble: initialBubble,
+          bubbleTimer: initialBubbleTimer,
+          lastChatTime: chatTime,
           lastServerTime: now,
-          moveSpeed: 5.8,
+          missingSince: 0,
         });
       }
     }
 
-    // Remove disconnected players
+    // Graceful disconnect: Only remove remote players if missing for 4.0 consecutive seconds!
+    // Prevents sudden glitching / blinking / disappearing on packet jitter or dropped frames
     for (const [id, remote] of this.remotePlayers.entries()) {
-      if (!activeIds.has(id)) {
-        this.tuguWorldGroup.remove(remote.root);
-        this.riverWorldGroup.remove(remote.root);
-        this.remotePlayers.delete(id);
+      if (activeIds.has(id)) {
+        remote.missingSince = 0;
+      } else {
+        if (!remote.missingSince) {
+          remote.missingSince = nowMs;
+        } else if (nowMs - remote.missingSince > 4000) {
+          this.tuguWorldGroup.remove(remote.root);
+          this.riverWorldGroup.remove(remote.root);
+          this.remotePlayers.delete(id);
+        }
       }
     }
   }
@@ -2662,28 +2685,32 @@ export class City3DManager {
       const target = remote.targetPos;
       const dist = cur.distanceTo(target);
 
-      if (dist > 0.04) {
-        // Linear smooth continuous movement at natural walking pace (prevents jerky dash & stop)
-        const speed = remote.moveSpeed || 5.8;
-        const step = Math.min(dist, speed * delta);
-        const dir = target.clone().sub(cur).normalize();
-        cur.addScaledVector(dir, step);
+      if (dist > 0.05) {
+        // Continuous smooth exponential damping towards target (eliminates jerky dash & stop)
+        const lerpFactor = Math.min(1.0, delta * 9.5);
+        cur.x += (target.x - cur.x) * lerpFactor;
+        cur.y += (target.y - cur.y) * lerpFactor;
+        cur.z += (target.z - cur.z) * lerpFactor;
 
         // Turn body smoothly towards the direction of travel
-        const moveAngle = Math.atan2(dir.x, dir.z);
-        let diff = (moveAngle - remote.root.rotation.y) % (Math.PI * 2);
-        if (diff > Math.PI) diff -= Math.PI * 2;
-        if (diff < -Math.PI) diff += Math.PI * 2;
-        remote.root.rotation.y += diff * Math.min(1, delta * 8.0);
+        const dirX = target.x - cur.x;
+        const dirZ = target.z - cur.z;
+        if (Math.hypot(dirX, dirZ) > 0.02) {
+          const moveAngle = Math.atan2(dirX, dirZ);
+          let diff = (moveAngle - remote.root.rotation.y) % (Math.PI * 2);
+          if (diff > Math.PI) diff -= Math.PI * 2;
+          if (diff < -Math.PI) diff += Math.PI * 2;
+          remote.root.rotation.y += diff * Math.min(1.0, delta * 10.0);
+        }
 
-        // Animate citizen legs and arms walking in sync with current speed
+        // Animate citizen walking pose smoothly
         remote.citizen.pose(true, elapsed, 4.5);
       } else {
-        // Reached destination: stand still and face the player's last reported orientation
+        // Reached destination: stand still and face the player's last reported orientation smoothly
         let diff = (remote.targetFacing - remote.root.rotation.y) % (Math.PI * 2);
         if (diff > Math.PI) diff -= Math.PI * 2;
         if (diff < -Math.PI) diff += Math.PI * 2;
-        remote.root.rotation.y += diff * Math.min(1, delta * 6.0);
+        remote.root.rotation.y += diff * Math.min(1.0, delta * 8.0);
 
         remote.citizen.pose(false, elapsed);
       }
