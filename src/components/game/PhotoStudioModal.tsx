@@ -42,13 +42,16 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
   const active3DMode = typeof window !== 'undefined' ? (window as any).__city3DManager?.viewMode : undefined
   const effectiveViewMode = active3DMode || viewMode
 
+  const isBeach = effectiveViewMode === 'beach' || selectedBuilding === 'netizen_beach' || currentDistrict === 'Pantai Netizen Beach'
   const isRiver = effectiveViewMode === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam'
   const isStadium = effectiveViewMode === 'stadium' || selectedBuilding === 'sports_stadium' || currentDistrict === 'Kawasan Olahraga'
   const isInvestor = selectedBuilding === 'investor_tower' || currentDistrict === 'Monumen Investor Kota' || currentDistrict === 'Distrik Investor'
   const isCityHall = selectedBuilding === 'city_hall'
   const isTugu = effectiveViewMode === 'tugu' || selectedBuilding === 'monument'
 
-  const locationTitle = isRiver
+  const locationTitle = isBeach
+    ? 'Pantai Netizen Beach'
+    : isRiver
     ? 'Sungai Kali Netizen'
     : isStadium
     ? 'Stadion Gelora Netizen'
@@ -223,7 +226,11 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
       let locationSubtitle = 'Alun-Alun Pusat Kota'
       let locationName = 'Alun-Alun Tugu'
 
-      if (liveEffective === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam') {
+      if (liveEffective === 'beach' || selectedBuilding === 'netizen_beach' || currentDistrict === 'Pantai Netizen Beach') {
+        locationBadge = '🏖️ PANTAI NETIZEN BEACH'
+        locationSubtitle = 'Dermaga Pancing & Kawasan Wisata Pantai'
+        locationName = 'Pantai Netizen Beach'
+      } else if (liveEffective === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam') {
         locationBadge = '🎣 DERMAGA SUNGAI KALI NETIZEN'
         locationSubtitle = 'Dermaga Pancing Sungai Kali Netizen'
         locationName = 'Sungai Kali Netizen'

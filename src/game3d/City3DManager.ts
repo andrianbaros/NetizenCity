@@ -44,6 +44,7 @@ export interface RiverFishCatch {
   rewardCoins: number;
   icon: string;
   desc: string;
+  caughtLocation?: string;
 }
 
 export const RIVER_FISH_SPECIES: RiverFishCatch[] = [
@@ -268,6 +269,209 @@ export const RIVER_FISH_SPECIES: RiverFishCatch[] = [
     rewardCoins: 12500,
     icon: '💎',
     desc: 'Naga kristal berlian abadi yang tak lekang oleh waktu, tangkapan paling agung di jagat raya!',
+  },
+];
+
+export const BEACH_FISH_SPECIES: RiverFishCatch[] = [
+  // 1. COMMON (Biasa - Hijau Emerald)
+  {
+    id: 'fish_kembung_pantai',
+    name: 'Ikan Kembung Pantai',
+    rarity: 'Common',
+    tier: 'common',
+    rarityColor: '#22C55E',
+    weight: 0.65,
+    rewardCoins: 50,
+    icon: '🐟',
+    desc: 'Ikan laut lincah bergerombol yang sering berenang di dekat ombak pantai.',
+  },
+  {
+    id: 'fish_tongkol_tropis',
+    name: 'Ikan Tongkol Tropis',
+    rarity: 'Common',
+    tier: 'common',
+    rarityColor: '#22C55E',
+    weight: 1.4,
+    rewardCoins: 60,
+    icon: '🐟',
+    desc: 'Ikan perenang cepat favorit nelayan pesisir Netizen Beach.',
+  },
+  {
+    id: 'fish_buntal_mini',
+    name: 'Ikan Buntal Mini Pasir',
+    rarity: 'Common',
+    tier: 'common',
+    rarityColor: '#22C55E',
+    weight: 0.8,
+    rewardCoins: 55,
+    icon: '🐡',
+    desc: 'Ikan buntal bulat menggemaskan yang suka bersembunyi di pasir dangkal.',
+  },
+  {
+    id: 'fish_kerang_mutiara',
+    name: 'Kerang Mutiara Pesisir',
+    rarity: 'Common',
+    tier: 'common',
+    rarityColor: '#22C55E',
+    weight: 0.5,
+    rewardCoins: 70,
+    icon: '🦪',
+    desc: 'Kerang laut berkilau yang tersangkut di kail pancing pemancing pantai.',
+  },
+
+  // 2. UNCOMMON (Menengah - Biru Langit / Sky Blue)
+  {
+    id: 'fish_kakap_merah',
+    name: 'Ikan Kakap Merah Karang',
+    rarity: 'Uncommon',
+    tier: 'uncommon',
+    rarityColor: '#0EA5E9',
+    weight: 3.2,
+    rewardCoins: 120,
+    icon: '🐠',
+    desc: 'Ikan kakap berwarna merah menyala dengan tarikan pancing yang bertenaga.',
+  },
+  {
+    id: 'fish_cumi_teluk',
+    name: 'Cumi-Cumi Teluk Netizen',
+    rarity: 'Uncommon',
+    tier: 'uncommon',
+    rarityColor: '#0EA5E9',
+    weight: 1.8,
+    rewardCoins: 135,
+    icon: '🦑',
+    desc: 'Cumi-cumi bertentakel lincah yang menyemprotkan tinta saat ditarik ke darat.',
+  },
+  {
+    id: 'fish_kepiting_bakau',
+    name: 'Kepiting Bakau Biru',
+    rarity: 'Uncommon',
+    tier: 'uncommon',
+    rarityColor: '#0EA5E9',
+    weight: 2.1,
+    rewardCoins: 140,
+    icon: '🦀',
+    desc: 'Kepiting bercapit kokoh dengan corak biru tropis yang eksotis.',
+  },
+  {
+    id: 'fish_pari_pasir',
+    name: 'Ikan Pari Pasir Tropis',
+    rarity: 'Uncommon',
+    tier: 'uncommon',
+    rarityColor: '#0EA5E9',
+    weight: 4.5,
+    rewardCoins: 155,
+    icon: '🦈',
+    desc: 'Ikan pari pipih yang meluncur anggun di dasar perairan pantai.',
+  },
+
+  // 3. RARE (Langka - Ungu Kristal)
+  {
+    id: 'fish_tuna_sirip_kuning',
+    name: 'Tuna Sirip Kuning Samudra',
+    rarity: 'Rare',
+    tier: 'rare',
+    rarityColor: '#A855F7',
+    weight: 8.6,
+    rewardCoins: 280,
+    icon: '🐟',
+    desc: 'Tuna gagah dengan sirip kuning keemasan, incaran utama para pemancing samudra.',
+  },
+  {
+    id: 'fish_kerapu_macan',
+    name: 'Ikan Kerapu Macan Karang',
+    rarity: 'Rare',
+    tier: 'rare',
+    rarityColor: '#A855F7',
+    weight: 6.2,
+    rewardCoins: 260,
+    icon: '🐠',
+    desc: 'Kerapu bercorak loreng macan penguasa celah terumbu karang laut dalam.',
+  },
+  {
+    id: 'fish_lobster_samudra',
+    name: 'Lobster Samudra Raja',
+    rarity: 'Rare',
+    tier: 'rare',
+    rarityColor: '#A855F7',
+    weight: 3.8,
+    rewardCoins: 310,
+    icon: '🦞',
+    desc: 'Lobster berduri merah menyala bernilai tinggi di pasar kuliner kota.',
+  },
+
+  // 4. EPIC (Epik - Emas Oranye / Amber)
+  {
+    id: 'fish_layaran_samudra',
+    name: 'Ikan Layaran Samudra (Sailfish)',
+    rarity: 'Epic',
+    tier: 'epic',
+    rarityColor: '#F59E0B',
+    weight: 16.5,
+    rewardCoins: 650,
+    icon: '🐬',
+    desc: 'Ikan tercepat di samudra dengan sirip punggung megah menyerupai layar kapal.',
+  },
+  {
+    id: 'fish_hiu_karang',
+    name: 'Hiu Karang Sirip Hitam',
+    rarity: 'Epic',
+    tier: 'epic',
+    rarityColor: '#F59E0B',
+    weight: 14.2,
+    rewardCoins: 720,
+    icon: '🦈',
+    desc: 'Predator anggun terumbu karang yang melompat dramatis saat menyambar kail.',
+  },
+
+  // 5. LEGENDARY (Legendaris - Merah Delima / Crimson)
+  {
+    id: 'fish_marlin_biru',
+    name: 'Marlin Biru Samudra (Blue Marlin)',
+    rarity: 'Legendary',
+    tier: 'legendary',
+    rarityColor: '#EF4444',
+    weight: 28.0,
+    rewardCoins: 1600,
+    icon: '⚔️',
+    desc: 'Raja samudra bertanduk pedang legendaris yang hanya sanggup ditaklukkan pemancing sejati.',
+  },
+  {
+    id: 'fish_todak_raja',
+    name: 'Ikan Todak Raja Laut Dalam',
+    rarity: 'Legendary',
+    tier: 'legendary',
+    rarityColor: '#EF4444',
+    weight: 24.5,
+    rewardCoins: 1450,
+    icon: '🗡️',
+    desc: 'Todak perak bercahaya yang muncul dari palung samudra terdalam.',
+  },
+
+  // 6. MYTHIC (Mitos - Merah Neon Mawar)
+  {
+    id: 'fish_barramundi_emas',
+    name: 'Barramundi Emas Ratu Pantai',
+    rarity: 'Mythic',
+    tier: 'mythic',
+    rarityColor: '#FB7185',
+    weight: 38.0,
+    rewardCoins: 3500,
+    icon: '👑',
+    desc: 'Ikan mitos bersisik emas murni yang konon membawa keberuntungan abadi bagi yang berhasil menangkapnya.',
+  },
+
+  // 7. IMMORTAL (Abadi - Pelangi Kosmik / Prismatic)
+  {
+    id: 'fish_naga_laut_netizen',
+    name: 'Naga Laut Samudra Netizen (Leviathan)',
+    rarity: 'Immortal',
+    tier: 'immortal',
+    rarityColor: '#38BDF8',
+    weight: 65.0,
+    rewardCoins: 8888,
+    icon: '🐉',
+    desc: 'Mahakarya samudra legendaris penjaga perairan Netizen City! Bersinar dengan aura mistis pelangi abadi.',
   },
 ];
 
@@ -536,11 +740,36 @@ export class City3DManager {
   private lastTime: number = typeof performance !== 'undefined' ? performance.now() : Date.now();
   private timeOfDay: TimeOfDay = 'noon';
   private cameraMode: CameraMode = 'orbit'; // Main city starts in free Orbit overview
-  public viewMode: 'city' | 'tugu' | 'river' | 'stadium' = 'city';
+  public viewMode: 'city' | 'tugu' | 'river' | 'stadium' | 'beach' = 'city';
   public cityWorldGroup = new THREE.Group();
   public tuguWorldGroup = new THREE.Group();
   public riverWorldGroup = new THREE.Group();
   public stadiumWorldGroup = new THREE.Group();
+  public beachWorldGroup = new THREE.Group();
+
+  // 3D Beach Map State
+  public beachLamps: Array<{
+    root: THREE.Mesh;
+    headMat: THREE.MeshStandardMaterial;
+    light: THREE.PointLight;
+  }> = [];
+  private beachFishList: Array<{
+    mesh: THREE.Group;
+    tail: THREE.Mesh;
+    center: THREE.Vector3;
+    radius: number;
+    angle: number;
+    speed: number;
+    depth: number;
+  }> = [];
+  private beachWaveFoams: THREE.Mesh[] = [];
+  private beachBuoys: THREE.Group[] = [];
+  private handleEnterBeachEvent?: () => void;
+  private handleExitBeachEvent?: () => void;
+
+  public get activeFishingWorldGroup(): THREE.Group {
+    return this.viewMode === 'beach' ? this.beachWorldGroup : this.riverWorldGroup;
+  }
 
   // 3D Stadium & Freekick State
   public soccerBall: THREE.Mesh | null = null;
@@ -941,6 +1170,11 @@ export class City3DManager {
     this.scene.add(this.stadiumWorldGroup);
     this.stadiumWorldGroup.visible = false; // Initially hidden
 
+    this.beachWorldGroup = new THREE.Group();
+    this.beachWorldGroup.name = 'BeachWorldGroup';
+    this.scene.add(this.beachWorldGroup);
+    this.beachWorldGroup.visible = false; // Initially hidden
+
     // 3. Camera Setup (near 0.8 and far 1200 eliminates clipping and depth precision artifacts)
     this.camera = new THREE.PerspectiveCamera(40, W / H, 0.8, 1200);
     this.updateCameraTransform();
@@ -971,6 +1205,7 @@ export class City3DManager {
     this.buildTuguMap();
     this.buildRiverMap();
     this.buildStadiumMap();
+    this.buildBeachMap();
 
     // 6. Setup Characters, Living Citizens & Airplanes
     this.setupCharacters();
@@ -2148,6 +2383,452 @@ export class City3DManager {
     });
   }
 
+  private buildBeachMap() {
+    this.beachLamps = [];
+    this.beachWaveFoams = [];
+    this.beachBuoys = [];
+
+    // 1. Underwater Seabed / Sand Bottom (Pasir Bawah Laut)
+    const seabedGeom = new THREE.PlaneGeometry(240, 100, 1, 1).rotateX(-Math.PI / 2);
+    const seabedMat = new THREE.MeshStandardMaterial({
+      color: '#D4B376',
+      roughness: 0.95,
+    });
+    const seabed = new THREE.Mesh(seabedGeom, seabedMat);
+    seabed.position.set(0, -2.4, -36);
+    this.beachWorldGroup.add(seabed);
+
+    // Underwater Colorful Coral Clusters & Sea Stones
+    const coralColors = ['#F97316', '#EF4444', '#10B981', '#EC4899', '#8B5CF6'];
+    const coralMat = (c: string) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75 });
+    for (let i = 0; i < 22; i++) {
+      const cx = (Math.random() - 0.5) * 60;
+      if (Math.abs(cx) < 3.5) continue;
+      const cz = -7.0 - Math.random() * 28.0;
+      const coral = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.35 + Math.random() * 0.45, 1),
+        coralMat(coralColors[i % coralColors.length])
+      );
+      coral.position.set(cx, -1.8, cz);
+      coral.scale.set(1.2, 0.8, 1.2);
+      this.beachWorldGroup.add(coral);
+    }
+
+    // 2. Translucent Tropical Turquoise Ocean Surface (Air Laut Tropis)
+    const oceanGeom = new THREE.PlaneGeometry(240, 80, 1, 1).rotateX(-Math.PI / 2);
+    const oceanMat = new THREE.MeshLambertMaterial({
+      color: '#0284C7',
+      transparent: true,
+      opacity: 0.86,
+      depthWrite: false,
+    });
+    const ocean = new THREE.Mesh(oceanGeom, oceanMat);
+    ocean.position.set(0, -0.05, -34);
+    this.beachWorldGroup.add(ocean);
+
+    // 3. Dynamic Beach Wave Foams (Ombak Garis Buih Putih)
+    for (let f = 0; f < 3; f++) {
+      const foamGeom = new THREE.PlaneGeometry(140 + f * 20, 0.9 + f * 0.3, 1, 1).rotateX(-Math.PI / 2);
+      const foamMat = new THREE.MeshBasicMaterial({
+        color: '#FFFFFF',
+        transparent: true,
+        opacity: 0.65 - f * 0.15,
+      });
+      const foamMesh = new THREE.Mesh(foamGeom, foamMat);
+      foamMesh.position.set(0, 0.01 + f * 0.005, -0.2 + f * 1.0);
+      this.beachWaveFoams.push(foamMesh);
+      this.beachWorldGroup.add(foamMesh);
+    }
+
+    // 4. Wet Sand Shoreline (Tideline ribbon)
+    const wetSand = new THREE.Mesh(
+      new THREE.BoxGeometry(240, 0.35, 2.5),
+      new THREE.MeshStandardMaterial({ color: '#D2B079', roughness: 0.95 })
+    );
+    wetSand.position.set(0, -0.15, 1.6);
+    this.beachWorldGroup.add(wetSand);
+
+    // 5. Fine Creamy Sand Beach (Hamparan Pasir Putih Bersih)
+    const sandBeach = new THREE.Mesh(
+      new THREE.BoxGeometry(240, 1.4, 48.0),
+      new THREE.MeshStandardMaterial({ color: '#F7E7C4', roughness: 0.98 })
+    );
+    sandBeach.position.set(0, -0.65, 26.0);
+    this.beachWorldGroup.add(sandBeach);
+
+    // Scattered Seashells on the Sand
+    const shellMat1 = new THREE.MeshStandardMaterial({ color: '#FFF5EB', roughness: 0.6 });
+    const shellMat2 = new THREE.MeshStandardMaterial({ color: '#FFE4E6', roughness: 0.6 });
+    for (let i = 0; i < 35; i++) {
+      const sx = (Math.random() - 0.5) * 65;
+      const sz = 3.5 + Math.random() * 20.0;
+      const shell = new THREE.Mesh(
+        new THREE.ConeGeometry(0.12, 0.18, 5),
+        i % 2 === 0 ? shellMat1 : shellMat2
+      );
+      shell.rotation.set(Math.PI / 2, 0, Math.random() * Math.PI);
+      shell.position.set(sx, 0.06, sz);
+      this.beachWorldGroup.add(shell);
+    }
+
+    // 6. Wooden Ocean Pier & Angling Boardwalk (Dermaga Pancing Samudra)
+    const pierDeckGroup = new THREE.Group();
+    const woodPlankMat1 = new THREE.MeshStandardMaterial({ color: '#7A4B26', roughness: 0.85 });
+    const woodPlankMat2 = new THREE.MeshStandardMaterial({ color: '#8C562E', roughness: 0.85 });
+
+    // Transition steps from Sand (Y = 0.0) up to Pier (Y = 0.35)
+    for (let step = 0; step < 3; step++) {
+      const stepPlank = new THREE.Mesh(
+        new THREE.BoxGeometry(4.4, 0.12, 0.4),
+        step % 2 === 0 ? woodPlankMat1 : woodPlankMat2
+      );
+      stepPlank.position.set(0, 0.08 + step * 0.1, 2.9 - step * 0.35);
+      pierDeckGroup.add(stepPlank);
+    }
+
+    // Pier Main Wooden Planks (Z = -12.5 to 2.0)
+    const pierLength = 14.5;
+    const plankCount = Math.floor(pierLength / 0.38);
+    for (let i = 0; i < plankCount; i++) {
+      const pz = -12.4 + i * 0.38;
+      const plank = new THREE.Mesh(
+        new THREE.BoxGeometry(4.4, 0.14, 0.34),
+        i % 2 === 0 ? woodPlankMat1 : woodPlankMat2
+      );
+      plank.position.set(0, 0.35, pz);
+      pierDeckGroup.add(plank);
+    }
+
+    // Pier Heavy Timber Support Pilings (Tiang Kayu Penyangga di Laut)
+    const pilingMat = new THREE.MeshStandardMaterial({ color: '#4E2F17', roughness: 0.9 });
+    [-1.9, 1.9].forEach((px) => {
+      for (let pz = -12.0; pz <= 1.0; pz += 3.0) {
+        const piling = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.16, 0.18, 3.2, 8),
+          pilingMat
+        );
+        piling.position.set(px, -0.9, pz);
+        pierDeckGroup.add(piling);
+      }
+    });
+
+    // Pier Railing Posts & Nautical Lanterns (beachLamps)
+    const postMat = new THREE.MeshStandardMaterial({ color: '#5A351B', roughness: 0.8 });
+    const lampBrassMat = new THREE.MeshStandardMaterial({ color: '#D4AF37', metalness: 0.7, roughness: 0.3 });
+    const lampGlowMat = new THREE.MeshStandardMaterial({
+      color: '#FFF8E7',
+      emissive: '#FFB84D',
+      emissiveIntensity: 0.2,
+      roughness: 0.3,
+    });
+
+    [-2.1, 2.1].forEach((px) => {
+      for (let pz = -12.2; pz <= 1.5; pz += 3.2) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.1, 0.18), postMat);
+        post.position.set(px, 0.85, pz);
+        pierDeckGroup.add(post);
+
+        // Brass Lantern on Post Top
+        const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.24), lampBrassMat);
+        lantern.position.set(px, 1.45, pz);
+        pierDeckGroup.add(lantern);
+
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), lampGlowMat);
+        bulb.position.set(px, 1.45, pz);
+        pierDeckGroup.add(bulb);
+
+        const pLight = new THREE.PointLight('#FFD180', 0.0, 7.0, 1.5);
+        pLight.position.set(px, 1.5, pz);
+        pierDeckGroup.add(pLight);
+
+        this.beachLamps.push({ root: lantern, headMat: lampGlowMat, light: pLight });
+      }
+    });
+
+    // Pier Props: Bait barrels, fishing tackle box, coiled rope
+    const barrelMat = new THREE.MeshStandardMaterial({ color: '#5B371B', roughness: 0.85 });
+    const barrel1 = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.85, 10), barrelMat);
+    barrel1.position.set(-1.45, 0.78, -4.5);
+    pierDeckGroup.add(barrel1);
+
+    const crateMat = new THREE.MeshStandardMaterial({ color: '#A06E3B', roughness: 0.85 });
+    const crate = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.5, 0.6), crateMat);
+    crate.position.set(1.4, 0.62, -7.0);
+    crate.rotation.y = 0.25;
+    pierDeckGroup.add(crate);
+
+    // Lifebuoy ring hanging on front-left pier post
+    const buoyRingMat = new THREE.MeshStandardMaterial({ color: '#EF4444', roughness: 0.5 });
+    const lifebuoy = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.07, 8, 16), buoyRingMat);
+    lifebuoy.position.set(-2.0, 0.95, -12.1);
+    lifebuoy.rotation.y = Math.PI / 2;
+    pierDeckGroup.add(lifebuoy);
+
+    this.beachWorldGroup.add(pierDeckGroup);
+
+    // 7. Lifeguard Watchtower (Menara Penjaga Pantai Netizen - Sesuai Request Deskripsi Modal)
+    const towerGroup = new THREE.Group();
+    towerGroup.position.set(-14.0, 0, 9.0);
+
+    const stiltMat = new THREE.MeshStandardMaterial({ color: '#784E2D', roughness: 0.85 });
+    [
+      { x: -1.6, z: -1.6 },
+      { x: 1.6, z: -1.6 },
+      { x: -1.6, z: 1.6 },
+      { x: 1.6, z: 1.6 },
+    ].forEach((pos) => {
+      const stilt = new THREE.Mesh(new THREE.BoxGeometry(0.22, 4.2, 0.22), stiltMat);
+      stilt.position.set(pos.x, 2.1, pos.z);
+      towerGroup.add(stilt);
+    });
+
+    const deckMat = new THREE.MeshStandardMaterial({ color: '#A57343', roughness: 0.8 });
+    const tDeck = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.2, 4.2), deckMat);
+    tDeck.position.set(0, 4.2, 0);
+    towerGroup.add(tDeck);
+
+    const cabinWallMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.8 });
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.2, 2.8), cabinWallMat);
+    cabin.position.set(0, 5.3, 0);
+    towerGroup.add(cabin);
+
+    const roofMatRed = new THREE.MeshStandardMaterial({ color: '#DC2626', roughness: 0.6 });
+    const tRoof = new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.2, 4), roofMatRed);
+    tRoof.position.set(0, 7.0, 0);
+    tRoof.rotation.y = Math.PI / 4;
+    towerGroup.add(tRoof);
+
+    for (let r = 0; r < 8; r++) {
+      const rung = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.08), stiltMat);
+      rung.position.set(0, 0.5 + r * 0.48, 1.7);
+      towerGroup.add(rung);
+    }
+    this.beachWorldGroup.add(towerGroup);
+
+    // 8. Tropical Parasols / Beach Umbrellas & Sunbeds (Payung & Kursi Pantai)
+    const umbrellaColors = ['#F43F5E', '#0EA5E9', '#F59E0B', '#10B981'];
+    const umbrellaSpots = [
+      { x: -8.0, z: 7.0 },
+      { x: 8.5, z: 7.5 },
+      { x: 16.0, z: 9.0 },
+      { x: -22.0, z: 12.0 },
+      { x: 25.0, z: 13.0 },
+    ];
+
+    umbrellaSpots.forEach((spot, i) => {
+      const uGroup = new THREE.Group();
+      uGroup.position.set(spot.x, 0, spot.z);
+
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 2.8, 8),
+        new THREE.MeshStandardMaterial({ color: '#D4AF37', roughness: 0.4 })
+      );
+      pole.position.set(0, 1.4, 0);
+      pole.rotation.z = -0.08;
+      uGroup.add(pole);
+
+      const color = umbrellaColors[i % umbrellaColors.length];
+      const canopy = new THREE.Mesh(
+        new THREE.ConeGeometry(1.85, 0.85, 8),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.7 })
+      );
+      canopy.position.set(-0.1, 2.7, 0);
+      uGroup.add(canopy);
+
+      const lounger = new THREE.Mesh(
+        new THREE.BoxGeometry(1.0, 0.22, 2.2),
+        new THREE.MeshStandardMaterial({ color: '#F1F5F9', roughness: 0.9 })
+      );
+      lounger.position.set(1.2, 0.15, 0);
+      lounger.rotation.y = 0.2;
+      uGroup.add(lounger);
+
+      this.beachWorldGroup.add(uGroup);
+    });
+
+    // 9. Lush Coconut Palm Trees (Pohon Kelapa Pantai Tropis)
+    const palmSpots = [
+      { x: -28.0, z: 16.0, tilt: 0.18 },
+      { x: -18.0, z: 22.0, tilt: -0.15 },
+      { x: 12.0, z: 18.0, tilt: 0.12 },
+      { x: 22.0, z: 22.0, tilt: -0.16 },
+      { x: 32.0, z: 15.0, tilt: 0.14 },
+    ];
+
+    palmSpots.forEach((ps) => {
+      const palm = this.createPalmTree(ps.tilt);
+      palm.position.set(ps.x, 0, ps.z);
+      this.beachWorldGroup.add(palm);
+    });
+
+    // 10. Gapura Berpita Pink (Entrance / Exit Portal Gate - Usulan @njemaa_28)
+    const portalArch = this.createBeachExitPortal();
+    portalArch.position.set(0, 0, 24.8);
+    this.beachWorldGroup.add(portalArch);
+
+    // 11. Swimming Tropical Marine Life (Ikan Laut Tropis Renang)
+    this.setupBeachFish();
+
+    // 12. Ocean Demarcation Buoys (Pelampung Penanda Laut)
+    [-18.0, 18.0, -32.0, 32.0].forEach((bx) => {
+      const buoy = new THREE.Group();
+      const topSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.35, 8, 8),
+        new THREE.MeshStandardMaterial({ color: '#EF4444', roughness: 0.5 })
+      );
+      topSphere.position.set(0, 0.25, 0);
+      buoy.add(topSphere);
+
+      const ring = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.42, 0.42, 0.2, 8),
+        new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.5 })
+      );
+      ring.position.set(0, 0.05, 0);
+      buoy.add(ring);
+
+      buoy.position.set(bx, 0, -22.0);
+      this.beachBuoys.push(buoy);
+      this.beachWorldGroup.add(buoy);
+    });
+  }
+
+  private createPalmTree(tilt = 0.15): THREE.Group {
+    const palmGroup = new THREE.Group();
+    const trunkMat = new THREE.MeshStandardMaterial({ color: '#8D6E63', roughness: 0.85 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: '#2E7D32', roughness: 0.6 });
+    const coconutMat = new THREE.MeshStandardMaterial({ color: '#4E342E', roughness: 0.8 });
+
+    let curY = 0;
+    let curX = 0;
+    for (let s = 0; s < 7; s++) {
+      const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.24 - s * 0.018, 0.28 - s * 0.018, 0.85, 7), trunkMat);
+      curY += 0.75;
+      curX += tilt * 0.5;
+      seg.position.set(curX, curY, 0);
+      seg.rotation.z = tilt * (s + 1) * 0.12;
+      palmGroup.add(seg);
+    }
+
+    for (let c = 0; c < 4; c++) {
+      const coconut = new THREE.Mesh(new THREE.SphereGeometry(0.18, 6, 6), coconutMat);
+      const ca = (c * Math.PI) / 2;
+      coconut.position.set(curX + Math.cos(ca) * 0.28, curY + 0.1, Math.sin(ca) * 0.28);
+      palmGroup.add(coconut);
+    }
+
+    for (let f = 0; f < 6; f++) {
+      const fa = (f * Math.PI * 2) / 6;
+      const frond = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.06, 2.6), leafMat);
+      frond.position.set(curX + Math.sin(fa) * 1.1, curY + 0.35, Math.cos(fa) * 1.1);
+      frond.rotation.y = fa;
+      frond.rotation.x = 0.45;
+      palmGroup.add(frond);
+    }
+
+    return palmGroup;
+  }
+
+  private createBeachExitPortal(): THREE.Group {
+    const archGroup = new THREE.Group();
+
+    const woodMat = new THREE.MeshStandardMaterial({ color: '#8C562E', roughness: 0.85 });
+    const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 4.2, 8), woodMat);
+    postL.position.set(-2.8, 2.1, 0);
+    const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 4.2, 8), woodMat);
+    postR.position.set(2.8, 2.1, 0);
+    archGroup.add(postL, postR);
+
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.38, 0.45), woodMat);
+    beam.position.set(0, 4.1, 0);
+    archGroup.add(beam);
+
+    const signBoardMat = new THREE.MeshStandardMaterial({ color: '#FEF3C7', roughness: 0.8 });
+    const signBoard = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.85, 0.12), signBoardMat);
+    signBoard.position.set(0, 3.5, 0);
+    archGroup.add(signBoard);
+
+    const pinkRibbonMat = new THREE.MeshStandardMaterial({ color: '#F472B6', roughness: 0.5 });
+    const ribbonKnot = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), pinkRibbonMat);
+    ribbonKnot.position.set(0, 4.65, 0);
+    archGroup.add(ribbonKnot);
+
+    const bowWingL = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.14, 8, 16), pinkRibbonMat);
+    bowWingL.position.set(-0.55, 4.75, 0);
+    bowWingL.rotation.y = Math.PI / 2;
+    bowWingL.rotation.z = -0.35;
+    const bowWingR = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.14, 8, 16), pinkRibbonMat);
+    bowWingR.position.set(0.55, 4.75, 0);
+    bowWingR.rotation.y = Math.PI / 2;
+    bowWingR.rotation.z = 0.35;
+    archGroup.add(bowWingL, bowWingR);
+
+    const padMat = new THREE.MeshStandardMaterial({
+      color: '#F472B6',
+      emissive: '#EC4899',
+      emissiveIntensity: 0.6,
+      roughness: 0.3,
+    });
+    const exitPad = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.08, 16), padMat);
+    exitPad.position.set(0, 0.04, 0);
+    archGroup.add(exitPad);
+
+    return archGroup;
+  }
+
+  private setupBeachFish() {
+    this.beachFishList = [];
+    const fishColors = ['#F97316', '#38BDF8', '#FBBF24', '#EF4444', '#A855F7', '#34D399'];
+    const swimCenters = [
+      new THREE.Vector3(-5.5, -0.75, -8.0),
+      new THREE.Vector3(5.5, -0.8, -9.5),
+      new THREE.Vector3(0, -0.9, -14.0),
+      new THREE.Vector3(-8.0, -0.7, -15.0),
+      new THREE.Vector3(8.0, -0.85, -16.0),
+      new THREE.Vector3(1.8, -0.7, -6.5),
+    ];
+
+    swimCenters.forEach((center, i) => {
+      const color = fishColors[i % fishColors.length];
+      const fishGroup = new THREE.Group();
+
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.4,
+        metalness: 0.3,
+      });
+      const bodyGeom = new THREE.ConeGeometry(0.15, 0.48, 8);
+      bodyGeom.rotateX(Math.PI / 2);
+      const body = new THREE.Mesh(bodyGeom, bodyMat);
+      fishGroup.add(body);
+
+      const tailGeom = new THREE.ConeGeometry(0.13, 0.24, 3);
+      tailGeom.rotateZ(Math.PI / 2);
+      const tail = new THREE.Mesh(tailGeom, bodyMat);
+      tail.position.set(0, 0, 0.3);
+      fishGroup.add(tail);
+
+      const eyeMat = new THREE.MeshBasicMaterial({ color: '#111827' });
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), eyeMat);
+      eyeL.position.set(0.08, 0.04, -0.15);
+      const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), eyeMat);
+      eyeR.position.set(-0.08, 0.04, -0.15);
+      fishGroup.add(eyeL, eyeR);
+
+      fishGroup.position.copy(center);
+      this.beachWorldGroup.add(fishGroup);
+
+      this.beachFishList.push({
+        mesh: fishGroup,
+        tail,
+        center,
+        radius: 2.2 + Math.random() * 2.0,
+        angle: Math.random() * Math.PI * 2,
+        speed: 0.65 + Math.random() * 0.5,
+        depth: center.y,
+      });
+    });
+  }
+
   private setupRiverFish() {
     this.riverFishList = [];
     const fishColors = ['#F59E0B', '#EF4444', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
@@ -2545,13 +3226,15 @@ export class City3DManager {
     }>,
     myClientId: string
   ) {
-    if (this.viewMode !== 'tugu' && this.viewMode !== 'river') return;
+    if (this.viewMode !== 'tugu' && this.viewMode !== 'river' && this.viewMode !== 'beach') return;
 
     const activeIds = new Set<string>();
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const nowMs = Date.now();
     const isRiver = this.viewMode === 'river';
-    const activeGroup = isRiver ? this.riverWorldGroup : this.tuguWorldGroup;
+    const isBeach = this.viewMode === 'beach';
+    const isFishingMode = isRiver || isBeach;
+    const activeGroup = isBeach ? this.beachWorldGroup : isRiver ? this.riverWorldGroup : this.tuguWorldGroup;
 
     for (const p of players) {
       if (!p || !p.id || p.id === myClientId) continue; // Don't duplicate local player
@@ -2561,7 +3244,7 @@ export class City3DManager {
       const existing = this.remotePlayers.get(p.id);
       if (existing) {
         existing.missingSince = 0; // Reset missing timer
-        const targetY = isRiver && p.z < 2.5 ? 0.35 : 0;
+        const targetY = isFishingMode && p.z < 2.5 ? 0.35 : 0;
         const targetV = new THREE.Vector3(p.x, targetY, p.z);
         const dist = existing.root.position.distanceTo(targetV);
         existing.lastServerTime = now;
@@ -2617,7 +3300,7 @@ export class City3DManager {
           }
         });
 
-        const targetY = isRiver && p.z < 2.5 ? 0.35 : 0;
+        const targetY = isFishingMode && p.z < 2.5 ? 0.35 : 0;
         citizen.root.position.set(p.x, targetY, p.z);
         citizen.root.rotation.y = typeof p.facing === 'number' && Number.isFinite(p.facing) ? p.facing : 0;
 
@@ -2630,8 +3313,8 @@ export class City3DManager {
         let remoteBobber: THREE.Group | undefined;
         let remoteLine: THREE.Line | undefined;
 
-        // In River mode, attach low-poly angler rod to right hand & prepare 3D line + bobber!
-        if (isRiver) {
+        // In River & Beach modes, attach low-poly angler rod to right hand & prepare 3D line + bobber!
+        if (isFishingMode) {
           const rod = this.createAnglerRod();
           rod.group.position.set(0, -0.32, 0.05);
           rod.group.rotation.set(1.2, 0, 0);
@@ -2639,10 +3322,10 @@ export class City3DManager {
           anglerRodTip = rod.tip;
 
           remoteBobber = this.createRemoteBobber();
-          this.riverWorldGroup.add(remoteBobber);
+          activeGroup.add(remoteBobber);
 
           remoteLine = this.createRemoteFishingLine();
-          this.riverWorldGroup.add(remoteLine);
+          activeGroup.add(remoteLine);
         }
 
         // Check if newly spawned player has an active recent speech bubble!
@@ -2689,10 +3372,17 @@ export class City3DManager {
         if (!remote.missingSince) {
           remote.missingSince = nowMs;
         } else if (nowMs - remote.missingSince > 4000) {
-          if (remote.bobber) this.riverWorldGroup.remove(remote.bobber);
-          if (remote.fishingLine) this.riverWorldGroup.remove(remote.fishingLine);
+          if (remote.bobber) {
+            this.riverWorldGroup.remove(remote.bobber);
+            this.beachWorldGroup.remove(remote.bobber);
+          }
+          if (remote.fishingLine) {
+            this.riverWorldGroup.remove(remote.fishingLine);
+            this.beachWorldGroup.remove(remote.fishingLine);
+          }
           this.tuguWorldGroup.remove(remote.root);
           this.riverWorldGroup.remove(remote.root);
+          this.beachWorldGroup.remove(remote.root);
           this.remotePlayers.delete(id);
         }
       }
@@ -2701,10 +3391,17 @@ export class City3DManager {
 
   public clearRemotePlayers() {
     for (const [, remote] of this.remotePlayers.entries()) {
-      if (remote.bobber) this.riverWorldGroup.remove(remote.bobber);
-      if (remote.fishingLine) this.riverWorldGroup.remove(remote.fishingLine);
+      if (remote.bobber) {
+        this.riverWorldGroup.remove(remote.bobber);
+        this.beachWorldGroup.remove(remote.bobber);
+      }
+      if (remote.fishingLine) {
+        this.riverWorldGroup.remove(remote.fishingLine);
+        this.beachWorldGroup.remove(remote.fishingLine);
+      }
       this.tuguWorldGroup.remove(remote.root);
       this.riverWorldGroup.remove(remote.root);
+      this.beachWorldGroup.remove(remote.root);
     }
     this.remotePlayers.clear();
   }
@@ -2835,13 +3532,13 @@ export class City3DManager {
         remote.citizen.pose(isPlayerWalking, elapsed, 4.5);
       }
 
-      // 4. River Fishing Visuals for Remote Players
-      if (this.viewMode === 'river' && remote.rodTip && remote.bobber && remote.fishingLine) {
+      // 4. Fishing Visuals for Remote Players (River & Beach)
+      if ((this.viewMode === 'river' || this.viewMode === 'beach') && remote.rodTip && remote.bobber && remote.fishingLine) {
         if (remote.isFishing) {
           remote.bobber.visible = true;
           remote.fishingLine.visible = true;
 
-          // Position bobber ~4.5 units in front of avatar in river
+          // Position bobber ~4.5 units in front of avatar in water
           const facing = remote.root.rotation.y;
           const forwardX = Math.sin(facing);
           const forwardZ = Math.cos(facing);
@@ -2855,7 +3552,7 @@ export class City3DManager {
           remote.rodTip.updateWorldMatrix(true, false);
           const rodTipWorld = new THREE.Vector3();
           remote.rodTip.getWorldPosition(rodTipWorld);
-          this.riverWorldGroup.worldToLocal(rodTipWorld);
+          this.activeFishingWorldGroup.worldToLocal(rodTipWorld);
 
           const endPos = new THREE.Vector3(targetBobberX, bobberWaveY + 0.12, targetBobberZ);
           const midPos = rodTipWorld.clone().lerp(endPos, 0.5);
@@ -2946,7 +3643,13 @@ export class City3DManager {
     this.viewMode = 'river';
     this.cityWorldGroup.visible = false;
     this.tuguWorldGroup.visible = false;
+    this.beachWorldGroup.visible = false;
     this.riverWorldGroup.visible = true;
+
+    // Reparent fishing gear to riverWorldGroup
+    if (this.fishingBobber) this.riverWorldGroup.add(this.fishingBobber);
+    if (this.fishingLine) this.riverWorldGroup.add(this.fishingLine);
+    if (this.caughtFishMesh) this.riverWorldGroup.add(this.caughtFishMesh);
 
     // Spawn player avatar on the pier facing North towards the river
     this.playerPos.set(0, 0.35, -5.5);
@@ -3022,6 +3725,7 @@ export class City3DManager {
     }
 
     this.riverWorldGroup.visible = false;
+    this.beachWorldGroup.visible = false;
     this.tuguWorldGroup.visible = false;
     this.cityWorldGroup.visible = true;
 
@@ -3045,6 +3749,118 @@ export class City3DManager {
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('river-mode-changed', { detail: { mode: 'city' } }));
+    }
+  }
+
+  public enterBeachArea() {
+    this.clearRemotePlayers();
+    this.viewMode = 'beach';
+    this.cityWorldGroup.visible = false;
+    this.tuguWorldGroup.visible = false;
+    this.riverWorldGroup.visible = false;
+    this.stadiumWorldGroup.visible = false;
+    this.beachWorldGroup.visible = true;
+
+    // Reparent fishing gear to beachWorldGroup
+    if (this.fishingBobber) this.beachWorldGroup.add(this.fishingBobber);
+    if (this.fishingLine) this.beachWorldGroup.add(this.fishingLine);
+    if (this.caughtFishMesh) this.beachWorldGroup.add(this.caughtFishMesh);
+
+    // Spawn player avatar on the beach pier facing North towards open sea
+    this.playerPos.set(0, 0.35, -5.5);
+    this.playerFacing = Math.PI;
+
+    if (this.playerCitizen) {
+      this.beachWorldGroup.add(this.playerCitizen.root);
+      this.playerCitizen.root.position.copy(this.playerPos);
+      this.playerCitizen.root.rotation.y = this.playerFacing;
+      this.playerCitizen.root.visible = true;
+
+      if (this.fishingRodGroup) {
+        this.playerCitizen.rightArm.add(this.fishingRodGroup);
+        this.fishingRodGroup.position.set(0, -0.32, 0.05);
+        this.fishingRodGroup.rotation.set(1.2, 0, 0);
+        this.fishingRodGroup.visible = true;
+      }
+      this.playerCitizen.rightArm.rotation.set(-0.55, -0.1, 0);
+      this.playerCitizen.leftArm.rotation.set(-0.45, 0.3, 0);
+    }
+    if (this.mayorPlayer) {
+      if (this.isPlayerAdmin) {
+        this.beachWorldGroup.add(this.mayorPlayer.root);
+        this.mayorPlayer.root.position.copy(this.playerPos);
+        this.mayorPlayer.root.rotation.y = this.playerFacing;
+        this.mayorPlayer.root.visible = true;
+        if (this.playerCitizen) this.playerCitizen.root.visible = false;
+      } else {
+        this.mayorPlayer.root.visible = false;
+      }
+    }
+    if (this.cat) {
+      this.beachWorldGroup.add(this.cat.root);
+      this.cat.root.position.set(1.2, 0.35, -5.2);
+      this.cat.root.visible = true;
+    }
+
+    this.resetFishing();
+
+    this.cameraMode = 'follow';
+    this.onCameraModeChange?.('follow');
+    this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.2, 0));
+    this.spherical.radius = 16;
+    this.spherical.phi = Math.PI / 3.4;
+    this.spherical.theta = this.playerFacing + Math.PI;
+    this.updateCameraTransform();
+
+    this.applyTimeOfDay(this.timeOfDay);
+
+    useGameStore.getState().setViewMode('beach');
+    useGameStore.getState().setSelectedBuilding('netizen_beach');
+    useGameStore.getState().setCurrentDistrict('Pantai Netizen Beach');
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('beach-mode-changed', { detail: { mode: 'beach' } }));
+      window.dispatchEvent(new CustomEvent('river-fishing-state', { detail: { state: 'idle' } }));
+    }
+  }
+
+  public exitBeachArea() {
+    this.clearRemotePlayers();
+    this.resetFishing();
+    this.viewMode = 'city';
+    this.targetPosition = null;
+
+    if (this.fishingRodGroup) {
+      this.fishingRodGroup.visible = false;
+      this.fishingRodGroup.parent?.remove(this.fishingRodGroup);
+    }
+
+    this.beachWorldGroup.visible = false;
+    this.riverWorldGroup.visible = false;
+    this.tuguWorldGroup.visible = false;
+    this.stadiumWorldGroup.visible = false;
+    this.cityWorldGroup.visible = true;
+
+    if (this.playerCitizen) this.playerCitizen.root.visible = false;
+    if (this.mayorPlayer) this.mayorPlayer.root.visible = false;
+    if (this.cat) this.cat.root.visible = false;
+
+    this.cameraMode = 'orbit';
+    this.onCameraModeChange?.('orbit');
+    this.target.set(0, 0, 0);
+    this.spherical.radius = 120;
+    this.spherical.phi = Math.PI / 3.5;
+    this.spherical.theta = Math.PI * 0.75;
+    this.updateCameraTransform();
+
+    this.applyTimeOfDay(this.timeOfDay);
+
+    useGameStore.getState().setViewMode('city');
+    useGameStore.getState().setSelectedBuilding(null);
+    useGameStore.getState().setCurrentDistrict('town_square');
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('beach-mode-changed', { detail: { mode: 'city' } }));
     }
   }
 
@@ -3277,7 +4093,7 @@ export class City3DManager {
     const rippleGeom = new THREE.RingGeometry(0.08, 0.14, 24).rotateX(-Math.PI / 2);
     const ripple = new THREE.Mesh(rippleGeom, rippleMat);
     ripple.position.set(pos.x, 0.02, pos.z);
-    this.riverWorldGroup.add(ripple);
+    this.activeFishingWorldGroup.add(ripple);
     this.riverRipples.push({
       mesh: ripple,
       curScale: 1.0,
@@ -3302,30 +4118,44 @@ export class City3DManager {
     }
     if (this.fishingState !== 'idle') return;
 
-    // 1. Determine landing spot on river water surface (GUARANTEED OPEN WATER - NEVER ON PIER WOOD OR SHORE)
-    // Pier bounds: X [-2.85, 2.85], Z [-9.8, 2.5]
+    // 1. Determine landing spot on water surface (River vs Beach open water)
+    const isBeach = this.viewMode === 'beach';
     let targetX = 0;
-    let targetZ = -13.0;
+    let targetZ = isBeach ? -15.5 : -13.0;
 
     if (targetWaterPos) {
-      const isSideWater = Math.abs(targetWaterPos.x) >= 3.0 && targetWaterPos.z <= 0.0 && targetWaterPos.z >= -25.0;
-      const isFrontWater = targetWaterPos.z <= -10.2 && Math.abs(targetWaterPos.x) <= 25.0;
+      if (isBeach) {
+        const isSideWater = Math.abs(targetWaterPos.x) >= 2.85 && targetWaterPos.z <= 2.0 && targetWaterPos.z >= -35.0;
+        const isFrontWater = targetWaterPos.z <= -12.5 && Math.abs(targetWaterPos.x) <= 35.0;
 
-      if (isSideWater) {
-        targetX = THREE.MathUtils.clamp(targetWaterPos.x, -22.0, 22.0);
-        targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -22.0, -0.8);
-      } else if (isFrontWater) {
-        targetX = THREE.MathUtils.clamp(targetWaterPos.x, -22.0, 22.0);
-        targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -25.0, -10.5);
+        if (isSideWater) {
+          targetX = THREE.MathUtils.clamp(targetWaterPos.x, -32.0, 32.0);
+          targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -30.0, 1.0);
+        } else if (isFrontWater) {
+          targetX = THREE.MathUtils.clamp(targetWaterPos.x, -32.0, 32.0);
+          targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -32.0, -13.0);
+        } else {
+          targetX = THREE.MathUtils.clamp((Math.random() - 0.5) * 2.0, -1.8, 1.8);
+          targetZ = -15.5 - Math.random() * 3.5;
+        }
       } else {
-        // Tap fell on pier wood or grass shore! Safely project out into open river water in front of pier center
-        targetX = THREE.MathUtils.clamp((Math.random() - 0.5) * 2.0, -1.8, 1.8);
-        targetZ = -13.2 - Math.random() * 2.8;
+        const isSideWater = Math.abs(targetWaterPos.x) >= 3.0 && targetWaterPos.z <= 0.0 && targetWaterPos.z >= -25.0;
+        const isFrontWater = targetWaterPos.z <= -10.2 && Math.abs(targetWaterPos.x) <= 25.0;
+
+        if (isSideWater) {
+          targetX = THREE.MathUtils.clamp(targetWaterPos.x, -22.0, 22.0);
+          targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -22.0, -0.8);
+        } else if (isFrontWater) {
+          targetX = THREE.MathUtils.clamp(targetWaterPos.x, -22.0, 22.0);
+          targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -25.0, -10.5);
+        } else {
+          targetX = THREE.MathUtils.clamp((Math.random() - 0.5) * 2.0, -1.8, 1.8);
+          targetZ = -13.2 - Math.random() * 2.8;
+        }
       }
     } else {
-      // Cast forward into the center of the river channel in front of pier
       targetX = THREE.MathUtils.clamp((Math.random() - 0.5) * 2.0, -1.8, 1.8);
-      targetZ = -13.5 - Math.random() * 2.8;
+      targetZ = (isBeach ? -15.5 : -13.5) - Math.random() * 3.0;
     }
 
     this.targetBobberPos.set(targetX, -0.05, targetZ);
@@ -3345,13 +4175,13 @@ export class City3DManager {
     this.fishingState = 'casting';
     this.castAnimTimer = 0;
 
-    // Get current rod tip world position converted to riverWorldGroup space!
+    // Get current rod tip world position converted to active fishing world group space!
     if (this.rodTip) {
       this.rodTip.updateWorldMatrix(true, false);
       const tipWorld = new THREE.Vector3();
       this.rodTip.getWorldPosition(tipWorld);
       this.castStartTipPos.copy(tipWorld);
-      this.riverWorldGroup.worldToLocal(this.castStartTipPos);
+      this.activeFishingWorldGroup.worldToLocal(this.castStartTipPos);
     } else {
       this.castStartTipPos.copy(this.playerPos).add(new THREE.Vector3(0, 1.4, 0));
     }
@@ -3459,11 +4289,13 @@ export class City3DManager {
       selectedTier = 'common';
     }
 
-    const tierSpecies = RIVER_FISH_SPECIES.filter((s) => s.tier === selectedTier);
+    const isBeach = this.viewMode === 'beach';
+    const speciesPool = isBeach ? BEACH_FISH_SPECIES : RIVER_FISH_SPECIES;
+    const tierSpecies = speciesPool.filter((s) => s.tier === selectedTier);
     const selected =
       tierSpecies.length > 0
         ? tierSpecies[Math.floor(Math.random() * tierSpecies.length)]
-        : RIVER_FISH_SPECIES[0];
+        : speciesPool[0];
 
     // High luck rods give bonus weight potential
     const weightBonus = 1.0 + Math.min(0.5, luck * 0.12);
@@ -3485,6 +4317,7 @@ export class City3DManager {
       rewardCoins: finalReward,
       icon: selected.icon,
       desc: selected.desc,
+      caughtLocation: isBeach ? 'Pantai Netizen Beach' : 'Sungai Kali Netizen',
     };
   }
 
@@ -3498,7 +4331,7 @@ export class City3DManager {
     }
 
     if (this.fishingRodGroup) {
-      this.fishingRodGroup.visible = this.viewMode === 'river';
+      this.fishingRodGroup.visible = this.viewMode === 'river' || this.viewMode === 'beach';
 
       if (this.rodBlankMesh) {
         const mat = this.rodBlankMesh.material as THREE.MeshStandardMaterial;
@@ -3575,7 +4408,7 @@ export class City3DManager {
   }
 
   private updateRiver(delta: number, elapsed: number) {
-    // 1. Update River Ripples
+    // 1. Update Water Ripples
     for (let i = this.riverRipples.length - 1; i >= 0; i--) {
       const rip = this.riverRipples[i];
       rip.curScale += rip.speed * delta;
@@ -3583,22 +4416,46 @@ export class City3DManager {
       const op = Math.max(0, 1 - rip.curScale / rip.maxScale);
       (rip.mesh.material as THREE.MeshBasicMaterial).opacity = op * 0.7;
       if (rip.curScale >= rip.maxScale) {
-        this.riverWorldGroup.remove(rip.mesh);
+        this.activeFishingWorldGroup.remove(rip.mesh);
         rip.mesh.geometry.dispose();
         (rip.mesh.material as THREE.Material).dispose();
         this.riverRipples.splice(i, 1);
       }
     }
 
-    // 2. Update Swimming Fish
-    this.riverFishList.forEach((fish) => {
-      fish.angle += fish.speed * delta;
-      const fx = fish.center.x + Math.cos(fish.angle) * fish.radius;
-      const fz = fish.center.z + Math.sin(fish.angle) * fish.radius;
-      fish.mesh.position.set(fx, fish.depth + Math.sin(elapsed * 2 + fish.angle) * 0.05, fz);
-      fish.mesh.rotation.y = -fish.angle + Math.PI / 2;
-      fish.tail.rotation.y = Math.sin(elapsed * 9 + fish.angle) * 0.42;
-    });
+    // 2. Update Swimming Fish & Marine Dynamics
+    if (this.viewMode === 'beach') {
+      this.beachFishList.forEach((fish) => {
+        fish.angle += fish.speed * delta;
+        const fx = fish.center.x + Math.cos(fish.angle) * fish.radius;
+        const fz = fish.center.z + Math.sin(fish.angle) * fish.radius;
+        fish.mesh.position.set(fx, fish.depth + Math.sin(elapsed * 2 + fish.angle) * 0.05, fz);
+        fish.mesh.rotation.y = -fish.angle + Math.PI / 2;
+        fish.tail.rotation.y = Math.sin(elapsed * 9 + fish.angle) * 0.42;
+      });
+
+      this.beachWaveFoams.forEach((foam, idx) => {
+        const wave = Math.sin(elapsed * 2.2 + idx * 1.4);
+        foam.position.z = -0.2 + idx * 1.0 + wave * 0.65;
+        foam.scale.x = 1.0 + wave * 0.08;
+        (foam.material as THREE.MeshBasicMaterial).opacity = 0.4 + Math.max(0, wave) * 0.35;
+      });
+
+      this.beachBuoys.forEach((buoy, idx) => {
+        buoy.position.y = Math.sin(elapsed * 2.8 + idx * 1.5) * 0.12;
+        buoy.rotation.z = Math.sin(elapsed * 2.0 + idx) * 0.1;
+        buoy.rotation.x = Math.cos(elapsed * 2.0 + idx) * 0.1;
+      });
+    } else {
+      this.riverFishList.forEach((fish) => {
+        fish.angle += fish.speed * delta;
+        const fx = fish.center.x + Math.cos(fish.angle) * fish.radius;
+        const fz = fish.center.z + Math.sin(fish.angle) * fish.radius;
+        fish.mesh.position.set(fx, fish.depth + Math.sin(elapsed * 2 + fish.angle) * 0.05, fz);
+        fish.mesh.rotation.y = -fish.angle + Math.PI / 2;
+        fish.tail.rotation.y = Math.sin(elapsed * 9 + fish.angle) * 0.42;
+      });
+    }
 
     // 3. CASTING ANIMATION (3-Phase Dynamic Motion)
     if (this.fishingState === 'casting') {
@@ -3630,7 +4487,7 @@ export class City3DManager {
             const tipWorld = new THREE.Vector3();
             this.rodTip.getWorldPosition(tipWorld);
             this.castStartTipPos.copy(tipWorld);
-            this.riverWorldGroup.worldToLocal(this.castStartTipPos);
+            this.activeFishingWorldGroup.worldToLocal(this.castStartTipPos);
             this.fishingBobber.position.copy(this.castStartTipPos);
           }
         } else if (this.castAnimTimer < 0.65) {
@@ -3657,7 +4514,7 @@ export class City3DManager {
             const tipWorld = new THREE.Vector3();
             this.rodTip.getWorldPosition(tipWorld);
             this.castStartTipPos.copy(tipWorld);
-            this.riverWorldGroup.worldToLocal(this.castStartTipPos);
+            this.activeFishingWorldGroup.worldToLocal(this.castStartTipPos);
             this.fishingBobber.position.copy(this.castStartTipPos);
           }
         } else if (this.castAnimTimer < totalCastDuration) {
@@ -3799,7 +4656,7 @@ export class City3DManager {
         const tipWorld = new THREE.Vector3();
         this.rodTip.getWorldPosition(tipWorld);
         const tipLocal = tipWorld.clone();
-        this.riverWorldGroup.worldToLocal(tipLocal);
+        this.activeFishingWorldGroup.worldToLocal(tipLocal);
         this.caughtFishMesh.position.set(tipLocal.x, tipLocal.y - 0.75, tipLocal.z);
         this.caughtFishMesh.rotation.y = elapsed * 3;
         this.caughtFishMesh.visible = true;
@@ -3829,13 +4686,13 @@ export class City3DManager {
       const rodTipWorld = new THREE.Vector3();
       this.rodTip.getWorldPosition(rodTipWorld);
       const startPos = rodTipWorld.clone();
-      this.riverWorldGroup.worldToLocal(startPos);
+      this.activeFishingWorldGroup.worldToLocal(startPos);
 
       this.fishingBobber.updateWorldMatrix(true, false);
       const bobberWorld = new THREE.Vector3();
       this.fishingBobber.getWorldPosition(bobberWorld);
       const endPos = bobberWorld.clone();
-      this.riverWorldGroup.worldToLocal(endPos);
+      this.activeFishingWorldGroup.worldToLocal(endPos);
       endPos.y += 0.14; // Top pin of bobber float
 
       // Midpoint for catenary sag or tension
@@ -4114,6 +4971,16 @@ private setupAirplanes() {
         }
       });
     }
+    if (this.beachLamps) {
+      this.beachLamps.forEach((lamp) => {
+        if (lamp.headMat) {
+          lamp.headMat.emissiveIntensity = nightAmount > 0.3 ? 1.4 : 0.2;
+        }
+        if (lamp.light) {
+          lamp.light.intensity = nightAmount > 0.3 ? 0.75 : 0.0;
+        }
+      });
+    }
   }
 
   public zoomIn(factor = 0.82) {
@@ -4201,6 +5068,11 @@ private setupAirplanes() {
     this.handleExitRiverEvent = () => this.exitRiverArea();
     window.addEventListener('enter-river-area', this.handleEnterRiverEvent);
     window.addEventListener('exit-river-area', this.handleExitRiverEvent);
+
+    this.handleEnterBeachEvent = () => this.enterBeachArea();
+    this.handleExitBeachEvent = () => this.exitBeachArea();
+    window.addEventListener('enter-beach-area', this.handleEnterBeachEvent);
+    window.addEventListener('exit-beach-area', this.handleExitBeachEvent);
     this.handlePlayerChat = (e: any) => {
       const text = e.detail?.text;
       if (text) this.showPlayerSpeechBubble(text);
@@ -4404,7 +5276,7 @@ private setupAirplanes() {
           }
         }
       }
-    } else if (e && this.viewMode === 'river') {
+    } else if (e && (this.viewMode === 'river' || this.viewMode === 'beach')) {
       const dragDist = Math.hypot(
         e.clientX - (this.pointerDownPos?.x ?? e.clientX),
         e.clientY - (this.pointerDownPos?.y ?? e.clientY)
@@ -4427,11 +5299,14 @@ private setupAirplanes() {
           }
 
           // Differentiate between open water vs pier deck vs shore
-          const isPier = Math.abs(target.x) <= 2.85 && target.z >= -9.8 && target.z <= 2.5;
-          const isShore = target.z > 0.0;
-          const isWater = !isPier && !isShore && (target.z < -9.8 || Math.abs(target.x) > 2.85);
+          const isBeach = this.viewMode === 'beach';
+          const isPier = isBeach
+            ? Math.abs(target.x) <= 2.85 && target.z >= -12.5 && target.z <= 2.5
+            : Math.abs(target.x) <= 2.85 && target.z >= -9.8 && target.z <= 2.5;
+          const isShore = isBeach ? target.z > 2.5 : target.z > 0.0;
+          const isWater = !isPier && !isShore && (isBeach ? (target.z < -12.5 || Math.abs(target.x) > 2.85) : (target.z < -9.8 || Math.abs(target.x) > 2.85));
 
-          // If tap in the river water area and fishing state is idle, directly cast!
+          // If tap in water area and fishing state is idle, directly cast!
           if (isWater && this.fishingState === 'idle') {
             this.castFishingLine(target);
             this.isPointerDown = false;
@@ -4607,8 +5482,8 @@ private setupAirplanes() {
       }
     }
 
-    if (this.viewMode === 'tugu' || this.viewMode === 'river' || this.viewMode === 'stadium') {
-      // Tap input di alun-alun tugu, sungai, dan stadion sudah ditangani instan (0ms delay) di onPointerUp
+    if (this.viewMode === 'tugu' || this.viewMode === 'river' || this.viewMode === 'stadium' || this.viewMode === 'beach') {
+      // Tap input di alun-alun tugu, sungai, dermaga, pantai, dan stadion sudah ditangani instan (0ms delay) di onPointerUp
       return;
     }
   };
@@ -4823,7 +5698,7 @@ private setupAirplanes() {
   }
 
   private updateCharacter(delta: number, elapsed: number) {
-    if (this.viewMode !== 'tugu' && this.viewMode !== 'river') {
+    if (this.viewMode !== 'tugu' && this.viewMode !== 'river' && this.viewMode !== 'beach') {
       return;
     }
 
@@ -4859,7 +5734,7 @@ private setupAirplanes() {
     if (this.keysPressed['d'] || this.keysPressed['arrowright'] || this.keysPressed['keyd']) moveVec.add(camRight);
     if (this.keysPressed['a'] || this.keysPressed['arrowleft'] || this.keysPressed['keya']) moveVec.sub(camRight);
 
-    if (this.viewMode === 'river' && this.fishingState !== 'idle') {
+    if ((this.viewMode === 'river' || this.viewMode === 'beach') && this.fishingState !== 'idle') {
       moveVec.set(0, 0, 0);
       this.targetPosition = null;
       // Lock avatar orientation directly facing the fishing bobber!
@@ -4900,6 +5775,20 @@ private setupAirplanes() {
         } else {
           nextPos.x = THREE.MathUtils.clamp(nextPos.x, -28.0, 28.0);
           nextPos.z = THREE.MathUtils.clamp(nextPos.z, 3.0, 18.0);
+          nextPos.y = 0.0;
+        }
+      } else if (this.viewMode === 'beach') {
+        if (nextPos.z < 2.0) {
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
+          nextPos.z = THREE.MathUtils.clamp(nextPos.z, -12.0, 2.0);
+          nextPos.y = 0.35;
+        } else if (nextPos.z <= 3.2) {
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
+          const t = (nextPos.z - 2.0) / (3.2 - 2.0);
+          nextPos.y = THREE.MathUtils.lerp(0.35, 0.0, t);
+        } else {
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -36.0, 36.0);
+          nextPos.z = THREE.MathUtils.clamp(nextPos.z, 3.2, 26.0);
           nextPos.y = 0.0;
         }
       } else if (this.viewMode === 'stadium') {
@@ -4947,6 +5836,20 @@ private setupAirplanes() {
             nextPos.z = THREE.MathUtils.clamp(nextPos.z, 3.0, 18.0);
             nextPos.y = 0.0;
           }
+        } else if (this.viewMode === 'beach') {
+          if (nextPos.z < 2.0) {
+            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
+            nextPos.z = THREE.MathUtils.clamp(nextPos.z, -12.0, 2.0);
+            nextPos.y = 0.35;
+          } else if (nextPos.z <= 3.2) {
+            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
+            const t = (nextPos.z - 2.0) / (3.2 - 2.0);
+            nextPos.y = THREE.MathUtils.lerp(0.35, 0.0, t);
+          } else {
+            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -36.0, 36.0);
+            nextPos.z = THREE.MathUtils.clamp(nextPos.z, 3.2, 26.0);
+            nextPos.y = 0.0;
+          }
         } else if (this.viewMode === 'stadium') {
           nextPos.x = THREE.MathUtils.clamp(nextPos.x, -21.0, 21.0);
           nextPos.z = THREE.MathUtils.clamp(nextPos.z, -33.0, 33.0);
@@ -4970,7 +5873,7 @@ private setupAirplanes() {
       this.playerCitizen.root.position.copy(this.playerPos);
       this.playerCitizen.root.rotation.y = this.playerFacing;
       this.playerCitizen.pose(isMoving, elapsed, 4.5);
-      if (this.viewMode === 'river') {
+      if (this.viewMode === 'river' || this.viewMode === 'beach') {
         if (isMoving) {
           this.playerCitizen.rightArm.rotation.set(-0.45 + Math.sin(elapsed * 4.5) * 0.08, -0.1, 0);
         } else if (this.fishingState !== 'idle') {
@@ -5007,6 +5910,12 @@ private setupAirplanes() {
       if (Math.hypot(this.playerPos.x - 0, this.playerPos.z - 13.5) <= 2.0) {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('exit-river-area'));
+        }
+      }
+    } else if (this.viewMode === 'beach') {
+      if (Math.hypot(this.playerPos.x - 0, this.playerPos.z - 24.8) <= 2.2) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('exit-beach-area'));
         }
       }
     }
@@ -5227,6 +6136,10 @@ private setupAirplanes() {
       useGameStore.getState().setViewMode('river');
       useGameStore.getState().setSelectedBuilding('river_spot');
       useGameStore.getState().setCurrentDistrict('Kawasan Alam');
+    } else if (this.viewMode === 'beach') {
+      useGameStore.getState().setViewMode('beach');
+      useGameStore.getState().setSelectedBuilding('netizen_beach');
+      useGameStore.getState().setCurrentDistrict('Pantai Netizen Beach');
     } else if (this.viewMode === 'stadium') {
       useGameStore.getState().setViewMode('stadium');
       useGameStore.getState().setSelectedBuilding('sports_stadium');
@@ -5256,7 +6169,7 @@ private setupAirplanes() {
           j.scale.y = 0.5 + Math.sin(elapsed * 4 + i * 0.4) * 0.4;
         });
       }
-    } else if (this.viewMode === 'river') {
+    } else if (this.viewMode === 'river' || this.viewMode === 'beach') {
       this.updateCharacter(delta, elapsed);
       this.updateRemotePlayersAnimation(delta, elapsed);
       this.updateRiver(delta, elapsed);
@@ -5573,6 +6486,8 @@ private setupAirplanes() {
     if (this.handleExitTuguEvent) window.removeEventListener('exit-tugu-area', this.handleExitTuguEvent);
     if (this.handleEnterRiverEvent) window.removeEventListener('enter-river-area', this.handleEnterRiverEvent);
     if (this.handleExitRiverEvent) window.removeEventListener('exit-river-area', this.handleExitRiverEvent);
+    if (this.handleEnterBeachEvent) window.removeEventListener('enter-beach-area', this.handleEnterBeachEvent);
+    if (this.handleExitBeachEvent) window.removeEventListener('exit-beach-area', this.handleExitBeachEvent);
     if (this.handleTimeOfDayEvent) window.removeEventListener('time-of-day-changed', this.handleTimeOfDayEvent);
     if (this.handleToggleDayNightEvent) window.removeEventListener('toggle-day-night', this.handleToggleDayNightEvent);
     if (this.handleAdjustCameraPOV) window.removeEventListener('adjust-camera-pov', this.handleAdjustCameraPOV);

@@ -13,7 +13,7 @@ export interface CityStats {
   isApiConnected?: boolean
 }
 
-export type ViewMode = 'city' | 'tugu' | 'river' | 'stadium'
+export type ViewMode = 'city' | 'tugu' | 'river' | 'stadium' | 'beach'
 
 export interface MultiplayerRoomSummary {
   roomId: string

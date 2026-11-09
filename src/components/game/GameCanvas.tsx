@@ -47,7 +47,7 @@ import {
   FishingState,
 } from '@/game3d/City3DManager'
 import { useCitizenStore } from '@/lib/stores/useCitizenStore'
-import { useGameStore } from '@/lib/stores/useGameStore'
+import { useGameStore, ViewMode } from '@/lib/stores/useGameStore'
 import { useUIStore } from '@/lib/stores/useUIStore'
 import { getFishingRodById } from '@/lib/inventory/rodDefinitions'
 
@@ -165,7 +165,7 @@ export default function GameCanvas() {
   const [mounted, setMounted] = useState(false)
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('noon')
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit')
-  const [viewMode, setViewMode] = useState<'city' | 'tugu' | 'river' | 'stadium'>('city')
+  const [viewMode, setViewMode] = useState<ViewMode>('city')
   const [showLandmarkMenu, setShowLandmarkMenu] = useState(false)
   const [showHelpHint, setShowHelpHint] = useState(false)
   const [tuguConfirmOpen, setTuguConfirmOpen] = useState(false)
@@ -249,15 +249,17 @@ export default function GameCanvas() {
     return () => window.removeEventListener('player-chat-sent', onChatSent)
   }, [])
 
-  // Sync player position with Tugu & River pier rooms (Adaptive, sequential, prevents out-of-order jitter & lag)
+  // Sync player position with Tugu, River & Beach pier rooms (Adaptive, sequential, prevents out-of-order jitter & lag)
   useEffect(() => {
-    if (viewMode !== 'tugu' && viewMode !== 'river') return
+    if (viewMode !== 'tugu' && viewMode !== 'river' && viewMode !== 'beach') return
 
     let isMounted = true
     let syncTimeout: NodeJS.Timeout | null = null
     const isRiver = viewMode === 'river'
-    const syncEndpoint = isRiver ? '/api/river/room' : '/api/tugu/room'
-    const leaveEndpoint = isRiver ? '/api/river/leave' : '/api/tugu/leave'
+    const isBeach = viewMode === 'beach'
+    const isFishingArea = isRiver || isBeach
+    const syncEndpoint = isBeach ? '/api/beach/room' : isRiver ? '/api/river/room' : '/api/tugu/room'
+    const leaveEndpoint = isBeach ? '/api/beach/leave' : isRiver ? '/api/river/leave' : '/api/tugu/leave'
 
     const syncRoom = async () => {
       if (isSyncingRef.current) return
@@ -269,8 +271,8 @@ export default function GameCanvas() {
         myClientIdRef.current = clientId
 
         const profile = useCitizenStore.getState().profile
-        const playerState = cityManagerRef.current?.getPlayerTuguState() || { x: 0, z: isRiver ? -5.5 : 12, facing: 0, isMoving: false }
-        const isFishingNow = isRiver ? fishingStateRef.current !== 'idle' : false
+        const playerState = cityManagerRef.current?.getPlayerTuguState() || { x: 0, z: isFishingArea ? -5.5 : 12, facing: 0, isMoving: false }
+        const isFishingNow = isFishingArea ? fishingStateRef.current !== 'idle' : false
         const body: any = {
           clientId,
           name: profile?.displayName || profile?.username || undefined,
@@ -470,6 +472,46 @@ export default function GameCanvas() {
       }
     }
 
+    const onEnterBeach = () => {
+      setSelectedLandmarkInfo(null)
+      setIsTransitioning(true)
+      setTransitionMessage('Memuat Pantai Netizen Beach 🏖️...')
+      setTimeout(() => {
+        cityManagerRef.current?.enterBeachArea()
+        setViewMode('beach')
+        useGameStore.getState().setViewMode('beach')
+        useGameStore.getState().setSelectedBuilding('netizen_beach')
+        useGameStore.getState().setCurrentDistrict('Pantai Netizen Beach')
+        setTimeout(() => {
+          setIsTransitioning(false)
+        }, 400)
+      }, 450)
+    }
+
+    const onExitBeach = () => {
+      setIsTransitioning(true)
+      setTransitionMessage('Kembali ke Kota Utama...')
+      setTimeout(() => {
+        cityManagerRef.current?.exitBeachArea()
+        setViewMode('city')
+        useGameStore.getState().setViewMode('city')
+        useGameStore.getState().setSelectedBuilding(null)
+        useGameStore.getState().setCurrentDistrict('town_square')
+        setTimeout(() => {
+          setIsTransitioning(false)
+        }, 400)
+      }, 450)
+    }
+
+    const onBeachModeChanged = (e: CustomEvent) => {
+      const mode = e.detail?.mode || 'city'
+      setViewMode(mode)
+      useGameStore.getState().setViewMode(mode)
+      if (mode === 'beach') {
+        setSelectedLandmarkInfo(null)
+      }
+    }
+
     const onRiverFishingState = (e: CustomEvent) => {
       if (e.detail?.state) {
         setFishingState(e.detail.state)
@@ -568,6 +610,10 @@ export default function GameCanvas() {
     window.addEventListener('exit-stadium-area', onExitStadium)
     window.addEventListener('stadium-mode-changed', onStadiumModeChanged as EventListener)
 
+    window.addEventListener('enter-beach-area', onEnterBeach)
+    window.addEventListener('exit-beach-area', onExitBeach)
+    window.addEventListener('beach-mode-changed', onBeachModeChanged as EventListener)
+
     return () => {
       window.removeEventListener('open-tugu-confirm', onOpenConfirm)
       window.removeEventListener('tugu-mode-changed', onModeChanged as EventListener)
@@ -584,6 +630,10 @@ export default function GameCanvas() {
       window.removeEventListener('enter-stadium-area', onEnterStadium)
       window.removeEventListener('exit-stadium-area', onExitStadium)
       window.removeEventListener('stadium-mode-changed', onStadiumModeChanged as EventListener)
+
+      window.removeEventListener('enter-beach-area', onEnterBeach)
+      window.removeEventListener('exit-beach-area', onExitBeach)
+      window.removeEventListener('beach-mode-changed', onBeachModeChanged as EventListener)
 
       if (cityManagerRef.current) {
         cityManagerRef.current.destroy()
@@ -909,21 +959,21 @@ export default function GameCanvas() {
       </div>
 
       {/* ============================================================ */}
-      {/* VIRTUAL ANALOG JOYSTICK (Tugu, River & Stadium on Touch)    */}
+      {/* VIRTUAL ANALOG JOYSTICK (Tugu, River, Stadium & Beach on Touch) */}
       {/* Positioned at bottom-6 left-4 (spacious, thumb-friendly)     */}
       {/* ============================================================ */}
-      {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium') && (
+      {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium' || viewMode === 'beach') && (
         <div className="md:hidden absolute bottom-6 sm:bottom-8 left-4 sm:left-8 z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* 3D RIVER FISHING CONTROLS & HUD                              */}
+      {/* 3D RIVER & BEACH FISHING CONTROLS & HUD                     */}
       {/* Mobile: right-thumb action buttons (zero analog collision)   */}
       {/* Desktop: clean centered bottom bar                           */}
       {/* ============================================================ */}
-      {viewMode === 'river' && (
+      {(viewMode === 'river' || viewMode === 'beach') && (
         <div className={`absolute z-30 pointer-events-auto font-sans flex flex-col gap-1.5 px-2 ${
           fishingState === 'idle'
             ? 'bottom-6 sm:bottom-8 right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 items-end sm:items-center'
@@ -950,7 +1000,7 @@ export default function GameCanvas() {
           {fishingState === 'idle' && (
             <div className="flex flex-col items-center gap-1.5">
               <span className="text-[9px] sm:text-[10px] font-semibold text-[#343B35] bg-[#F7F4E9]/95 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-[#D8CEBE] shadow-xs">
-                💡 Tap air sungai atau tombol lempar
+                {viewMode === 'beach' ? '💡 Tap air laut atau tombol lempar kail' : '💡 Tap air sungai atau tombol lempar'}
               </span>
 
               <div className="flex items-center gap-1.5 justify-center">
@@ -1019,7 +1069,7 @@ export default function GameCanvas() {
           {fishingState === 'casting' && (
             <div className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-[#F7F4E9] border border-[#D8CEBE] shadow-md text-xs font-bold text-[#267385] animate-pulse">
               <Waves className="w-4 h-4 text-[#267385] animate-spin" />
-              <span>Melempar kail ke tengah sungai...</span>
+              <span>{viewMode === 'beach' ? 'Melempar kail ke laut samudra...' : 'Melempar kail ke tengah sungai...'}</span>
             </div>
           )}
 
@@ -1248,7 +1298,7 @@ export default function GameCanvas() {
       {/* ============================================================ */}
       <div
         className={`absolute z-20 pointer-events-auto font-sans ${
-          viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium'
+          viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium' || viewMode === 'beach'
             ? 'top-20 sm:top-24 right-3 sm:right-4'
             : 'bottom-4 sm:bottom-5 right-3 sm:right-4'
         }`}
@@ -1262,6 +1312,8 @@ export default function GameCanvas() {
                   ? 'Panduan Kota 3D'
                   : viewMode === 'river'
                   ? 'Panduan Sungai Kali Netizen'
+                  : viewMode === 'beach'
+                  ? 'Panduan Pantai Netizen Beach'
                   : viewMode === 'stadium'
                   ? 'Panduan Freekick Stadion'
                   : 'Panduan Alun-Alun'}
@@ -1281,7 +1333,7 @@ export default function GameCanvas() {
                   <div>• <strong className="text-[#343B35]">Geser 1 Jari:</strong> Geser map (Pan)</div>
                   <div>• <strong className="text-[#343B35]">2 Jari (Putar/Cubit):</strong> Muter-muter orbit kamera &amp; zoom</div>
                   <div>• <strong className="text-[#343B35]">Mouse:</strong> Klik kiri drag orbit, klik kanan geser</div>
-                  <div>• <strong className="text-[#343B35]">Klik Bangunan:</strong> Kunjungi Alun-Alun, Sungai, atau Stadion</div>
+                  <div>• <strong className="text-[#343B35]">Klik Bangunan:</strong> Kunjungi Alun-Alun, Sungai, Pantai, atau Stadion</div>
                 </>
               ) : viewMode === 'river' ? (
                 <>
@@ -1289,6 +1341,13 @@ export default function GameCanvas() {
                   <div>• <strong className="text-[#343B35]">Mode Auto:</strong> Lempar, strike &amp; tarik kail otomatis tanpa lelah</div>
                   <div>• <strong className="text-[#343B35]">STRIKE &amp; Tarik:</strong> Tap secepatnya saat kail disambar ikan</div>
                   <div>• <strong className="text-[#343B35]">Koleksi Rarity:</strong> Common, Rare, Epic, Legendary, Mythic, hingga Immortal 🔱</div>
+                </>
+              ) : viewMode === 'beach' ? (
+                <>
+                  <div>• <strong className="text-[#343B35]">Dermaga &amp; Pantai:</strong> Eksplorasi dermaga kayu samudra hingga pasir pantai</div>
+                  <div>• <strong className="text-[#343B35]">Mancing Samudra:</strong> 17 spesies biota laut (Lumba-lumba, Pari, Hiu Martil, Megalodon)</div>
+                  <div>• <strong className="text-[#343B35]">Multiplayer Pantai:</strong> Mancing bersama 10 warga per server ruangan</div>
+                  <div>• <strong className="text-[#343B35]">Mode Auto:</strong> Santai mancing otomatis sambil mengobrol</div>
                 </>
               ) : viewMode === 'stadium' ? (
                 <>
@@ -1456,6 +1515,8 @@ export default function GameCanvas() {
               ? 'Menghubungkan ke server ruangan Alun-Alun Tugu...'
               : transitionMessage.includes('Sungai')
               ? 'Mempersiapkan alat pancing & dermaga kayu sungai...'
+              : transitionMessage.includes('Pantai')
+              ? 'Menghubungkan ke server ruangan Pantai Netizen Beach & ombak laut...'
               : 'Memuat peta diorama 3D kota utama...'}
           </p>
           <div className="w-36 h-1 bg-white/20 rounded-full mt-3 overflow-hidden">

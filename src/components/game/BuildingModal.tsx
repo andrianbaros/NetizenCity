@@ -121,7 +121,7 @@ export default function BuildingModal() {
       district: string
       desc: string
       actionName: string
-      actionType: 'work' | 'vote' | 'inspect' | 'investor' | 'freekick' | 'fishing'
+      actionType: 'work' | 'vote' | 'inspect' | 'investor' | 'freekick' | 'fishing' | 'beach'
     }
   > = {
     city_hall: {
@@ -280,9 +280,9 @@ export default function BuildingModal() {
       title: 'PANTAI NETIZEN BEACH',
       icon: <Sun className="w-6 h-6 text-yellow-400" />,
       district: 'Kawasan Alam & Wisata (Day 5)',
-      desc: 'Pantai tropis eksotis usulan @njemaa_28: pasir krem halus, ombak pastel, deretan payung santai, menara penjaga pantai, dan gapura berpita pink.',
-      actionName: 'Bersantai di Pantai',
-      actionType: 'inspect',
+      desc: 'Pantai tropis eksotis usulan @njemaa_28: pasir krem halus, ombak pastel, deretan payung santai, menara penjaga pantai, dan gapura berpita pink. Dilengkapi dermaga pancing samudra dengan aneka ikan laut tropis!',
+      actionName: 'Masuk ke Pantai & Mulai Mancing 🏖️',
+      actionType: 'beach',
     },
     river_spot: {
       title: 'SUNGAI KALI NETIZEN & DERMAGA PANCING',
@@ -389,6 +389,11 @@ export default function BuildingModal() {
       closeModal()
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('enter-river-area'))
+      }
+    } else if (current.actionType === 'beach' || selectedBuilding === 'netizen_beach') {
+      closeModal()
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('enter-beach-area'))
       }
     } else if (current.actionType === 'work') {
       if (typeof window !== 'undefined') {

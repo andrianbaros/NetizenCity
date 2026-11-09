@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         color: fish.rarityColor || fish.color || '#22C55E',
         icon: fish.icon || '🐟',
         desc: fish.desc,
-        caughtLocation: 'Sungai Kali Netizen',
+        caughtLocation: fish.caughtLocation || 'Sungai Kali Netizen',
       })
 
       const updatedInventory = getCitizenInventoryDetailed(citizen.id)

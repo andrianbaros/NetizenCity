@@ -367,8 +367,8 @@ export default function GameHUD() {
               </span>
             </div>
           </>
-        ) : (viewMode === 'tugu' || viewMode === 'river') ? (
-          /* MULTIPLAYER ROOM PILL IN TUGU & RIVER INSTANCES (Desktop md+) */
+        ) : (viewMode === 'tugu' || viewMode === 'river' || viewMode === 'beach') ? (
+          /* MULTIPLAYER ROOM PILL IN TUGU, RIVER & BEACH INSTANCES (Desktop md+) */
           <div className="hidden md:flex items-center space-x-1 sm:space-x-1.5 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-0.5 sm:p-1 shadow-[0_3px_10px_rgba(52,59,53,0.08)] text-xs pointer-events-auto relative shrink-0">
             {/* Room Switcher Toggle Button */}
             <button
@@ -381,8 +381,8 @@ export default function GameHUD() {
               title="Pilih Server Ruangan (Maks 10 Warga)"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#668B65] animate-pulse" />
-              <span className="sm:hidden">{viewMode === 'river' ? 'D#' : 'R#'}{currentRoomId}</span>
-              <span className="hidden sm:inline">{viewMode === 'river' ? 'Dermaga' : 'Ruang'} #{currentRoomId}</span>
+              <span className="sm:hidden">{viewMode === 'beach' ? 'P#' : viewMode === 'river' ? 'D#' : 'R#'}{currentRoomId}</span>
+              <span className="hidden sm:inline">{viewMode === 'beach' ? 'Pantai' : viewMode === 'river' ? 'Dermaga' : 'Ruang'} #{currentRoomId}</span>
               <span className="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-extrabold">
                 {roomUserCount}/10
               </span>
@@ -412,7 +412,7 @@ export default function GameHUD() {
                 <div className="fixed inset-0 z-40" onClick={() => setShowHudRoomSwitcher(false)} />
                 <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-56 sm:w-64 bg-[#F7F4E9] border-2 border-[#D8CEBE] rounded-2xl p-2 shadow-2xl z-50 text-xs font-sans">
                   <div className="font-heading font-black text-[10px] text-[#78634B] px-2 py-1 uppercase tracking-wide border-b border-[#D8CEBE] mb-1 flex items-center justify-between">
-                    <span>Pilih Server {viewMode === 'river' ? 'Dermaga' : 'Ruangan'} (Maks 10)</span>
+                    <span>Pilih Server {viewMode === 'beach' ? 'Pantai' : viewMode === 'river' ? 'Dermaga' : 'Ruangan'} (Maks 10)</span>
                     <button type="button" onClick={() => setShowHudRoomSwitcher(false)} className="text-[#78634B] hover:text-[#343B35] p-0.5">
                       <X className="w-3 h-3" />
                     </button>
@@ -439,7 +439,7 @@ export default function GameHUD() {
                         >
                           <span className="flex items-center gap-1.5 font-heading text-xs">
                             {isCurrent && <Check className="w-3 h-3 text-white" />}
-                            <span>{viewMode === 'river' ? `Dermaga #${r.roomId}` : r.name}</span>
+                            <span>{viewMode === 'beach' ? `Pantai #${r.roomId}` : viewMode === 'river' ? `Dermaga #${r.roomId}` : r.name}</span>
                           </span>
                           <span className={`text-[10px] font-semibold ${isCurrent ? 'text-white' : 'text-[#78634B]'}`}>
                             {r.isFull ? 'Penuh (10/10)' : `${r.userCount}/10 Warga`}
@@ -460,7 +460,7 @@ export default function GameHUD() {
                   <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-[#D8CEBE]">
                     <span className="font-heading font-black text-[10px] text-[#78634B] uppercase tracking-wide flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-[#668B65]" />
-                      <span>Warga di {viewMode === 'river' ? 'Dermaga' : 'Ruang'} #{currentRoomId}</span>
+                      <span>Warga di {viewMode === 'beach' ? 'Pantai' : viewMode === 'river' ? 'Dermaga' : 'Ruang'} #{currentRoomId}</span>
                     </span>
                     <button type="button" onClick={() => setShowHudRoster(false)} className="text-[#78634B] hover:text-[#343B35] p-0.5 rounded cursor-pointer">
                       <X className="w-3.5 h-3.5" />
@@ -671,7 +671,7 @@ export default function GameHUD() {
       </header>
 
       {/* Sub-bar below header: Back to City, Room Switcher (on mobile), & Location Badge */}
-      {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium') && (
+      {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'beach' || viewMode === 'stadium') && (
         <div className="pointer-events-auto flex items-center space-x-1.5 mt-1 self-start z-20 flex-wrap gap-y-1">
           <button
             type="button"
@@ -680,6 +680,8 @@ export default function GameHUD() {
                 if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('exit-tugu-area'))
               } else if (viewMode === 'river') {
                 if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('exit-river-area'))
+              } else if (viewMode === 'beach') {
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('exit-beach-area'))
               } else if (viewMode === 'stadium') {
                 if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('exit-stadium-area'))
               }
@@ -690,7 +692,7 @@ export default function GameHUD() {
           </button>
 
           {/* On Mobile screens (<md), show the Room Switcher right here in the sub-bar! */}
-          {(viewMode === 'tugu' || viewMode === 'river') && (
+          {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'beach') && (
             <div className="md:hidden flex items-center space-x-1 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-0.5 shadow-xs text-xs pointer-events-auto relative shrink-0">
               {/* Room Switcher Toggle Button */}
               <button
@@ -703,7 +705,7 @@ export default function GameHUD() {
                 title="Pilih Server Ruangan (Maks 10 Warga)"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-[#668B65] animate-pulse" />
-                <span>{viewMode === 'river' ? 'D#' : 'R#'}{currentRoomId}</span>
+                <span>{viewMode === 'beach' ? 'P#' : viewMode === 'river' ? 'D#' : 'R#'}{currentRoomId}</span>
                 <span className="text-[9px] px-1 py-0.2 rounded bg-[#668B65]/15 text-[#668B65] font-extrabold">
                   {roomUserCount}/10
                 </span>
@@ -732,7 +734,7 @@ export default function GameHUD() {
                   <div className="fixed inset-0 z-40" onClick={() => setShowHudRoomSwitcher(false)} />
                   <div className="absolute top-full mt-1.5 left-0 w-56 bg-[#F7F4E9] border-2 border-[#D8CEBE] rounded-2xl p-2 shadow-2xl z-50 text-xs font-sans">
                     <div className="font-heading font-black text-[10px] text-[#78634B] px-2 py-1 uppercase tracking-wide border-b border-[#D8CEBE] mb-1 flex items-center justify-between">
-                      <span>Pilih Server {viewMode === 'river' ? 'Dermaga' : 'Ruangan'} (Maks 10)</span>
+                      <span>Pilih Server {viewMode === 'beach' ? 'Pantai' : viewMode === 'river' ? 'Dermaga' : 'Ruangan'} (Maks 10)</span>
                       <button type="button" onClick={() => setShowHudRoomSwitcher(false)} className="text-[#78634B] hover:text-[#343B35] p-0.5">
                         <X className="w-3 h-3" />
                       </button>
@@ -759,7 +761,7 @@ export default function GameHUD() {
                           >
                             <span className="flex items-center gap-1.5 font-heading text-xs">
                               {isCurrent && <Check className="w-3 h-3 text-white" />}
-                              <span>{viewMode === 'river' ? `Dermaga #${r.roomId}` : r.name}</span>
+                              <span>{viewMode === 'beach' ? `Pantai #${r.roomId}` : viewMode === 'river' ? `Dermaga #${r.roomId}` : r.name}</span>
                             </span>
                             <span className={`text-[10px] font-semibold ${isCurrent ? 'text-white' : 'text-[#78634B]'}`}>
                               {r.isFull ? 'Penuh (10/10)' : `${r.userCount}/10 Warga`}
@@ -780,7 +782,7 @@ export default function GameHUD() {
                     <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-[#D8CEBE]">
                       <span className="font-heading font-black text-[10px] text-[#78634B] uppercase tracking-wide flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-[#668B65]" />
-                        <span>Warga di {viewMode === 'river' ? 'Dermaga' : 'Ruang'} #{currentRoomId}</span>
+                        <span>Warga di {viewMode === 'beach' ? 'Pantai' : viewMode === 'river' ? 'Dermaga' : 'Ruang'} #{currentRoomId}</span>
                       </span>
                       <button type="button" onClick={() => setShowHudRoster(false)} className="text-[#78634B] hover:text-[#343B35] p-0.5 rounded cursor-pointer">
                         <X className="w-3.5 h-3.5" />
@@ -814,7 +816,9 @@ export default function GameHUD() {
 
           <div className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-[#F7F4E9]/95 border border-[#D8CEBE] text-[#78634B] text-[10px] sm:text-[11px] font-heading font-bold shadow-xs">
             <span>
-              {viewMode === 'river'
+              {viewMode === 'beach'
+                ? '🏖️ Pantai Netizen Beach'
+                : viewMode === 'river'
                 ? '🎣 Dermaga Sungai Kali Netizen'
                 : '🏛️ Alun-Alun Tugu Pusat'}
             </span>
