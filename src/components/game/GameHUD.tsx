@@ -227,11 +227,13 @@ export default function GameHUD() {
   }
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between p-2 sm:p-4 select-none font-sans">
+    <div className="absolute inset-0 pointer-events-none z-30 flex flex-col p-2 sm:p-4 select-none font-sans">
       {/* ============================================================ */}
-      {/* TOP HUD BAR: Player Identity, City Stats & Action Toolbar   */}
+      {/* TOP HUD CONTAINER: Pinned to Top (Header + Sub-Bar)          */}
       {/* ============================================================ */}
-      <header className="flex items-center justify-between gap-1.5 sm:gap-2.5 pointer-events-none w-full">
+      <div className="flex flex-col gap-1 sm:gap-1.5 w-full pointer-events-none">
+        {/* TOP HUD BAR: Player Identity, City Stats & Action Toolbar   */}
+        <header className="flex items-center justify-between gap-1.5 sm:gap-2.5 pointer-events-none w-full">
         {/* A. Player Profile — Top Left */}
         {profile ? (
           <div className="flex items-center space-x-1.5 sm:space-x-2 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 sm:p-1.5 pr-2 sm:pr-3 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto shrink-0">
@@ -817,6 +819,7 @@ export default function GameHUD() {
           </div>
         </div>
       )}
+      </div>
 
       {/* ============================================================ */}
       {/* MOBILE ACTION DRAWER (Full Cozy Netizen City Experience)     */}

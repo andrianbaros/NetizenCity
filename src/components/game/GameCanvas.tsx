@@ -140,19 +140,19 @@ function AnalogJoystick({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="relative w-22 h-22 sm:w-26 sm:h-26 rounded-full bg-[#F7F4E9]/95 border-2 border-[#D8CEBE] shadow-xl backdrop-blur-xs flex items-center justify-center touch-none select-none pointer-events-auto cursor-grab active:cursor-grabbing"
+      className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#F7F4E9]/95 border-2 border-[#D8CEBE] shadow-xl backdrop-blur-xs flex items-center justify-center touch-none select-none pointer-events-auto cursor-grab active:cursor-grabbing"
       title="Analog Joystick Karakter (Sentuh & Gerakkan)"
     >
       {/* Decorative concentric indicator */}
-      <div className="absolute w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-[#D8CEBE]/80 pointer-events-none" />
+      <div className="absolute w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-[#D8CEBE]/80 pointer-events-none" />
       <div className="absolute w-2 h-2 rounded-full bg-[#78634B]/30 pointer-events-none" />
 
       {/* Movable Knob (Zero-latency direct 1:1 hardware transform) */}
       <div
         ref={knobRef}
-        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#668B65] border-2 border-[#527251] shadow-md flex items-center justify-center pointer-events-none will-change-transform"
+        className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-[#668B65] border-2 border-[#527251] shadow-md flex items-center justify-center pointer-events-none will-change-transform"
       >
-        <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white/40" />
+        <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white/40" />
       </div>
     </div>
   )
@@ -873,20 +873,25 @@ export default function GameCanvas() {
 
       {/* ============================================================ */}
       {/* VIRTUAL ANALOG JOYSTICK (Tugu, River & Stadium on Touch)    */}
-      {/* Lifted to bottom-20 on mobile to avoid cutoffs & overlaps    */}
+      {/* Positioned at bottom-6 left-4 (spacious, thumb-friendly)     */}
       {/* ============================================================ */}
       {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium') && (
-        <div className="absolute bottom-20 sm:bottom-8 left-4 sm:left-8 z-30 pointer-events-auto">
+        <div className="absolute bottom-6 sm:bottom-8 left-4 sm:left-8 z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}
 
       {/* ============================================================ */}
       {/* 3D RIVER FISHING CONTROLS & HUD                              */}
-      {/* Compact centered layout that never collides with analog      */}
+      {/* Mobile: right-thumb action buttons (zero analog collision)   */}
+      {/* Desktop: clean centered bottom bar                           */}
       {/* ============================================================ */}
       {viewMode === 'river' && (
-        <div className="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto font-sans flex flex-col items-center gap-1.5 w-auto max-w-[280px] sm:max-w-sm px-2">
+        <div className={`absolute z-30 pointer-events-auto font-sans flex flex-col gap-1.5 px-2 ${
+          fishingState === 'idle'
+            ? 'bottom-6 sm:bottom-8 right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 items-end sm:items-center'
+            : 'bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 items-center w-auto max-w-[320px] sm:max-w-sm'
+        }`}>
           {/* Active Auto-Fishing Notification Badge */}
           {isAutoFishing && fishingState !== 'caught' && (
             <div className="flex items-center space-x-2 px-3 py-1 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-xl border border-white/30 animate-pulse font-sans">
@@ -1207,7 +1212,7 @@ export default function GameCanvas() {
       <div
         className={`absolute z-20 pointer-events-auto font-sans ${
           viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium'
-            ? 'bottom-16 sm:bottom-5 right-3 sm:right-4'
+            ? 'top-20 sm:top-24 right-3 sm:right-4'
             : 'bottom-4 sm:bottom-5 right-3 sm:right-4'
         }`}
       >
