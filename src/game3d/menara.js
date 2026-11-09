@@ -44,7 +44,7 @@ export function makeTower(renderer) {
   const root = new THREE.Group(); root.position.set(TOWER.x, 0, TOWER.z);
   const env = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), .04).texture;
   const pearl = new THREE.MeshPhysicalMaterial({ color: '#E2D2F6', roughness: .12, metalness: .15, clearcoat: 1, clearcoatRoughness: .06, iridescence: 1, iridescenceIOR: 2.0,
-    iridescenceThicknessRange: [250, 900], envMap: env, envMapIntensity: 1.1, sheen: .8, sheenRoughness: .4, sheenColor: new THREE.Color('#BFF2DE') });
+    iridescenceThicknessMinimum: 250, iridescenceThicknessMaximum: 900, envMap: env, envMapIntensity: 1.1, sheen: .8, sheenRoughness: .4, sheenColor: new THREE.Color('#BFF2DE') });
   const band = new THREE.MeshPhysicalMaterial({ color: '#FFFFFF', roughness: .25, metalness: .2, clearcoat: 1, envMap: env, envMapIntensity: .7 });
   const floors = [];
   const slab = new THREE.ExtrudeGeometry(plate(TOWER.w, 1.2), { depth: TOWER.fh - .16, bevelEnabled: true, bevelThickness: .06, bevelSize: .06, bevelSegments: 2, curveSegments: 6 }).rotateX(-Math.PI / 2);

@@ -373,6 +373,14 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
     return set
   }, [inventory])
 
+  // Calculate batch sell sum (must be declared at top level with all other hooks)
+  const batchTotalCoins = useMemo(() => {
+    const safeList = Array.isArray(inventory) ? inventory : []
+    return safeList
+      .filter((i) => selectedIds.has(i.id))
+      .reduce((sum, item) => sum + (item.sellPrice || 50), 0)
+  }, [inventory, selectedIds])
+
   // ACTIONS
   // 1. Equip / Unequip
   const handleEquipToggle = async (item: InventoryItem) => {
@@ -674,13 +682,6 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
   }
 
   if (!isOpen || !mounted) return null
-
-  // Calculate batch sell sum
-  const batchTotalCoins = useMemo(() => {
-    return inventory
-      .filter((i) => selectedIds.has(i.id))
-      .reduce((sum, item) => sum + (item.sellPrice || 50), 0)
-  }, [inventory, selectedIds])
 
   const modalEl = (
     <div
