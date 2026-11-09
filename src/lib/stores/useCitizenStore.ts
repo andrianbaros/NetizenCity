@@ -62,11 +62,13 @@ export const useCitizenStore = create<CitizenState>((set) => ({
     set((state) => {
       const target = state.inventory.find((inv) => inv.id === inventoryId)
       if (!target) return state
-      const isRod = target.itemId.startsWith('rod_') || target.category === 'tools'
+      const targetItemId = target.itemId || (target as any).item_id || ''
+      const isRod = targetItemId.startsWith('rod_') || target.category === 'tools'
 
       return {
         inventory: state.inventory.map((inv) => {
-          if (isRod && (inv.itemId.startsWith('rod_') || inv.category === 'tools')) {
+          const invItemId = inv.itemId || (inv as any).item_id || ''
+          if (isRod && (invItemId.startsWith('rod_') || inv.category === 'tools')) {
             return { ...inv, isEquipped: inv.id === inventoryId }
           }
           if (inv.id === inventoryId) {

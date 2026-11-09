@@ -217,7 +217,7 @@ export default function GameCanvas() {
   useEffect(() => {
     if (!cityManagerRef.current) return
     const equipped = inventory.find(
-      (item) => item.isEquipped && (item.itemId.startsWith('rod_') || item.category === 'tools')
+      (item) => item.isEquipped && ((item.itemId || (item as any).item_id || '').startsWith('rod_') || item.category === 'tools')
     )
     if (equipped) {
       const rodDef = getFishingRodById(equipped.itemId)
@@ -1110,7 +1110,7 @@ export default function GameCanvas() {
                   type="button"
                   onClick={() => {
                     const hasRod = inventory.some(
-                      (i) => i.isEquipped && (i.itemId.startsWith('rod_') || i.category === 'tools')
+                      (i) => i.isEquipped && ((i.itemId || (i as any).item_id || '').startsWith('rod_') || i.category === 'tools')
                     )
                     if (!hasRod) {
                       useUIStore.getState().addNotification({
@@ -1135,7 +1135,7 @@ export default function GameCanvas() {
                   type="button"
                   onClick={() => {
                     const hasRod = inventory.some(
-                      (i) => i.isEquipped && (i.itemId.startsWith('rod_') || i.category === 'tools')
+                      (i) => i.isEquipped && ((i.itemId || (i as any).item_id || '').startsWith('rod_') || i.category === 'tools')
                     )
                     if (!hasRod && !isAutoFishing) {
                       useUIStore.getState().addNotification({

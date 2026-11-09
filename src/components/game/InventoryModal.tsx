@@ -130,6 +130,38 @@ function isRareOrHigher(rarity?: string) {
   )
 }
 
+function getItemId(item?: InventoryItem | null): string {
+  if (!item) return ''
+  return item.itemId || (item as any).item_id || item.id || ''
+}
+
+function isRodItem(item?: InventoryItem | null): boolean {
+  if (!item) return false
+  const cat = (item.category || (item as any).metadata?.category || '').toLowerCase()
+  return cat === 'tools' || getItemId(item).startsWith('rod_')
+}
+
+function isFishItem(item?: InventoryItem | null): boolean {
+  if (!item) return false
+  const cat = (item.category || (item as any).metadata?.category || '').toLowerCase()
+  return cat === 'fish' || getItemId(item).startsWith('fish_')
+}
+
+function formatDateSafe(dateVal?: string): string {
+  if (!dateVal) return 'Hari ini'
+  try {
+    const d = new Date(dateVal)
+    if (isNaN(d.getTime())) return 'Hari ini'
+    return d.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+  } catch {
+    return 'Hari ini'
+  }
+}
+
 export default function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
   const [mounted, setMounted] = useState(false)
   const [activeCategory, setActiveCategory] = useState<BackpackCategory>('all')
@@ -206,10 +238,12 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
 
   // Filter items according to category
   const categorizedItems = useMemo(() => {
-    return inventory.filter((item) => {
+    const safeList = Array.isArray(inventory) ? inventory : []
+    return safeList.filter((item) => {
+      if (!item) return false
       const cat = (item.category || '').toLowerCase()
-      const isRod = item.itemId.startsWith('rod_') || cat === 'tools'
-      const isFish = cat === 'fish' || item.itemId.startsWith('fish_')
+      const isRod = isRodItem(item)
+      const isFish = isFishItem(item)
       const isClothing =
         cat === 'clothing' ||
         ['tops', 'bottoms', 'shoes', 'fashion'].includes(cat)
@@ -251,10 +285,14 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
     // Sort
     list = [...list].sort((a, b) => {
       if (sortOption === 'newest') {
-        return new Date(b.acquiredAt).getTime() - new Date(a.acquiredAt).getTime()
+        const tB = b.acquiredAt ? new Date(b.acquiredAt).getTime() : 0
+        const tA = a.acquiredAt ? new Date(a.acquiredAt).getTime() : 0
+        return (isNaN(tB) ? 0 : tB) - (isNaN(tA) ? 0 : tA)
       }
       if (sortOption === 'oldest') {
-        return new Date(a.acquiredAt).getTime() - new Date(b.acquiredAt).getTime()
+        const tA = a.acquiredAt ? new Date(a.acquiredAt).getTime() : 0
+        const tB = b.acquiredAt ? new Date(b.acquiredAt).getTime() : 0
+        return (isNaN(tA) ? 0 : tA) - (isNaN(tB) ? 0 : tB)
       }
       if (sortOption === 'weight_desc') {
         return (b.weight || 0) - (a.weight || 0)
@@ -301,8 +339,9 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
 
   // Counts for category badges
   const categoryCounts = useMemo(() => {
+    const safeList = Array.isArray(inventory) ? inventory : []
     const counts = {
-      all: inventory.length,
+      all: safeList.length,
       tools: 0,
       fish: 0,
       clothing: 0,
@@ -310,10 +349,11 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
       special: 0,
     }
 
-    inventory.forEach((item) => {
+    safeList.forEach((item) => {
+      if (!item) return
       const cat = (item.category || '').toLowerCase()
-      if (item.itemId.startsWith('rod_') || cat === 'tools') counts.tools++
-      else if (cat === 'fish' || item.itemId.startsWith('fish_')) counts.fish++
+      if (isRodItem(item)) counts.tools++
+      else if (isFishItem(item)) counts.fish++
       else if (cat === 'clothing' || ['tops', 'bottoms', 'shoes', 'fashion'].includes(cat)) counts.clothing++
       else if (cat === 'accessories' || ['accessories', 'hairstyles', 'skins', 'back'].includes(cat)) counts.accessories++
       else counts.special++
@@ -325,8 +365,10 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
   // Rods owned IDs set
   const ownedRodIds = useMemo(() => {
     const set = new Set<string>()
-    inventory.forEach((i) => {
-      if (i.itemId.startsWith('rod_')) set.add(i.itemId)
+    const safeList = Array.isArray(inventory) ? inventory : []
+    safeList.forEach((i) => {
+      const id = getItemId(i)
+      if (id.startsWith('rod_')) set.add(id)
     })
     return set
   }, [inventory])
@@ -501,7 +543,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
   const handleSelectAllSellableFish = () => {
     const next = new Set<string>()
     categorizedItems.forEach((item) => {
-      const isFish = item.category === 'fish' || item.itemId.startsWith('fish_')
+      const isFish = isFishItem(item)
       if (isFish && !item.isFavorite && !item.isEquipped) {
         next.add(item.id)
       }
@@ -937,8 +979,8 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
                     const isSelected = selectedItemId === item.id && !selectedShopRodId
                     const isChecked = selectedIds.has(item.id)
                     const theme = getRarityTheme(item.rarity)
-                    const isFish = item.category === 'fish' || item.itemId.startsWith('fish_')
-                    const isRod = item.itemId.startsWith('rod_') || item.category === 'tools'
+                    const isFish = isFishItem(item)
+                    const isRod = isRodItem(item)
 
                     return (
                       <div
@@ -1347,11 +1389,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
                         <div className="flex items-center justify-between">
                           <span className="text-[#78634B]">Tanggal Ditangkap</span>
                           <span className="font-bold text-[#343B35]">
-                            {new Date(selectedItem.acquiredAt).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
+                            {formatDateSafe(selectedItem.acquiredAt)}
                           </span>
                         </div>
 
@@ -1367,8 +1405,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
                     )}
 
                     {/* If Tool / Rod: Luck, Speed, Max Weight, Ability */}
-                    {(selectedItem.category === 'tools' ||
-                      selectedItem.itemId.startsWith('rod_')) && (
+                    {isRodItem(selectedItem) && (
                       <>
                         <div className="flex items-center justify-between">
                           <span className="text-[#78634B] flex items-center gap-1">
@@ -1408,8 +1445,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
 
                     {/* If Fashion or Other: Quantity, Acquired */}
                     {selectedItem.category !== 'fish' &&
-                      selectedItem.category !== 'tools' &&
-                      !selectedItem.itemId.startsWith('rod_') && (
+                      !isRodItem(selectedItem) && (
                         <>
                           <div className="flex items-center justify-between">
                             <span className="text-[#78634B]">Jumlah</span>
@@ -1420,7 +1456,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
                           <div className="flex items-center justify-between">
                             <span className="text-[#78634B]">Diperoleh</span>
                             <span className="font-bold text-[#343B35]">
-                              {new Date(selectedItem.acquiredAt).toLocaleDateString('id-ID')}
+                              {formatDateSafe(selectedItem.acquiredAt)}
                             </span>
                           </div>
                         </>
@@ -1431,8 +1467,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
                 {/* Bottom Actions for Owned Item */}
                 <div className="mt-4 pt-4 border-t border-[#D8CEBE] space-y-2">
                   {/* Tool Equip/Unequip */}
-                  {(selectedItem.category === 'tools' ||
-                    selectedItem.itemId.startsWith('rod_')) && (
+                  {isRodItem(selectedItem) && (
                     <button
                       type="button"
                       onClick={() => handleEquipToggle(selectedItem)}
@@ -1574,7 +1609,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
               </>
             )}
 
-            {(selectedShopRod || selectedItem?.itemId.startsWith('rod_')) && (
+            {(selectedShopRod || isRodItem(selectedItem)) && (
               <>
                 <div className="flex justify-between">
                   <span className="text-[#78634B]">Keberuntungan:</span>
@@ -1605,7 +1640,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
               </button>
             )}
 
-            {selectedItem && (selectedItem.category === 'tools' || selectedItem.itemId.startsWith('rod_')) && (
+            {selectedItem && isRodItem(selectedItem) && (
               <button
                 type="button"
                 onClick={() => handleEquipToggle(selectedItem)}

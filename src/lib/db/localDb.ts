@@ -910,7 +910,7 @@ export function getCitizenInventoryDetailed(citizenId: string) {
 
   // Auto-grant starter Wooden Rod if citizen owns no fishing rod
   const hasRod = list.some(
-    (inv) => inv.item_id.startsWith('rod_') || inv.metadata?.category === 'tools'
+    (inv) => (inv.item_id || '').startsWith('rod_') || inv.metadata?.category === 'tools'
   )
   if (!hasRod) {
     const starter = getStarterRod()
@@ -941,9 +941,10 @@ export function getCitizenInventoryDetailed(citizenId: string) {
 
   return list.map((inv) => {
     const item = db.items.find((it) => it.id === inv.item_id)
-    const meta = inv.metadata || {}
-    const isRod = inv.item_id.startsWith('rod_') || meta.category === 'tools'
-    const isFish = meta.category === 'fish' || inv.item_id.startsWith('fish_')
+    const meta = (typeof inv.metadata === 'object' && inv.metadata !== null) ? inv.metadata : {}
+    const itemId = inv.item_id || inv.id || ''
+    const isRod = itemId.startsWith('rod_') || meta.category === 'tools'
+    const isFish = meta.category === 'fish' || itemId.startsWith('fish_')
 
     return {
       id: inv.id,
@@ -1193,13 +1194,13 @@ export function equipInventoryItem(citizenId: string, inventoryId: string) {
   )
   if (!target) return { success: false, error: 'Item tidak ditemukan di tas.' }
 
-  const isRod = target.item_id.startsWith('rod_') || target.metadata?.category === 'tools'
+  const isRod = (target.item_id || '').startsWith('rod_') || target.metadata?.category === 'tools'
   if (isRod) {
     // Unequip all other rods for this citizen
     db.inventory.forEach((inv) => {
       if (
         inv.citizen_id === citizenId &&
-        (inv.item_id.startsWith('rod_') || inv.metadata?.category === 'tools')
+        ((inv.item_id || '').startsWith('rod_') || inv.metadata?.category === 'tools')
       ) {
         inv.is_equipped = false
       }
@@ -1279,7 +1280,7 @@ export function buyFishingRod(citizenId: string, rodId: string) {
   db.inventory.forEach((inv) => {
     if (
       inv.citizen_id === citizenId &&
-      (inv.item_id.startsWith('rod_') || inv.metadata?.category === 'tools')
+      ((inv.item_id || '').startsWith('rod_') || inv.metadata?.category === 'tools')
     ) {
       inv.is_equipped = false
     }

@@ -50,6 +50,7 @@ import FreekickModal from './FreekickModal'
 import GardenModal from './GardenModal'
 import InvestorModal from './InvestorModal'
 import InventoryModal from './InventoryModal'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import BGMPlayer from './BGMPlayer'
 
 export default function GameHUD() {
@@ -62,7 +63,8 @@ export default function GameHUD() {
 
   const wallet = useCitizenStore((s) => s.wallet)
   const profile = useCitizenStore((s) => s.profile)
-  const inventory = useCitizenStore((s) => s.inventory)
+  const rawInventory = useCitizenStore((s) => s.inventory)
+  const inventory = Array.isArray(rawInventory) ? rawInventory : []
   const setProfile = useCitizenStore((s) => s.setProfile)
   const setWallet = useCitizenStore((s) => s.setWallet)
   const setInventory = useCitizenStore((s) => s.setInventory)
@@ -131,7 +133,7 @@ export default function GameHUD() {
         } else {
           setWallet(null)
         }
-        if (citData.inventory) {
+        if (Array.isArray(citData.inventory)) {
           setInventory(citData.inventory)
         } else {
           setInventory([])
@@ -723,10 +725,12 @@ export default function GameHUD() {
         isOpen={activeModal === 'investor'}
         onClose={closeModal}
       />
-      <InventoryModal
-        isOpen={activeModal === 'inventory'}
-        onClose={closeModal}
-      />
+      <ErrorBoundary name="InventoryModal">
+        <InventoryModal
+          isOpen={activeModal === 'inventory'}
+          onClose={closeModal}
+        />
+      </ErrorBoundary>
     </div>
   )
 }
