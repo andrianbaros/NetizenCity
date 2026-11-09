@@ -5,7 +5,8 @@
 
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   X,
   Fish,
@@ -43,6 +44,7 @@ const isFashionItem = (category?: string) => {
 }
 
 export default function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
+  const [mounted, setMounted] = useState(false)
   const [activeTab, setActiveTab] = useState<TabCategory>('all')
   const [sellingId, setSellingId] = useState<string | null>(null)
 
@@ -54,6 +56,26 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
   const updateBalance = useCitizenStore((s) => s.updateBalance)
   const addNotification = useUIStore((s) => s.addNotification)
   const openModal = useUIStore((s) => s.openModal)
+  const closeModal = useUIStore((s) => s.closeModal)
+
+  const handleClose = () => {
+    onClose()
+    closeModal()
+  }
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Listen to Escape key to close modal
+  useEffect(() => {
+    if (!isOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isOpen])
 
   const currentCoins = wallet?.balance ?? 500
   const maxSlots = 50
@@ -124,11 +146,26 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
     }
   }
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-[#F7F4E9] border-2 border-[#D8CEBE] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+  const modalEl = (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 pointer-events-auto"
+      style={{ pointerEvents: 'auto' }}
+    >
+      {/* Dimmed backdrop - click to close */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer animate-fade-in"
+        onClick={handleClose}
+        style={{ pointerEvents: 'auto' }}
+      />
+
+      {/* Modal Dialog */}
+      <div
+        className="relative z-10 w-full max-w-2xl bg-[#F7F4E9] border-2 border-[#D8CEBE] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-scale-up"
+        style={{ pointerEvents: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header Bar */}
         <div className="flex items-center justify-between p-4 sm:p-5 bg-[#EFE9D8] border-b border-[#D8CEBE]">
           <div className="flex items-center space-x-3">
@@ -156,8 +193,9 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
 
             <button
               type="button"
-              onClick={onClose}
-              className="w-9 h-9 rounded-xl bg-[#F7F4E9] hover:bg-[#E2DAC7] border border-[#D8CEBE] flex items-center justify-center text-[#78634B] transition-colors"
+              onClick={handleClose}
+              title="Tutup (Esc)"
+              className="w-9 h-9 rounded-xl bg-[#F7F4E9] hover:bg-[#E2DAC7] border border-[#D8CEBE] flex items-center justify-center text-[#78634B] hover:text-[#343B35] transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -169,7 +207,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
           <button
             type="button"
             onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-xl font-heading font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3 py-1.5 rounded-xl font-heading font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeTab === 'all'
                 ? 'bg-[#668B65] text-white shadow-xs'
                 : 'bg-[#EFE9D8] text-[#78634B] hover:bg-[#E2DAC7]'
@@ -181,7 +219,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
           <button
             type="button"
             onClick={() => setActiveTab('fish')}
-            className={`px-3 py-1.5 rounded-xl font-heading font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3 py-1.5 rounded-xl font-heading font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeTab === 'fish'
                 ? 'bg-[#2D7F9D] text-white shadow-xs'
                 : 'bg-[#EFE9D8] text-[#78634B] hover:bg-[#E2DAC7]'
@@ -193,7 +231,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
           <button
             type="button"
             onClick={() => setActiveTab('fashion')}
-            className={`px-3 py-1.5 rounded-xl font-heading font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3 py-1.5 rounded-xl font-heading font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeTab === 'fashion'
                 ? 'bg-[#78634B] text-white shadow-xs'
                 : 'bg-[#EFE9D8] text-[#78634B] hover:bg-[#E2DAC7]'
@@ -205,7 +243,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
           <button
             type="button"
             onClick={() => setActiveTab('other')}
-            className={`px-3 py-1.5 rounded-xl font-heading font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3 py-1.5 rounded-xl font-heading font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeTab === 'other'
                 ? 'bg-[#E6C66F] text-[#343B35] shadow-xs'
                 : 'bg-[#EFE9D8] text-[#78634B] hover:bg-[#E2DAC7]'
@@ -240,10 +278,10 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
                 <button
                   type="button"
                   onClick={() => {
-                    onClose()
+                    handleClose()
                     openModal('mall')
                   }}
-                  className="px-4 py-2 rounded-xl bg-[#668B65] text-white font-heading font-bold text-xs hover:bg-[#527051] transition-colors flex items-center gap-1.5 shadow-sm"
+                  className="px-4 py-2 rounded-xl bg-[#668B65] text-white font-heading font-bold text-xs hover:bg-[#527051] transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <ShoppingBag className="w-4 h-4" /> Buka Mall Busana
                 </button>
@@ -332,7 +370,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
                           type="button"
                           onClick={() => handleSell(item)}
                           disabled={sellingId === item.id}
-                          className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-heading font-bold text-xs flex items-center gap-1 transition-all active:translate-y-0.5 cursor-pointer disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-heading font-bold text-xs flex items-center gap-1 transition-all active:translate-y-0.5 cursor-pointer disabled:opacity-50 shadow-xs"
                         >
                           <Coins className="w-3.5 h-3.5 text-[#E6C66F]" />
                           Jual (+{item.sellPrice || 40})
@@ -341,10 +379,10 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
                         <button
                           type="button"
                           onClick={() => {
-                            onClose()
+                            handleClose()
                             openModal('mall')
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] font-heading font-bold text-[11px] border border-[#D8CEBE] flex items-center gap-1"
+                          className="px-2.5 py-1 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] font-heading font-bold text-[11px] border border-[#D8CEBE] flex items-center gap-1 cursor-pointer"
                         >
                           Lihat di Mall
                         </button>
@@ -359,11 +397,11 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
 
         {/* Footer info */}
         <div className="p-3.5 px-5 bg-[#EFE9D8] border-t border-[#D8CEBE] flex items-center justify-between text-xs text-[#78634B]">
-          <span>💡 Ikan yang dipancing dapat kamu simpan sebagai koleksi atau dijual ke pasar kota untuk koin tambahan!</span>
+          <span className="truncate pr-2">💡 Ikan tangkapan dapat disimpan sebagai koleksi atau dijual ke pasar.</span>
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 bg-[#343B35] hover:bg-[#252A26] text-white font-heading font-bold rounded-xl transition-colors"
+            onClick={handleClose}
+            className="px-4 py-1.5 bg-[#343B35] hover:bg-[#252A26] text-white font-heading font-bold rounded-xl transition-colors cursor-pointer shrink-0 shadow-xs"
           >
             Tutup
           </button>
@@ -371,4 +409,6 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
       </div>
     </div>
   )
+
+  return createPortal(modalEl, document.body)
 }

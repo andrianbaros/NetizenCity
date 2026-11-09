@@ -35,8 +35,27 @@ type POVPreset = 'selfie' | 'normal' | 'drone' | 'wide'
 export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalProps) {
   const profile = useCitizenStore((s) => s.profile)
   const addNotification = useUIStore((s) => s.addNotification)
+  const viewMode = useGameStore((s) => s.viewMode)
   const selectedBuilding = useGameStore((s) => s.selectedBuilding)
   const currentDistrict = useGameStore((s) => s.currentDistrict)
+
+  const isRiver = viewMode === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam'
+  const isStadium = viewMode === 'stadium' || selectedBuilding === 'sports_stadium' || currentDistrict === 'Kawasan Olahraga'
+  const isInvestor = selectedBuilding === 'investor_tower' || currentDistrict === 'Distrik Investor'
+  const isCityHall = selectedBuilding === 'city_hall'
+  const isTugu = viewMode === 'tugu' || selectedBuilding === 'monument' || currentDistrict === 'Pusat Kota'
+
+  const locationTitle = isRiver
+    ? 'Sungai Kali Netizen'
+    : isStadium
+    ? 'Stadion Gelora Netizen'
+    : isInvestor
+    ? 'Menara Investor'
+    : isCityHall
+    ? 'Balai Kota Netizen'
+    : isTugu
+    ? 'Alun-Alun Tugu'
+    : 'Netizen City'
 
   const [activePOV, setActivePOV] = useState<POVPreset>('normal')
   const [orbitAngle, setOrbitAngle] = useState(135)
@@ -193,18 +212,18 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
         photoHeight
       )
 
-      // Determine dynamic location based on selectedBuilding & currentDistrict
+      // Determine dynamic location based on viewMode, selectedBuilding & currentDistrict
       let locationBadge = '🏛️ ALUN-ALUN TUGU'
       let locationSubtitle = 'Alun-Alun Pusat Kota'
       let locationName = 'Alun-Alun Tugu'
 
-      if (selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam') {
+      if (viewMode === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam') {
         locationBadge = '🎣 DERMAGA SUNGAI KALI NETIZEN'
         locationSubtitle = 'Dermaga Pancing Sungai Kali Netizen'
         locationName = 'Sungai Kali Netizen'
-      } else if (selectedBuilding === 'sports_stadium') {
+      } else if (viewMode === 'stadium' || selectedBuilding === 'sports_stadium' || currentDistrict === 'Kawasan Olahraga') {
         locationBadge = '⚽ STADION GELORA NETIZEN'
-        locationSubtitle = 'Stadion Gelora Netizen'
+        locationSubtitle = 'Lapangan Utama Stadion Gelora Netizen'
         locationName = 'Stadion Gelora Netizen'
       } else if (selectedBuilding === 'investor_tower' || currentDistrict === 'Distrik Investor') {
         locationBadge = '🏢 MENARA INVESTOR'
@@ -214,7 +233,7 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
         locationBadge = '🏛️ BALAI KOTA NETIZEN'
         locationSubtitle = 'Balai Kota Netizen'
         locationName = 'Balai Kota'
-      } else if (selectedBuilding === 'monument' || currentDistrict === 'town_square' || currentDistrict === 'Pusat Kota') {
+      } else if (viewMode === 'tugu' || selectedBuilding === 'monument' || currentDistrict === 'Pusat Kota') {
         locationBadge = '🏛️ ALUN-ALUN TUGU'
         locationSubtitle = 'Alun-Alun Pusat Kota'
         locationName = 'Alun-Alun Tugu'
@@ -307,7 +326,7 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
           {/* Top Bar Hint */}
           <div className="mb-3 bg-[#343B35]/90 backdrop-blur-md text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg border border-white/20 pointer-events-auto flex items-center space-x-2">
             <Camera className="w-3.5 h-3.5 text-amber-400" />
-            <span>Mode Foto Bersama Alun-Alun</span>
+            <span>Mode Foto Bersama • {locationTitle}</span>
             <button
               type="button"
               onClick={onClose}
@@ -458,7 +477,7 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
             <div className="flex items-center justify-between pb-2 border-b border-[#D8CEBE]">
               <h3 className="text-sm sm:text-base font-extrabold text-[#343B35] flex items-center">
                 <Sparkles className="w-4 h-4 mr-1.5 text-amber-500" />
-                Foto Polaroid Alun-Alun Berhasil!
+                Foto Polaroid {locationTitle} Berhasil!
               </h3>
               <button
                 type="button"
@@ -474,7 +493,7 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
             <div className="relative rounded-2xl overflow-hidden border-2 border-[#D8CEBE] shadow-md bg-[#343B35] max-h-[55vh] flex items-center justify-center">
               <img
                 src={capturedImage}
-                alt="Hasil Foto Alun-Alun"
+                alt={`Hasil Foto ${locationTitle}`}
                 className="w-full h-auto max-h-[55vh] object-contain"
               />
             </div>

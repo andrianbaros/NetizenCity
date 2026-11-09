@@ -36,6 +36,7 @@ import {
   Check,
   Fish,
   Waves,
+  Trophy,
 } from 'lucide-react'
 import {
   City3DManager,
@@ -162,7 +163,7 @@ export default function GameCanvas() {
   const [mounted, setMounted] = useState(false)
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('noon')
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit')
-  const [viewMode, setViewMode] = useState<'city' | 'tugu' | 'river'>('city')
+  const [viewMode, setViewMode] = useState<'city' | 'tugu' | 'river' | 'stadium'>('city')
   const [showLandmarkMenu, setShowLandmarkMenu] = useState(false)
   const [showHelpHint, setShowHelpHint] = useState(false)
   const [tuguConfirmOpen, setTuguConfirmOpen] = useState(false)
@@ -390,6 +391,38 @@ export default function GameCanvas() {
       }
     }
 
+    const onEnterStadium = () => {
+      setIsTransitioning(true)
+      setTransitionMessage('Memasuki Lapangan Stadion Gelora Netizen 🏟️...')
+      setTimeout(() => {
+        cityManagerRef.current?.enterStadiumArea()
+        setViewMode('stadium')
+        setTimeout(() => {
+          setIsTransitioning(false)
+        }, 400)
+      }, 450)
+    }
+
+    const onExitStadium = () => {
+      setIsTransitioning(true)
+      setTransitionMessage('Kembali ke Kota Utama...')
+      setTimeout(() => {
+        cityManagerRef.current?.exitStadiumArea()
+        setViewMode('city')
+        setTimeout(() => {
+          setIsTransitioning(false)
+        }, 400)
+      }, 450)
+    }
+
+    const onStadiumModeChanged = (e: CustomEvent) => {
+      const mode = e.detail?.mode || 'city'
+      setViewMode(mode)
+      if (mode === 'stadium') {
+        setSelectedLandmarkInfo(null)
+      }
+    }
+
     const onRiverFishingState = (e: CustomEvent) => {
       if (e.detail?.state) {
         setFishingState(e.detail.state)
@@ -465,6 +498,10 @@ export default function GameCanvas() {
     window.addEventListener('river-fishing-state', onRiverFishingState as EventListener)
     window.addEventListener('river-fish-caught', onRiverFishCaught as EventListener)
 
+    window.addEventListener('enter-stadium-area', onEnterStadium)
+    window.addEventListener('exit-stadium-area', onExitStadium)
+    window.addEventListener('stadium-mode-changed', onStadiumModeChanged as EventListener)
+
     return () => {
       window.removeEventListener('open-tugu-confirm', onOpenConfirm)
       window.removeEventListener('tugu-mode-changed', onModeChanged as EventListener)
@@ -476,6 +513,10 @@ export default function GameCanvas() {
       window.removeEventListener('river-mode-changed', onRiverModeChanged as EventListener)
       window.removeEventListener('river-fishing-state', onRiverFishingState as EventListener)
       window.removeEventListener('river-fish-caught', onRiverFishCaught as EventListener)
+
+      window.removeEventListener('enter-stadium-area', onEnterStadium)
+      window.removeEventListener('exit-stadium-area', onExitStadium)
+      window.removeEventListener('stadium-mode-changed', onStadiumModeChanged as EventListener)
 
       if (cityManagerRef.current) {
         cityManagerRef.current.destroy()
@@ -592,6 +633,28 @@ export default function GameCanvas() {
             <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#F7F4E9]/90 border border-[#D8CEBE] text-[#343B35] text-xs font-semibold shadow-xs">
               <Fish className="w-3.5 h-3.5 text-[#267385]" />
               <span>Dermaga Pancing Sungai Kali Netizen</span>
+            </div>
+          </div>
+        ) : viewMode === 'stadium' ? (
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => {
+                setIsTransitioning(true)
+                setTransitionMessage('Kembali ke Kota Utama...')
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('exit-stadium-area'))
+                  setTimeout(() => setIsTransitioning(false), 400)
+                }, 450)
+              }}
+              className="flex items-center space-x-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] text-[#343B35] font-bold text-[11px] sm:text-xs shadow-sm transition-transform cursor-pointer"
+            >
+              <Navigation className="w-3.5 h-3.5 text-[#668B65]" />
+              <span>Kembali ke Kota</span>
+            </button>
+            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#F7F4E9]/90 border border-[#D8CEBE] text-[#343B35] text-xs font-semibold shadow-xs">
+              <Trophy className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Stadion Gelora Netizen (Freekick 3D)</span>
             </div>
           </div>
         ) : (
@@ -885,9 +948,9 @@ export default function GameCanvas() {
       </div>
 
       {/* ============================================================ */}
-      {/* VIRTUAL ANALOG JOYSTICK (Tugu & River Maps on Touch Screens) */}
+      {/* VIRTUAL ANALOG JOYSTICK (Tugu, River & Stadium on Touch)    */}
       {/* ============================================================ */}
-      {(viewMode === 'tugu' || viewMode === 'river') && (
+      {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium') && (
         <div className="absolute bottom-5 sm:bottom-6 left-3 sm:left-6 z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
@@ -1051,11 +1114,65 @@ export default function GameCanvas() {
       )}
 
       {/* ============================================================ */}
+      {/* 3D STADIUM FREEKICK CONTROLS & HUD                           */}
+      {/* ============================================================ */}
+      {viewMode === 'stadium' && (
+        <div className="absolute bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-28 z-30 pointer-events-auto font-sans flex flex-col items-center sm:items-end gap-2.5 max-w-sm">
+          <div className="flex flex-col items-center sm:items-end gap-1.5">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-[#343B35] bg-[#F7F4E9]/90 backdrop-blur-xs px-2.5 py-1 rounded-full border border-[#D8CEBE] shadow-xs">
+              💡 Ketuk bola sepak atau tombol untuk menendang
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => cityManagerRef.current?.shootSoccerBall('top_left', 90)}
+                className="px-3 py-2 rounded-xl bg-[#2D7F36] hover:bg-[#23682B] text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer border border-white/20"
+                title="Tendang Pojok Kiri Atas"
+              >
+                ↖️ Kiri
+              </button>
+              <button
+                type="button"
+                onClick={() => cityManagerRef.current?.shootSoccerBall('center', 85)}
+                className="flex items-center space-x-1.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl bg-gradient-to-r from-[#2D7F36] to-[#1E5C25] text-white font-bold text-xs sm:text-sm shadow-lg hover:shadow-xl active:scale-95 transition-all cursor-pointer border border-white/20"
+              >
+                <span>Tendang Keras ⚽</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => cityManagerRef.current?.shootSoccerBall('top_right', 90)}
+                className="px-3 py-2 rounded-xl bg-[#2D7F36] hover:bg-[#23682B] text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer border border-white/20"
+                title="Tendang Pojok Kanan Atas"
+              >
+                ↗️ Kanan
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 mt-1">
+              <button
+                type="button"
+                onClick={() => useUIStore.getState().openModal('freekick')}
+                className="px-3 py-1 rounded-lg bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-[11px] font-bold text-[#343B35] shadow-xs cursor-pointer"
+              >
+                🎮 Mini-Game Penalti
+              </button>
+              <button
+                type="button"
+                onClick={() => useUIStore.getState().openModal('photo_studio')}
+                className="px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 border border-amber-300 text-[11px] font-bold text-amber-900 shadow-xs cursor-pointer"
+              >
+                📸 Foto di Lapangan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
       {/* COMPACT PLAYER GUIDANCE PANEL                                */}
       {/* ============================================================ */}
       <div
         className={`absolute z-20 pointer-events-auto font-sans ${
-          viewMode === 'tugu' || viewMode === 'river'
+          viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium'
             ? 'bottom-16 sm:bottom-5 right-3 sm:right-4'
             : 'bottom-4 sm:bottom-5 right-3 sm:right-4'
         }`}
@@ -1069,6 +1186,8 @@ export default function GameCanvas() {
                   ? 'Panduan Kota 3D'
                   : viewMode === 'river'
                   ? 'Panduan Sungai Kali Netizen'
+                  : viewMode === 'stadium'
+                  ? 'Panduan Freekick Stadion'
                   : 'Panduan Alun-Alun'}
               </span>
               <button
@@ -1083,10 +1202,10 @@ export default function GameCanvas() {
             <div className="space-y-1 text-[#78634B]">
               {viewMode === 'city' ? (
                 <>
-                  <div>• <strong className="text-[#343B35]">Geser 1 Jari / Mouse:</strong> Putar orbit kota</div>
-                  <div>• <strong className="text-[#343B35]">Cubit 2 Jari / Scroll:</strong> Zoom in &amp; out</div>
-                  <div>• <strong className="text-[#343B35]">Geser 2 Jari:</strong> Pindah pandangan kamera</div>
-                  <div>• <strong className="text-[#343B35]">Klik Landmark / Tugu:</strong> Kunjungi Alun-Alun Warga</div>
+                  <div>• <strong className="text-[#343B35]">Geser 1 Jari:</strong> Geser map (Pan)</div>
+                  <div>• <strong className="text-[#343B35]">2 Jari (Putar/Cubit):</strong> Muter-muter orbit kamera &amp; zoom</div>
+                  <div>• <strong className="text-[#343B35]">Mouse:</strong> Klik kiri drag orbit, klik kanan geser</div>
+                  <div>• <strong className="text-[#343B35]">Klik Bangunan:</strong> Kunjungi Alun-Alun, Sungai, atau Stadion</div>
                 </>
               ) : viewMode === 'river' ? (
                 <>
@@ -1094,6 +1213,13 @@ export default function GameCanvas() {
                   <div>• <strong className="text-[#343B35]">Tap Air Sungai:</strong> Lempar kail langsung ke air</div>
                   <div>• <strong className="text-[#343B35]">STRIKE:</strong> Tap secepatnya saat kail disambar ikan!</div>
                   <div>• <strong className="text-[#343B35]">Tensi Tarikan:</strong> Tap tombol berulang kali sampai 100%</div>
+                </>
+              ) : viewMode === 'stadium' ? (
+                <>
+                  <div>• <strong className="text-[#343B35]">Analog / WASD:</strong> Jelajahi rumput lapangan hijau</div>
+                  <div>• <strong className="text-[#343B35]">Tendang Bola:</strong> Ketuk bola atau tombol tendang keras</div>
+                  <div>• <strong className="text-[#343B35]">Kiper AI 3D:</strong> Taklukkan kiper &amp; pagar betis untuk cetak gol</div>
+                  <div>• <strong className="text-[#343B35]">Mini-Game:</strong> Mainkan mode penalti beruntun</div>
                 </>
               ) : (
                 <>

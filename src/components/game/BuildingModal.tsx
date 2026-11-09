@@ -232,8 +232,8 @@ export default function BuildingModal() {
       title: 'STADION & KOMPLEKS OLAHRAGA',
       icon: <Trophy className="w-6 h-6 text-emerald-400" />,
       district: 'Olahraga & Hiburan (Day 7)',
-      desc: 'Kompleks olahraga megah usulan @rznn8619 dengan stadion atletik, lintasan lari tartan, GOR serbaguna, dan lapangan adu penalti freekick.',
-      actionName: 'Adu Penalti Freekick ⚽',
+      desc: 'Kompleks olahraga megah usulan @rznn8619 dengan stadion atletik, lintasan lari tartan, gawang sepakbola 3D, dan lapangan adu penalti freekick.',
+      actionName: 'Masuk Lapangan Stadion (Freekick 3D) ⚽',
       actionType: 'freekick',
     },
     science_lab: {
@@ -382,7 +382,9 @@ export default function BuildingModal() {
       openModal('investor')
     } else if (current.actionType === 'freekick' || selectedBuilding === 'sports_stadium') {
       closeModal()
-      openModal('freekick')
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('enter-stadium-area'))
+      }
     } else if (current.actionType === 'fishing' || selectedBuilding === 'river_spot') {
       closeModal()
       if (typeof window !== 'undefined') {

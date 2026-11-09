@@ -528,7 +528,7 @@ export default function GameHUD() {
                   className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
                 >
                   <Camera className="w-4 h-4 text-amber-600" />
-                  <span>Foto Bersama Alun-Alun</span>
+                  <span>Mode Foto Polaroid</span>
                 </button>
 
                 <button

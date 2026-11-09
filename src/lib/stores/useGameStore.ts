@@ -13,8 +13,11 @@ export interface CityStats {
   isApiConnected?: boolean
 }
 
+export type ViewMode = 'city' | 'tugu' | 'river' | 'stadium'
+
 interface GameState {
   isGameReady: boolean
+  viewMode: ViewMode
   currentDistrict: string
   playerPosition: Position
   playerDirection: Direction
@@ -25,6 +28,7 @@ interface GameState {
   selectedPlayer: PlayerState | null
 
   setGameReady: (ready: boolean) => void
+  setViewMode: (viewMode: ViewMode) => void
   setCurrentDistrict: (district: string) => void
   setPlayerPosition: (position: Position) => void
   setPlayerDirection: (direction: Direction) => void
@@ -38,6 +42,7 @@ interface GameState {
 
 export const useGameStore = create<GameState>((set) => ({
   isGameReady: false,
+  viewMode: 'city',
   currentDistrict: 'town_square',
   playerPosition: { x: 1600, y: 1600 },
   playerDirection: 'down',
@@ -52,6 +57,7 @@ export const useGameStore = create<GameState>((set) => ({
   selectedPlayer: null,
 
   setGameReady: (isGameReady) => set({ isGameReady }),
+  setViewMode: (viewMode) => set({ viewMode }),
   setCurrentDistrict: (currentDistrict) => set({ currentDistrict }),
   setPlayerPosition: (playerPosition) => set({ playerPosition }),
   setPlayerDirection: (playerDirection) => set({ playerDirection }),
