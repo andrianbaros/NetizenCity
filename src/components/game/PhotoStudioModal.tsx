@@ -39,11 +39,14 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
   const selectedBuilding = useGameStore((s) => s.selectedBuilding)
   const currentDistrict = useGameStore((s) => s.currentDistrict)
 
-  const isRiver = viewMode === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam'
-  const isStadium = viewMode === 'stadium' || selectedBuilding === 'sports_stadium' || currentDistrict === 'Kawasan Olahraga'
+  const active3DMode = typeof window !== 'undefined' ? (window as any).__city3DManager?.viewMode : undefined
+  const effectiveViewMode = active3DMode || viewMode
+
+  const isRiver = effectiveViewMode === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam'
+  const isStadium = effectiveViewMode === 'stadium' || selectedBuilding === 'sports_stadium' || currentDistrict === 'Kawasan Olahraga'
   const isInvestor = selectedBuilding === 'investor_tower' || currentDistrict === 'Monumen Investor Kota' || currentDistrict === 'Distrik Investor'
   const isCityHall = selectedBuilding === 'city_hall'
-  const isTugu = viewMode === 'tugu' || selectedBuilding === 'monument' || currentDistrict === 'Pusat Kota'
+  const isTugu = effectiveViewMode === 'tugu' || selectedBuilding === 'monument'
 
   const locationTitle = isRiver
     ? 'Sungai Kali Netizen'
@@ -212,16 +215,19 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
         photoHeight
       )
 
-      // Determine dynamic location based on viewMode, selectedBuilding & currentDistrict
+      // Determine dynamic location based on actual active mode
+      const liveMode = typeof window !== 'undefined' ? (window as any).__city3DManager?.viewMode : undefined
+      const liveEffective = liveMode || viewMode
+
       let locationBadge = '🏛️ ALUN-ALUN TUGU'
       let locationSubtitle = 'Alun-Alun Pusat Kota'
       let locationName = 'Alun-Alun Tugu'
 
-      if (viewMode === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam') {
+      if (liveEffective === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam') {
         locationBadge = '🎣 DERMAGA SUNGAI KALI NETIZEN'
         locationSubtitle = 'Dermaga Pancing Sungai Kali Netizen'
         locationName = 'Sungai Kali Netizen'
-      } else if (viewMode === 'stadium' || selectedBuilding === 'sports_stadium' || currentDistrict === 'Kawasan Olahraga') {
+      } else if (liveEffective === 'stadium' || selectedBuilding === 'sports_stadium' || currentDistrict === 'Kawasan Olahraga') {
         locationBadge = '⚽ STADION GELORA NETIZEN'
         locationSubtitle = 'Lapangan Utama Stadion Gelora Netizen'
         locationName = 'Stadion Gelora Netizen'
@@ -233,14 +239,18 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
         locationBadge = '🏛️ BALAI KOTA NETIZEN'
         locationSubtitle = 'Balai Kota Netizen'
         locationName = 'Balai Kota'
-      } else if (viewMode === 'tugu' || selectedBuilding === 'monument' || currentDistrict === 'Pusat Kota') {
+      } else if (liveEffective === 'tugu' || selectedBuilding === 'monument') {
         locationBadge = '🏛️ ALUN-ALUN TUGU'
         locationSubtitle = 'Alun-Alun Pusat Kota'
         locationName = 'Alun-Alun Tugu'
-      } else if (currentDistrict) {
-        locationBadge = `🏙️ ${currentDistrict.toUpperCase()}`
-        locationSubtitle = `${currentDistrict} • NetizenCity`
+      } else if (currentDistrict && currentDistrict !== 'town_square' && currentDistrict !== 'Pusat Kota') {
+        locationBadge = '🏙️ ' + currentDistrict.toUpperCase()
+        locationSubtitle = currentDistrict + ' • NetizenCity'
         locationName = currentDistrict
+      } else {
+        locationBadge = '🏙️ NETIZEN CITY'
+        locationSubtitle = 'Pusat Kota NetizenCity'
+        locationName = 'Netizen City'
       }
 
       // 3. Top Stamp Banner (Dynamically sized to text width)

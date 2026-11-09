@@ -177,18 +177,21 @@ export function buildMetro(scene, C) {
   for (let i = 0; i < 90; i++) { const a = R() * 6.283, r = 15 + R() * 6, x = KERUK.x + Math.cos(a) * r, z = KERUK.z + Math.sin(a) * r; if (z < -8.5 && x < -49.5 && x > -91) trees.push([x, z]); }
   // Day 9: the sidewalk in front of the adoption house (day9.js VET, west of the hospital) stays open: no tree, no planter in the shot
   const adoptFront = (x, z) => x > -114.5 && x < -108 && z > 15.5 && z < 18.5;
-  const treeOK = trees.filter(([x, z]) => ((x - KERUK.x) / 10.5) ** 2 + ((z - KERUK.z) / 18.5) ** 2 > 1 && !inMallLot(x, z) && !adoptFront(x, z));
+  const nearRail = (x, z) => Math.abs(z - RAIL_Z) < 3.8;
+  const onRoad = (x, z) => ROADS.some(r => { const lat = r.ax === 'x' ? z : x, al = r.ax === 'x' ? x : z; return Math.abs(lat - r.c) < r.w / 2 + SW + .4 && al > r.a0 - 3 && al < r.a1 + 3; });
+  const treeOK = trees.filter(([x, z]) => ((x - KERUK.x) / 10.5) ** 2 + ((z - KERUK.z) / 18.5) ** 2 > 1 && !inMallLot(x, z) && !adoptFront(x, z) && !nearRail(x, z) && !onRoad(x, z));
   const trunk = instanced(new THREE.CylinderGeometry(.1, .14, .8, 6).translate(0, .4, 0), mat('#B48A68'), treeOK.length);
   const crown = instanced(new THREE.IcosahedronGeometry(.75, 0).translate(0, 1.35, 0), mat('#ffffff'), treeOK.length, treeOK.map((_, i) => i % 3 ? '#8FD3B8' : '#9CC48A'));
   scene.add(trunk, crown);
   city.trees = treeOK.map(([x, z], i) => ({ x, z, s: .85 + hash(i * 1.3) * .35, ry: hash(i * 2.7) * 6 }));
   city.treeMeshes = [trunk, crown];
   const poleM = mat('#EEE6F6'), headM = mat('#FFF4D8', { emissive: '#FFD58A', emissiveIntensity: 0 });
-  const lpole = instanced(new THREE.CylinderGeometry(.05, .065, 2.3, 6).translate(0, 1.15, 0), poleM, lamps.length);
+  const lampsOK = lamps.filter(([lx, lz]) => !nearRail(lx, lz) && !onRoad(lx, lz));
+  const lpole = instanced(new THREE.CylinderGeometry(.05, .065, 2.3, 6).translate(0, 1.15, 0), poleM, lampsOK.length);
   const lhead = instanced(new THREE.SphereGeometry(.16, 10, 8).translate(.32, 2.25, 0), headM, lamps.length);
   const larm = instanced(new THREE.BoxGeometry(.4, .05, .05).translate(.16, 2.3, 0), poleM, lamps.length);
   scene.add(lpole, lhead, larm);
-  city.lamps = lamps.map(([x, z, ax, side]) => ({ x, z, ry: ax === 'x' ? (side < 0 ? Math.PI / 2 : -Math.PI / 2) : (side < 0 ? 0 : Math.PI) }));
+  city.lamps = lampsOK.map(([x, z, ax, side]) => ({ x, z, ry: ax === 'x' ? (side < 0 ? Math.PI / 2 : -Math.PI / 2) : (side < 0 ? 0 : Math.PI) }));
   const tpole = instanced(new THREE.CylinderGeometry(.05, .06, 2.4, 6).translate(0, 1.2, 0), mat('#7F7A86'), tl.length);
   const thead = instanced(new THREE.BoxGeometry(.24, .62, .24).translate(0, 2.55, 0), mat('#4E4A56'), tl.length);
   const tlamp = instanced(new THREE.SphereGeometry(.1, 10, 8).translate(0, 2.55, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }), tl.length, tl.map(() => '#7BE07B'));
@@ -218,7 +221,7 @@ export function buildMetro(scene, C) {
   const geoStop = mergeGeometries([B(2.6, .08, 1.1, 0, 2.05, 0, '#A8DCC8'), B(2.4, 1.4, .05, 0, 1.15, -.48, '#BFD6EE'), B(.08, 2.0, .08, -1.15, 1.0, -.48, '#EEE6F6'), B(.08, 2.0, .08, 1.15, 1.0, -.48, '#EEE6F6'),
     B(1.6, .07, .3, 0, .4, -.28, '#F4F1EA'), B(.5, .7, .06, 1.15, 1.6, -.4, '#F7D772')]);
   const geoCart = mergeGeometries([B(.9, .5, .5, 0, .45, 0, '#FFF6E6'), B(.92, .1, .52, 0, .73, 0, '#F2E3CC'), B(.04, .9, .04, 0, 1.2, 0, '#9A938A'), vc(new THREE.CylinderGeometry(.16, .16, .08, 10).rotateX(Math.PI / 2).translate(-.3, .16, .26), '#4A4650'), vc(new THREE.CylinderGeometry(.16, .16, .08, 10).rotateX(Math.PI / 2).translate(.3, .16, .26), '#4A4650')]);
-  for (const k in furn) furn[k] = furn[k].filter(f => !inMallLot(f.x, f.z));
+  for (const k in furn) furn[k] = furn[k].filter(f => !adoptFront(f.x, f.z) && !inMallLot(f.x, f.z) && !nearRail(f.x, f.z) && !onRoad(f.x, f.z));
   const mkF = (geo, list, m, tint) => { const im = instanced(geo, m || vmat, list.length, tint ? list.map(o => o.c) : null); scene.add(im); return im; };
   const fBench = mkF(geoBench, furn.bench), fStop = mkF(geoStop, furn.stop), fCart = mkF(geoCart, furn.cart);
   const fUmb = mkF(new THREE.ConeGeometry(.75, .35, 8).translate(0, 1.75, 0), furn.cart, mat('#ffffff'), true);
@@ -266,10 +269,34 @@ export function buildMetro(scene, C) {
   const shops = [];
   const shopRow = (x0, x1, z, dz, face) => { for (let x = x0; x < x1 - 3; ) { const big = hash(x * .37 + z) > .82, w = big ? 13 : 5 + Math.floor(hash(x * 1.1 + z) * 3);
     if (x + w > x1) break; shops.push({ x: x + w / 2, z, w: w - .5, d: dz, h: big ? 3.3 : .1 + 2 * .9 + .1, c: PASTEL[Math.floor(hash(x * 2.3 + z) * 8)], t0: C.jalan - .3 + d0(x, z) / 150 * .8, dur: .25, floors: 2, big, face }); x += w; } };
-  shopRow(-148, -50, 39.5, 4.4, -1); shopRow(26, 40, 39.5, 4.4, -1); shopRow(48.5, 148, 39.5, 4.4, -1); shopRow(-36, -6, 39.5, 4.4, -1);          // face: the side of the avenue
+  shopRow(-148, -100.5, 39.5, 4.4, -1); shopRow(-91.5, -50, 39.5, 4.4, -1); shopRow(-36, -6, 39.5, 4.4, -1); shopRow(26, 40, 39.5, 4.4, -1); shopRow(48.5, 91.5, 39.5, 4.4, -1); shopRow(100.5, 148, 39.5, 4.4, -1);          // face: the side of the avenue
   shopRow(-148, -100, 3.2, 3.6, -1); shopRow(-92, -70, 3.2, 3.6, -1); shopRow(-148, -100, -9.6, 4, 1); shopRow(-148, -100, 27, 4, 1); shopRow(-92, -80, 27, 4, 1);
   shopRow(-148, -100, 14.4, 3.6, 1); shopRow(-92, -70, 14.4, 3.6, 1);
-  for (let i = shops.length - 1; i >= 0; i--) if (Math.abs(shops[i].z - 14.4) < .1 && shops[i].x > -118 && shops[i].x < -67) shops.splice(i, 1);   // + Day 9: the animal hospital's lot (day9.js VET)   // Day 7: the library's lot (day7.js LIB) and its reading garden
+  for (let i = shops.length - 1; i >= 0; i--) if (Math.abs(shops[i].z - 14.4) < .1 && shops[i].x > -118 && shops[i].x < -67) shops.splice(i, 1);
+  const shopCollidesRoad = (s) => {
+    const hw = s.w / 2 + 0.6;
+    const hd = s.d / 2 + 0.6;
+    if (Math.abs(s.z - RAIL_Z) < hd + 1.8) return true;
+    for (const r of ROADS) {
+      if (r.ax === 'z') {
+        const minX = r.c - (r.w / 2 + SW + 0.6);
+        const maxX = r.c + (r.w / 2 + SW + 0.6);
+        const minZ = r.a0 - 1.0;
+        const maxZ = r.a1 + 1.0;
+        if (s.x + hw > minX && s.x - hw < maxX && s.z + hd > minZ && s.z - hd < maxZ) return true;
+      } else if (r.ax === 'x') {
+        const minZ = r.c - (r.w / 2 + SW + 0.6);
+        const maxZ = r.c + (r.w / 2 + SW + 0.6);
+        const minX = r.a0 - 1.0;
+        const maxX = r.a1 + 1.0;
+        if (s.z + hd > minZ && s.z - hd < maxZ && s.x + hw > minX && s.x - hw < maxX) return true;
+      }
+    }
+    return false;
+  };
+  for (let i = shops.length - 1; i >= 0; i--) {
+    if (shopCollidesRoad(shops[i])) shops.splice(i, 1);
+  }   // + Day 9: the animal hospital's lot (day9.js VET)   // Day 7: the library's lot (day7.js LIB) and its reading garden
   const shopM = cityMat('#ffffff', { fh: .9, base: .1, sx: 1.4, box: [.08, .92, .1, .72], glass: '#9DB6D2', band: 1, lit: .7 });
   const shopSet = bset(shops, shopM);
   const stripe = canvasTex(64, 16, (x, w, h) => { for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#FFFFFF' : '#F0E6E0'; x.fillRect(i * 8, 0, 8, h); } }, true);
@@ -321,7 +348,7 @@ export function buildMetro(scene, C) {
   const crownM = instanced(new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), mat('#ffffff'), tops.length, tops.map(a => a.cc)); scene.add(crownM);
   const tank = instanced(new THREE.CylinderGeometry(.45, .45, .7, 10).translate(0, .35, 0), mat('#C9C3D3'), tops.length); scene.add(tank);
   // shrubs at the corners of the tall buildings, so their yards are not bare (never on a road or a sidewalk)
-  const onRoad = (x, z) => ROADS.some(r => { const lat = r.ax === 'x' ? z : x, al = r.ax === 'x' ? x : z; return Math.abs(lat - r.c) < r.w / 2 + SW + .4 && al > r.a0 - 3 && al < r.a1 + 3; });
+  // onRoad defined above
   const yard = [];
   for (const it of [...rus, ...apt, ...off, ...mid, ...apt4, ...rus4, ...apt5, ...rus5, ...apt6, ...rus6, ...apt7, ...rus7, ...apt8, ...rus8, ...apt9, ...rus9]) for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
     const x = it.x + sx * (it.w / 2 + .55), z = it.z + sz * (it.d / 2 + .5), h = hash(it.x * 3.1 + it.z * 1.7 + sx * 5 + sz);
@@ -496,7 +523,7 @@ export function buildMetro(scene, C) {
   city.walkSpots = () => {                                                   // sidewalk spots for the crowd, and a few on the zebra crossings
     const P = [], Rw = mulberry(17);
     for (const r of ROADS) for (const sp of r.spans || []) { const dens = r.w > 4 ? 1.25 : 2.6;
-      for (let a = sp.a + .5; a < sp.b - .5; a += dens * (.7 + Rw() * .6)) { const lat = r.c + sp.off + (Rw() - .5) * 1.1; P.push(r.ax === 'x' ? [a, lat] : [lat, a]); } }
+      for (let a = sp.a + .5; a < sp.b - .5; a += dens * (.7 + Rw() * .6)) { const lat = r.c + sp.off + (Rw() - .5) * 1.1; const pt = r.ax === 'x' ? [a, lat] : [lat, a]; if (!nearRail(pt[0], pt[1])) P.push(pt); } }
     for (const q of XS) if (q.big && !q.plain) for (let k = 0; k < 6; k++) { const s = k % 2 ? 1 : -1; P.push([q.x + s * (q.wx / 2 + .75) + (Rw() - .5) * .5, q.z + (Rw() - .5) * q.wz * .8]); }
     for (let k = 0; k < 40; k++) P.push([STATION.x - 9 + Rw() * 18, STATION.z + 2.7 + Rw() * 1.0]);
     return P.filter(([x, z]) => x > -150 && x < 150);

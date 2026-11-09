@@ -365,6 +365,7 @@ export default function GameCanvas() {
     const onModeChanged = (e: CustomEvent) => {
       const mode = e.detail?.mode || 'city'
       setViewMode(mode)
+      useGameStore.getState().setViewMode(mode)
       if (mode === 'tugu') {
         setSelectedLandmarkInfo(null)
       }
@@ -385,6 +386,9 @@ export default function GameCanvas() {
       setTimeout(() => {
         cityManagerRef.current?.enterRiverArea()
         setViewMode('river')
+        useGameStore.getState().setViewMode('river')
+        useGameStore.getState().setSelectedBuilding('river_spot')
+        useGameStore.getState().setCurrentDistrict('Kawasan Alam')
         setTimeout(() => {
           setIsTransitioning(false)
         }, 400)
@@ -397,6 +401,9 @@ export default function GameCanvas() {
       setTimeout(() => {
         cityManagerRef.current?.exitRiverArea()
         setViewMode('city')
+        useGameStore.getState().setViewMode('city')
+        useGameStore.getState().setSelectedBuilding(null)
+        useGameStore.getState().setCurrentDistrict('town_square')
         setTimeout(() => {
           setIsTransitioning(false)
         }, 400)
@@ -406,6 +413,7 @@ export default function GameCanvas() {
     const onRiverModeChanged = (e: CustomEvent) => {
       const mode = e.detail?.mode || 'city'
       setViewMode(mode)
+      useGameStore.getState().setViewMode(mode)
       if (mode === 'river') {
         setSelectedLandmarkInfo(null)
       }
@@ -417,6 +425,9 @@ export default function GameCanvas() {
       setTimeout(() => {
         cityManagerRef.current?.enterStadiumArea()
         setViewMode('stadium')
+        useGameStore.getState().setViewMode('stadium')
+        useGameStore.getState().setSelectedBuilding('sports_stadium')
+        useGameStore.getState().setCurrentDistrict('Kawasan Olahraga')
         setTimeout(() => {
           setIsTransitioning(false)
         }, 400)
@@ -429,6 +440,9 @@ export default function GameCanvas() {
       setTimeout(() => {
         cityManagerRef.current?.exitStadiumArea()
         setViewMode('city')
+        useGameStore.getState().setViewMode('city')
+        useGameStore.getState().setSelectedBuilding(null)
+        useGameStore.getState().setCurrentDistrict('town_square')
         setTimeout(() => {
           setIsTransitioning(false)
         }, 400)
@@ -438,6 +452,7 @@ export default function GameCanvas() {
     const onStadiumModeChanged = (e: CustomEvent) => {
       const mode = e.detail?.mode || 'city'
       setViewMode(mode)
+      useGameStore.getState().setViewMode(mode)
       if (mode === 'stadium') {
         setSelectedLandmarkInfo(null)
       }
@@ -1065,8 +1080,8 @@ export default function GameCanvas() {
       {/* ============================================================ */}
       {viewMode === 'river' && (
         <div className="absolute bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto font-sans flex flex-col items-center gap-2 w-full max-w-sm px-3">
-          {/* Active Auto-Fishing Notification Badge */}
-          {isAutoFishing && (
+          {/* Active Auto-Fishing Notification Badge (Hidden when caught modal displays to prevent button collisions) */}
+          {isAutoFishing && fishingState !== 'caught' && (
             <div className="flex items-center space-x-2.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-xl border border-white/30 animate-pulse font-sans">
               <span className="text-sm sm:text-base animate-spin">⚡</span>
               <span className="text-xs sm:text-sm font-black tracking-wide">

@@ -879,6 +879,9 @@ export class City3DManager {
   constructor(container: HTMLElement, options?: City3DOptions) {
     this.container = container;
     this.onCameraModeChange = options?.onCameraModeChange;
+    if (typeof window !== 'undefined') {
+      (window as any).__city3DManager = this;
+    }
     this.init();
   }
 
@@ -4256,7 +4259,7 @@ private setupAirplanes() {
     } else if (this.activePointers.size === 1) {
       const remaining = Array.from(this.activePointers.values())[0];
       this.pointerStart = { x: remaining.x, y: remaining.y };
-      this.isPanning = false;
+      this.isPanning = e ? (e.pointerType === 'touch' || e.button === 2 || e.shiftKey) : false;
     }
   };
 
@@ -5309,6 +5312,9 @@ private setupAirplanes() {
   public destroy() {
     this.isDestroyed = true;
     cancelAnimationFrame(this.reqId);
+    if (typeof window !== 'undefined' && (window as any).__city3DManager === this) {
+      (window as any).__city3DManager = null;
+    }
 
     this.unsubscribeCitizen?.();
     this.unsubscribeGameStore?.();
