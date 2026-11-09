@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { useCitizenStore } from '@/lib/stores/useCitizenStore'
 import { useUIStore } from '@/lib/stores/useUIStore'
+import { useGameStore } from '@/lib/stores/useGameStore'
 
 interface PhotoStudioModalProps {
   isOpen: boolean
@@ -34,6 +35,8 @@ type POVPreset = 'selfie' | 'normal' | 'drone' | 'wide'
 export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalProps) {
   const profile = useCitizenStore((s) => s.profile)
   const addNotification = useUIStore((s) => s.addNotification)
+  const selectedBuilding = useGameStore((s) => s.selectedBuilding)
+  const currentDistrict = useGameStore((s) => s.currentDistrict)
 
   const [activePOV, setActivePOV] = useState<POVPreset>('normal')
   const [orbitAngle, setOrbitAngle] = useState(135)
@@ -190,14 +193,47 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
         photoHeight
       )
 
-      // 3. Top Stamp Banner
-      ctx.fillStyle = 'rgba(52, 59, 53, 0.7)'
+      // Determine dynamic location based on selectedBuilding & currentDistrict
+      let locationBadge = '🏛️ ALUN-ALUN TUGU'
+      let locationSubtitle = 'Alun-Alun Pusat Kota'
+      let locationName = 'Alun-Alun Tugu'
+
+      if (selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam') {
+        locationBadge = '🎣 DERMAGA SUNGAI KALI NETIZEN'
+        locationSubtitle = 'Dermaga Pancing Sungai Kali Netizen'
+        locationName = 'Sungai Kali Netizen'
+      } else if (selectedBuilding === 'sports_stadium') {
+        locationBadge = '⚽ STADION GELORA NETIZEN'
+        locationSubtitle = 'Stadion Gelora Netizen'
+        locationName = 'Stadion Gelora Netizen'
+      } else if (selectedBuilding === 'investor_tower' || currentDistrict === 'Distrik Investor') {
+        locationBadge = '🏢 MENARA INVESTOR'
+        locationSubtitle = 'Pusat Bisnis Menara Investor'
+        locationName = 'Menara Investor'
+      } else if (selectedBuilding === 'city_hall') {
+        locationBadge = '🏛️ BALAI KOTA NETIZEN'
+        locationSubtitle = 'Balai Kota Netizen'
+        locationName = 'Balai Kota'
+      } else if (selectedBuilding === 'monument' || currentDistrict === 'town_square' || currentDistrict === 'Pusat Kota') {
+        locationBadge = '🏛️ ALUN-ALUN TUGU'
+        locationSubtitle = 'Alun-Alun Pusat Kota'
+        locationName = 'Alun-Alun Tugu'
+      } else if (currentDistrict) {
+        locationBadge = `🏙️ ${currentDistrict.toUpperCase()}`
+        locationSubtitle = `${currentDistrict} • NetizenCity`
+        locationName = currentDistrict
+      }
+
+      // 3. Top Stamp Banner (Dynamically sized to text width)
+      ctx.font = 'bold 13px sans-serif'
+      const badgeTextWidth = ctx.measureText(locationBadge).width
+      const bannerWidth = Math.max(180, badgeTextWidth + 32)
+      ctx.fillStyle = 'rgba(52, 59, 53, 0.78)'
       ctx.beginPath()
-      ctx.roundRect(pad + 16, pad + 16, 220, 34, 8)
+      ctx.roundRect(pad + 16, pad + 16, bannerWidth, 34, 8)
       ctx.fill()
       ctx.fillStyle = '#FFFFFF'
-      ctx.font = 'bold 13px sans-serif'
-      ctx.fillText('🏛️ ALUN-ALUN TUGU', pad + 28, pad + 38)
+      ctx.fillText(locationBadge, pad + 28, pad + 38)
 
       // 4. Polaroid Footer
       const footerY = pad + photoHeight + 36
@@ -221,7 +257,7 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
       })
       ctx.fillStyle = '#78634B'
       ctx.font = '12px sans-serif'
-      ctx.fillText(`📅 ${dateStr} • Alun-Alun Pusat Kota`, pad + 10, footerY + 54)
+      ctx.fillText(`📅 ${dateStr} • ${locationSubtitle}`, pad + 10, footerY + 54)
 
       // Cute Mascot Stamp on right side of footer
       ctx.font = '36px sans-serif'
@@ -236,7 +272,7 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
 
       addNotification({
         title: 'Foto Berhasil Diambil! 📸',
-        message: 'Foto Polaroid Alun-Alun siap diunduh!',
+        message: `Foto Polaroid ${locationName} siap diunduh!`,
         type: 'success',
       })
     }, 250)

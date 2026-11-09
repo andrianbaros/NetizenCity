@@ -97,6 +97,7 @@ export interface LocalDBSchema {
     item_id: string
     is_equipped: boolean
     acquired_at: string
+    metadata?: any
   }>
   daily_login_rewards: Array<{
     id: string
@@ -900,6 +901,151 @@ export function buyShopItem(citizenId: string, itemId: string) {
 
   writeLocalDB(db)
   return { success: true, item, newBalance: wallet.balance }
+}
+
+export function getCitizenInventoryDetailed(citizenId: string) {
+  const db = readLocalDB()
+  const list = db.inventory.filter((inv) => inv.citizen_id === citizenId)
+  return list.map((inv) => {
+    const item = db.items.find((it) => it.id === inv.item_id)
+    const meta = inv.metadata || {}
+    return {
+      id: inv.id,
+      citizenId: inv.citizen_id,
+      itemId: inv.item_id,
+      isEquipped: inv.is_equipped,
+      acquiredAt: inv.acquired_at,
+      name: meta.name || item?.name || inv.item_id,
+      category: meta.category || item?.category || 'other',
+      description: meta.description || item?.description || '',
+      icon: meta.icon || (meta.category === 'fish' ? '🐟' : '🎒'),
+      weight: meta.weight,
+      rarity: meta.rarity || item?.rarity || 'common',
+      sellPrice: meta.sellPrice ?? (item ? Math.round(item.price * 0.7) : 50),
+      quantity: meta.quantity || 1,
+      item: item
+        ? {
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            category: item.category as any,
+            price: item.price,
+            rarity: item.rarity as any,
+            spriteKey: item.sprite_key,
+            isAvailable: item.is_available,
+            isLimited: false,
+            availableFrom: null,
+            availableUntil: null,
+            createdAt: new Date().toISOString(),
+          }
+        : undefined,
+    }
+  })
+}
+
+export function addCaughtFishToInventory(
+  citizenId: string,
+  fish: {
+    name: string
+    weight: number
+    rarity: string
+    rewardCoins: number
+    color?: string
+  }
+) {
+  const db = readLocalDB()
+  const newId = 'fish-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6)
+  const itemKey = 'fish_' + fish.name.toLowerCase().replace(/[^a-z0-9]/g, '_')
+
+  const invEntry = {
+    id: newId,
+    citizen_id: citizenId,
+    item_id: itemKey,
+    is_equipped: false,
+    acquired_at: new Date().toISOString(),
+    metadata: {
+      name: fish.name,
+      category: 'fish',
+      weight: fish.weight,
+      rarity: fish.rarity,
+      sellPrice: fish.rewardCoins,
+      color: fish.color,
+      icon: '🐟',
+      description: `Tangkapan segar dari Sungai Kali Netizen dengan bobot ${fish.weight} kg.`,
+    },
+  }
+
+  db.inventory.unshift(invEntry)
+  writeLocalDB(db)
+
+  return {
+    id: invEntry.id,
+    citizenId: invEntry.citizen_id,
+    itemId: invEntry.item_id,
+    isEquipped: false,
+    acquiredAt: invEntry.acquired_at,
+    name: fish.name,
+    category: 'fish' as const,
+    weight: fish.weight,
+    rarity: fish.rarity as any,
+    sellPrice: fish.rewardCoins,
+    icon: '🐟',
+    description: invEntry.metadata.description,
+  }
+}
+
+export function sellInventoryItem(citizenId: string, inventoryId: string) {
+  const db = readLocalDB()
+  const index = db.inventory.findIndex(
+    (inv) => inv.id === inventoryId && inv.citizen_id === citizenId
+  )
+  if (index === -1) {
+    return { success: false, error: 'Barang tidak ditemukan di inventori' }
+  }
+
+  const inv = db.inventory[index]
+  const meta = inv.metadata || {}
+  const item = db.items.find((it) => it.id === inv.item_id)
+
+  const sellPrice =
+    typeof meta.sellPrice === 'number'
+      ? meta.sellPrice
+      : item
+      ? Math.round(item.price * 0.7)
+      : 50
+
+  const itemName = meta.name || item?.name || 'Barang'
+
+  // Remove from inventory
+  db.inventory.splice(index, 1)
+
+  // Credit wallet
+  const wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (wallet) {
+    wallet.balance += sellPrice
+    wallet.total_earned += sellPrice
+    wallet.updated_at = new Date().toISOString()
+
+    db.transactions.unshift({
+      id: 'tx-' + Math.random().toString(36).substring(2, 9),
+      citizen_id: citizenId,
+      type: 'earn',
+      amount: sellPrice,
+      previous_balance: wallet.balance - sellPrice,
+      new_balance: wallet.balance,
+      description: `Menjual ${itemName} ke Pasar Kota`,
+      reference_type: 'inventory_sale',
+      reference_id: inventoryId,
+      created_at: new Date().toISOString(),
+    })
+  }
+
+  writeLocalDB(db)
+  return {
+    success: true,
+    soldItem: { id: inventoryId, name: itemName, sellPrice },
+    newBalance: wallet ? wallet.balance : 0,
+  }
 }
 
 export function castVote(citizenId: string, voteId: string, optionId: number) {

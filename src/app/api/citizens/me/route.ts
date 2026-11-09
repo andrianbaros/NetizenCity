@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import {
   getActiveCitizen,
   getCitizenWallet,
-  readLocalDB,
+  getCitizenInventoryDetailed,
 } from '@/lib/db/localDb'
 
 export async function GET(request: NextRequest) {
@@ -17,8 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   const wallet = getCitizenWallet(citizen.id)
-  const db = readLocalDB()
-  const inventory = db.inventory.filter((inv) => inv.citizen_id === citizen.id)
+  const inventory = getCitizenInventoryDetailed(citizen.id)
 
   return NextResponse.json({
     citizen,

@@ -2280,13 +2280,32 @@ export class City3DManager {
   public castFishingLine(targetWaterPos?: THREE.Vector3) {
     if (this.fishingState !== 'idle') return;
 
-    // 1. Determine landing spot on river water surface
-    const targetX = targetWaterPos
-      ? THREE.MathUtils.clamp(targetWaterPos.x, -7.5, 7.5)
-      : (Math.random() - 0.5) * 4;
-    const targetZ = targetWaterPos
-      ? THREE.MathUtils.clamp(targetWaterPos.z, -14, -6.5)
-      : -8.5 - Math.random() * 3;
+    // 1. Determine landing spot on river water surface (GUARANTEED OPEN WATER - NEVER ON PIER WOOD OR SHORE)
+    // Pier bounds: X [-2.85, 2.85], Z [-9.8, 2.5]
+    let targetX = 0;
+    let targetZ = -13.0;
+
+    if (targetWaterPos) {
+      const isSideWater = Math.abs(targetWaterPos.x) >= 3.0 && targetWaterPos.z <= 0.0 && targetWaterPos.z >= -25.0;
+      const isFrontWater = targetWaterPos.z <= -10.2 && Math.abs(targetWaterPos.x) <= 25.0;
+
+      if (isSideWater) {
+        targetX = THREE.MathUtils.clamp(targetWaterPos.x, -22.0, 22.0);
+        targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -22.0, -0.8);
+      } else if (isFrontWater) {
+        targetX = THREE.MathUtils.clamp(targetWaterPos.x, -22.0, 22.0);
+        targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -25.0, -10.5);
+      } else {
+        // Tap fell on pier wood or grass shore! Safely project out into open river water in front of pier
+        targetX = THREE.MathUtils.clamp(this.playerPos.x + (Math.random() - 0.5) * 4.0, -6.5, 6.5);
+        targetZ = -12.0 - Math.random() * 3.5;
+      }
+    } else {
+      // Cast forward into the open river in front of pier (pier ends at z = -9.55)
+      targetX = THREE.MathUtils.clamp(this.playerPos.x + (Math.random() - 0.5) * 4.0, -6.5, 6.5);
+      targetZ = -12.5 - Math.random() * 3.5;
+    }
+
     this.targetBobberPos.set(targetX, -0.05, targetZ);
 
     // 2. Rotate avatar to face the exact water target direction!
@@ -3276,8 +3295,21 @@ private setupAirplanes() {
         const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         const target = new THREE.Vector3();
         if (this.raycaster.ray.intersectPlane(plane, target)) {
-          // If tap in the river water area (z < -6.0) and fishing state is idle, directly cast!
-          if (target.z < -6.0 && this.fishingState === 'idle') {
+          // If fish is biting or reeling, tapping screen also reels it in!
+          if (this.fishingState === 'bite' || this.fishingState === 'reeling') {
+            this.reelFishingTap();
+            this.isPointerDown = false;
+            this.isPanning = false;
+            return;
+          }
+
+          // Differentiate between open water vs pier deck vs shore
+          const isPier = Math.abs(target.x) <= 2.85 && target.z >= -9.8 && target.z <= 2.5;
+          const isShore = target.z > 0.0;
+          const isWater = !isPier && !isShore && (target.z < -9.8 || Math.abs(target.x) > 2.85);
+
+          // If tap in the river water area and fishing state is idle, directly cast!
+          if (isWater && this.fishingState === 'idle') {
             this.castFishingLine(target);
             this.isPointerDown = false;
             this.isPanning = false;

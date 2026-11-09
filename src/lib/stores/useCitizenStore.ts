@@ -15,6 +15,8 @@ interface CitizenState {
   setWallet: (wallet: Wallet | null) => void
   updateBalance: (balance: number) => void
   setInventory: (inventory: InventoryItem[]) => void
+  addToInventory: (item: InventoryItem) => void
+  removeFromInventory: (inventoryId: string) => void
   updateAvatar: (avatarConfig: AvatarConfig) => void
   setLoading: (loading: boolean) => void
   reset: () => void
@@ -32,6 +34,14 @@ export const useCitizenStore = create<CitizenState>((set) => ({
       wallet: state.wallet ? { ...state.wallet, balance } : null,
     })),
   setInventory: (inventory) => set({ inventory }),
+  addToInventory: (item) =>
+    set((state) => ({
+      inventory: [item, ...state.inventory],
+    })),
+  removeFromInventory: (inventoryId) =>
+    set((state) => ({
+      inventory: state.inventory.filter((inv) => inv.id !== inventoryId),
+    })),
   updateAvatar: (avatarConfig) =>
     set((state) => ({
       profile: state.profile

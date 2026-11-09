@@ -67,6 +67,14 @@ export interface InventoryItem {
   item?: Item
   isEquipped: boolean
   acquiredAt: string
+  name?: string
+  category?: 'fish' | 'fashion' | 'crop' | 'other' | ItemCategory
+  description?: string
+  icon?: string
+  weight?: number // for fish (e.g. 3.45 kg)
+  rarity?: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'Biasa' | 'Langka' | 'Legendaris'
+  sellPrice?: number
+  quantity?: number
 }
 
 /** Price display helper */

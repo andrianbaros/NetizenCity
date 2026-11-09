@@ -407,12 +407,48 @@ export default function GameCanvas() {
       if (fish) {
         const wallet = useCitizenStore.getState().wallet
         const updateBalance = useCitizenStore.getState().updateBalance
+        const addToInventory = useCitizenStore.getState().addToInventory
+        const setInventory = useCitizenStore.getState().setInventory
+        const profile = useCitizenStore.getState().profile
         const addNotification = useUIStore.getState().addNotification
+
         const cur = wallet?.balance ?? 500
         updateBalance(cur + fish.rewardCoins)
+
+        // Optimistically add to citizen backpack inventory
+        const tempId = 'fish-' + Date.now()
+        addToInventory({
+          id: tempId,
+          citizenId: profile?.id || 'citizen',
+          itemId: 'fish_' + fish.name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+          name: fish.name,
+          category: 'fish',
+          weight: fish.weight,
+          rarity: fish.rarity as any,
+          sellPrice: fish.rewardCoins,
+          icon: '🐟',
+          isEquipped: false,
+          acquiredAt: new Date().toISOString(),
+          description: `Tangkapan segar dari Sungai Kali Netizen (${fish.weight} kg).`,
+        })
+
+        // Persist fish catch to local DB / API
+        fetch('/api/inventory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add_fish', fish }),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.inventory) {
+              setInventory(data.inventory)
+            }
+          })
+          .catch(() => {})
+
         addNotification({
           title: `Berhasil Menangkap ${fish.name}! 🎣`,
-          message: `Berat: ${fish.weight} kg • +${fish.rewardCoins} Netizen Coins masuk ke dompetmu!`,
+          message: `Berat: ${fish.weight} kg • Disimpan ke Tas Barang (+${fish.rewardCoins} Netizen Coins)!`,
           type: 'success',
         })
       }

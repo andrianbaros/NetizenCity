@@ -29,6 +29,7 @@ import {
   Fish,
   Sprout,
   Trophy,
+  Backpack,
 } from 'lucide-react'
 import { InstagramIcon } from '@/components/ui/InstagramIcon'
 import { useGameStore } from '@/lib/stores/useGameStore'
@@ -47,6 +48,7 @@ import FishingModal from './FishingModal'
 import FreekickModal from './FreekickModal'
 import GardenModal from './GardenModal'
 import InvestorModal from './InvestorModal'
+import InventoryModal from './InventoryModal'
 import BGMPlayer from './BGMPlayer'
 
 export default function GameHUD() {
@@ -58,6 +60,7 @@ export default function GameHUD() {
 
   const wallet = useCitizenStore((s) => s.wallet)
   const profile = useCitizenStore((s) => s.profile)
+  const inventory = useCitizenStore((s) => s.inventory)
   const setProfile = useCitizenStore((s) => s.setProfile)
   const setWallet = useCitizenStore((s) => s.setWallet)
   const setInventory = useCitizenStore((s) => s.setInventory)
@@ -368,6 +371,20 @@ export default function GameHUD() {
 
           <button
             type="button"
+            onClick={() => openModal('inventory')}
+            title="Tas Barang Warga (Inventori)"
+            className="relative p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0"
+          >
+            <Backpack className="w-3.5 h-3.5 text-[#668B65]" />
+            {inventory.length > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] bg-[#668B65] text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 shadow-xs">
+                {inventory.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
             onClick={() => openModal('mall')}
             title="Mall Busana"
             className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0"
@@ -512,6 +529,18 @@ export default function GameHUD() {
                 >
                   <Camera className="w-4 h-4 text-amber-600" />
                   <span>Foto Bersama Alun-Alun</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('inventory')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                >
+                  <Backpack className="w-4 h-4 text-[#668B65]" />
+                  <span>Tas Barang Warga ({inventory.length})</span>
                 </button>
 
                 <button
@@ -705,6 +734,10 @@ export default function GameHUD() {
       />
       <InvestorModal
         isOpen={activeModal === 'investor'}
+        onClose={closeModal}
+      />
+      <InventoryModal
+        isOpen={activeModal === 'inventory'}
         onClose={closeModal}
       />
     </div>
