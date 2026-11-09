@@ -63,17 +63,28 @@ export const useUIStore = create<UIState>((set) => ({
     set((state) => ({ isMiniMapExpanded: !state.isMiniMapExpanded })),
   setMobileControlsVisible: (isMobileControlsVisible) =>
     set({ isMobileControlsVisible }),
-  addNotification: (notification) =>
+  addNotification: (notification) => {
+    const id = Math.random().toString(36).substring(2, 9)
     set((state) => ({
       notifications: [
-        ...state.notifications,
+        ...state.notifications.slice(-3),
         {
           ...notification,
-          id: Math.random().toString(36).substring(2, 9),
+          id,
           timestamp: Date.now(),
         },
       ],
-    })),
+    }))
+
+    // Automatic dismissal backup in store
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        set((state) => ({
+          notifications: state.notifications.filter((n) => n.id !== id),
+        }))
+      }, 10200)
+    }
+  },
   removeNotification: (id) =>
     set((state) => ({
       notifications: state.notifications.filter((n) => n.id !== id),

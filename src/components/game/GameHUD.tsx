@@ -30,6 +30,7 @@ import {
   Sprout,
   Trophy,
   Backpack,
+  CheckCircle2,
 } from 'lucide-react'
 import { InstagramIcon } from '@/components/ui/InstagramIcon'
 import { useGameStore } from '@/lib/stores/useGameStore'
@@ -671,25 +672,15 @@ export default function GameHUD() {
       </header>
 
       {/* ============================================================ */}
-      {/* NOTIFICATIONS CONTAINER                                      */}
+      {/* NOTIFICATIONS CONTAINER (Otomatis Hilang Fadeout 10 Detik)   */}
       {/* ============================================================ */}
-      <div className="pointer-events-auto fixed top-16 right-3 sm:right-5 z-40 max-w-xs space-y-2">
+      <div className="pointer-events-auto fixed top-16 right-3 sm:right-5 z-40 max-w-xs space-y-2 font-sans">
         {notifications.map((n) => (
-          <div
+          <NotificationToast
             key={n.id}
-            onClick={() => removeNotification(n.id)}
-            className="p-3 rounded-xl bg-[#F7F4E9] border border-[#D8CEBE] shadow-[0_4px_16px_rgba(52,59,53,0.12)] cursor-pointer transition-all hover:scale-102 flex items-start space-x-2.5 text-xs font-sans"
-          >
-            <div className="w-6 h-6 rounded-md bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#78634B] shrink-0 mt-0.5">
-              <Award className="w-3.5 h-3.5" />
-            </div>
-            <div>
-              <h5 className="font-heading font-bold text-[#343B35] text-xs">{n.title}</h5>
-              <p className="text-[#78634B] text-[11px] mt-0.5 leading-snug">
-                {n.message}
-              </p>
-            </div>
-          </div>
+            notification={n}
+            onDismiss={removeNotification}
+          />
         ))}
       </div>
 
@@ -736,6 +727,94 @@ export default function GameHUD() {
         isOpen={activeModal === 'inventory'}
         onClose={closeModal}
       />
+    </div>
+  )
+}
+
+function NotificationToast({
+  notification,
+  onDismiss,
+}: {
+  notification: { id: string; title: string; message: string; type: string }
+  onDismiss: (id: string) => void
+}) {
+  const [isFadingOut, setIsFadingOut] = useState(false)
+
+  useEffect(() => {
+    // Start smooth fadeout at 9.2s, dismiss at 10.0s (10 detik menghilang otomatis)
+    const fadeTimer = setTimeout(() => {
+      setIsFadingOut(true)
+    }, 9200)
+
+    const removeTimer = setTimeout(() => {
+      onDismiss(notification.id)
+    }, 10000)
+
+    return () => {
+      clearTimeout(fadeTimer)
+      clearTimeout(removeTimer)
+    }
+  }, [notification.id, onDismiss])
+
+  const handleClick = () => {
+    setIsFadingOut(true)
+    setTimeout(() => {
+      onDismiss(notification.id)
+    }, 280)
+  }
+
+  const isFish =
+    notification.title.toLowerCase().includes('ikan') ||
+    notification.message.toLowerCase().includes('ikan') ||
+    notification.title.toLowerCase().includes('menangkap')
+
+  return (
+    <div
+      onClick={handleClick}
+      className={`relative overflow-hidden p-3 rounded-2xl bg-[#F7F4E9]/95 backdrop-blur-md border border-[#D8CEBE] shadow-[0_6px_20px_rgba(52,59,53,0.15)] cursor-pointer flex items-start space-x-2.5 text-xs font-sans transition-all duration-700 ease-out select-none ${
+        isFadingOut
+          ? 'opacity-0 translate-x-10 scale-95 pointer-events-none'
+          : 'opacity-100 translate-x-0 scale-100 animate-in fade-in slide-in-from-right-6 duration-300'
+      }`}
+      title="Klik untuk menutup sekarang (Otomatis hilang dalam 10 detik)"
+    >
+      <div className="w-7 h-7 rounded-lg bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-sm shrink-0 mt-0.5 shadow-inner">
+        {isFish ? (
+          '🐟'
+        ) : notification.type === 'success' ? (
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        ) : (
+          <Award className="w-3.5 h-3.5 text-[#668B65]" />
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1 pr-1">
+        <h5 className="font-heading font-extrabold text-[#343B35] text-xs leading-snug">
+          {notification.title}
+        </h5>
+        <p className="text-[#78634B] text-[11px] mt-0.5 leading-snug">
+          {notification.message}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          handleClick()
+        }}
+        className="text-[#78634B] hover:text-[#343B35] p-0.5 rounded cursor-pointer shrink-0 -mr-1 -mt-0.5"
+      >
+        <X className="w-3 h-3" />
+      </button>
+
+      {/* 10-Second Countdown Line */}
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#D8CEBE]/40 overflow-hidden">
+        <div
+          className="h-full bg-[#668B65]/70 transition-all duration-[10000ms] ease-linear"
+          style={{ width: isFadingOut ? '0%' : '100%' }}
+        />
+      </div>
     </div>
   )
 }
