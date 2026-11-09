@@ -700,13 +700,13 @@ export class City3DManager {
     },
     {
       id: 'investor_tower',
-      name: 'Menara Investor (103 Investor Kota)',
-      district: 'Distrik Investor',
+      name: 'Monumen Investor Kota (103 Investor)',
+      district: 'Monumen Investor Kota',
       type: 'investor',
       position: new THREE.Vector3(TOWER.x, 0, TOWER.z),
       cameraTarget: new THREE.Vector3(TOWER.x, 10, TOWER.z),
-      cameraPos: new THREE.Vector3(TOWER.x + 20, 18, TOWER.z + 22),
-      radius: 10,
+      cameraPos: new THREE.Vector3(TOWER.x + 18, 16, TOWER.z + 20),
+      radius: 8,
     },
     {
       id: 'hospital',
@@ -3593,9 +3593,18 @@ private setupAirplanes() {
   private registerInteractiveLandmarks() {
     this.interactiveMeshes = [];
     this.landmarks.forEach((lm) => {
-      // Cylinder hitbox wrapping each landmark - generous sizing for effortless tapping on mobile
-      const radius = lm.id === 'monument' ? 38.0 : Math.max(lm.radius * 1.3, 14.0);
-      const height = lm.id === 'monument' ? 34.0 : Math.max(22, radius * 1.2);
+      // Cylinder hitbox wrapping each landmark - accurately separating monument (X=0) and investor tower (X=22)
+      let radius = Math.max(lm.radius * 1.2, 12.0);
+      let height = Math.max(20, radius * 1.2);
+
+      if (lm.id === 'monument') {
+        radius = 15.0; // Central fountain park radius
+        height = 36.0;
+      } else if (lm.id === 'investor_tower') {
+        radius = 8.5; // Monumen Investor tower radius
+        height = 28.0;
+      }
+
       const geo = new THREE.CylinderGeometry(radius, radius, height, 16);
       const mat = new THREE.MeshBasicMaterial({ visible: false });
       const hitBox = new THREE.Mesh(geo, mat);
@@ -4192,20 +4201,14 @@ private setupAirplanes() {
         const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         const groundHit = new THREE.Vector3();
         if (this.raycaster.ray.intersectPlane(groundPlane, groundHit)) {
-          // Check proximity to any landmark, prioritizing monument (Tugu)
-          const monumentLm = this.landmarks.find((lm) => lm.id === 'monument');
-          if (monumentLm && groundHit.distanceTo(monumentLm.position) <= 38.0) {
-            targetLandmark = monumentLm;
-          } else {
-            // Find closest landmark within its generous radius
-            let closestDist = Infinity;
-            for (const lm of this.landmarks) {
-              const d = groundHit.distanceTo(lm.position);
-              const maxDist = lm.id === 'monument' ? 38.0 : Math.max(lm.radius * 1.5, 16.0);
-              if (d <= maxDist && d < closestDist) {
-                closestDist = d;
-                targetLandmark = lm;
-              }
+          // Find closest landmark within its proper radius
+          let closestDist = Infinity;
+          for (const lm of this.landmarks) {
+            const d = groundHit.distanceTo(lm.position);
+            const maxDist = lm.id === 'monument' ? 15.0 : lm.id === 'investor_tower' ? 10.0 : Math.max(lm.radius * 1.3, 12.0);
+            if (d <= maxDist && d < closestDist) {
+              closestDist = d;
+              targetLandmark = lm;
             }
           }
         }

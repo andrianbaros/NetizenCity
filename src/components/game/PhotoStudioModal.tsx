@@ -41,7 +41,7 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
 
   const isRiver = viewMode === 'river' || selectedBuilding === 'river_spot' || currentDistrict === 'Kawasan Alam'
   const isStadium = viewMode === 'stadium' || selectedBuilding === 'sports_stadium' || currentDistrict === 'Kawasan Olahraga'
-  const isInvestor = selectedBuilding === 'investor_tower' || currentDistrict === 'Distrik Investor'
+  const isInvestor = selectedBuilding === 'investor_tower' || currentDistrict === 'Monumen Investor Kota' || currentDistrict === 'Distrik Investor'
   const isCityHall = selectedBuilding === 'city_hall'
   const isTugu = viewMode === 'tugu' || selectedBuilding === 'monument' || currentDistrict === 'Pusat Kota'
 
@@ -50,7 +50,7 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
     : isStadium
     ? 'Stadion Gelora Netizen'
     : isInvestor
-    ? 'Menara Investor'
+    ? 'Monumen Investor Kota'
     : isCityHall
     ? 'Balai Kota Netizen'
     : isTugu
@@ -225,10 +225,10 @@ export default function PhotoStudioModal({ isOpen, onClose }: PhotoStudioModalPr
         locationBadge = '⚽ STADION GELORA NETIZEN'
         locationSubtitle = 'Lapangan Utama Stadion Gelora Netizen'
         locationName = 'Stadion Gelora Netizen'
-      } else if (selectedBuilding === 'investor_tower' || currentDistrict === 'Distrik Investor') {
-        locationBadge = '🏢 MENARA INVESTOR'
-        locationSubtitle = 'Pusat Bisnis Menara Investor'
-        locationName = 'Menara Investor'
+      } else if (selectedBuilding === 'investor_tower' || currentDistrict === 'Monumen Investor Kota' || currentDistrict === 'Distrik Investor') {
+        locationBadge = '🏢 MONUMEN INVESTOR KOTA'
+        locationSubtitle = 'Monumen Investor Kota • 103 Pendukung'
+        locationName = 'Monumen Investor Kota'
       } else if (selectedBuilding === 'city_hall') {
         locationBadge = '🏛️ BALAI KOTA NETIZEN'
         locationSubtitle = 'Balai Kota Netizen'

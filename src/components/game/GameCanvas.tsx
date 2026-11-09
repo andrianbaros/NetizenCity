@@ -798,6 +798,18 @@ export default function GameCanvas() {
 
                   <button
                     type="button"
+                    onClick={() => handleFlyTo('investor_tower')}
+                    className="flex items-center space-x-2 text-left p-1.5 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
+                  >
+                    <Building2 className="w-4 h-4 text-purple-600 shrink-0" />
+                    <div>
+                      <div className="font-semibold text-xs text-purple-700">Monumen Investor Kota</div>
+                      <div className="text-[10px] text-[#78634B]">103 Investor Kota &bull; Hall of Fame</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => handleFlyTo('city_hall')}
                     className="flex items-center space-x-2 text-left p-1.5 rounded-lg text-[#343B35] hover:bg-[#EFE9D8] transition-colors cursor-pointer"
                   >

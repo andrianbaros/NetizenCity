@@ -122,11 +122,11 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Menara Investor Netizen City (103 Investor)"
+      title="Monumen Investor Kota Netizen (103 Investor)"
       maxWidth="md"
     >
       <div className="space-y-4 font-sans text-[#343B35]">
-        {/* Banner Menara Spiral 11 Lantai */}
+        {/* Banner Monumen Spiral 11 Lantai */}
         <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-950 text-white rounded-2xl p-4 flex items-center justify-between shadow-md">
           <div className="flex items-center space-x-3.5">
             <div className="w-12 h-12 rounded-xl bg-purple-500/30 border border-purple-400/40 flex items-center justify-center text-3xl shadow-inner">
@@ -135,10 +135,10 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
             <div>
               <span className="text-[10px] font-extrabold text-amber-300 uppercase tracking-widest flex items-center">
                 <Crown className="w-3 h-3 mr-1" />
-                Distrik Investor (Day 8)
+                Monumen Investor Kota
               </span>
               <h3 className="text-sm font-extrabold text-white mt-0.5">
-                Menara Spiral 11 Lantai & Halo Emas
+                Monumen Spiral 11 Lantai &amp; Halo Emas
               </h3>
               <p className="text-xs text-purple-200 mt-0.5">
                 100 Jendela menyala dan 3 Crown Windows emas untuk pendukung kota.

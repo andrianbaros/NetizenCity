@@ -173,11 +173,11 @@ export default function BuildingModal() {
       actionType: 'inspect',
     },
     investor_tower: {
-      title: 'MENARA INVESTOR (103 INVESTOR KOTA)',
+      title: 'MONUMEN INVESTOR KOTA (103 INVESTOR)',
       icon: <Building2 className="w-6 h-6 text-purple-400" />,
-      district: 'Distrik Investor (Day 8)',
-      desc: 'Menara spiral 11 lantai berlapis opal dengan 100 jendela menyala untuk para investor, 3 Crown Windows emas di puncak, cincin halo terapung, dan sign neon "TERIMA KASIH, INVESTOR KOTA".',
-      actionName: 'Buka Hall of Fame & Trakteer ☕',
+      district: 'Monumen Investor Kota',
+      desc: 'Monumen megah 11 lantai berlapis opal dengan 100 jendela menyala untuk para investor, 3 Crown Windows emas di puncak, cincin halo terapung, dan sign neon "TERIMA KASIH, INVESTOR KOTA".',
+      actionName: 'Buka Hall of Fame Investor & Trakteer ☕',
       actionType: 'investor',
     },
     hospital: {
