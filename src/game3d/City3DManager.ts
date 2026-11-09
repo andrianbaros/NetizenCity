@@ -5285,6 +5285,12 @@ private setupAirplanes() {
       if (this.river) {
         this.river.build(1, elapsed);
       }
+      if (this.mtn) {
+        this.mtn.build(1, 1, elapsed);
+      }
+      if (this.beach) {
+        this.beach.build(1, 1, 1, elapsed);
+      }
       if (this.lab) {
         this.lab.update(elapsed);
       }

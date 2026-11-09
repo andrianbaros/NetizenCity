@@ -32,7 +32,7 @@ function revealed(m, key) {
 function waterTex(base = '#93D0EC', seed = 8) {
   const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d'), R = mulberry(seed);
   x.fillStyle = base; x.fillRect(0, 0, 64, 256);
-  for (let i = 0; i < 10; i++) { x.fillStyle = i % 3 ? 'rgba(255,255,255,.8)' : 'rgba(214,241,251,.95)'; const X = R() * 60, w = 2 + R() * 3, y0 = R() * 256, L = 50 + R() * 150; x.fillRect(X, y0, w, L); if (y0 + L > 256) x.fillRect(X, 0, w, y0 + L - 256); }
+  for (let i = 0; i < 14; i++) { x.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,.95)' : i % 3 === 1 ? 'rgba(214,245,255,.85)' : 'rgba(165,225,248,.75)'; const X = R() * 58, w = 2 + R() * 4, y0 = R() * 256, L = 40 + R() * 160; x.fillRect(X, y0, w, L); if (y0 + L > 256) x.fillRect(X, 0, w, y0 + L - 256); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t;
 }
 
@@ -158,6 +158,15 @@ export function makeMountain() {
   const mtn = { root, bands, clouds, trail, cliff, water, stream, fall, fallM, wt, pool, poolW, foam, rim, pebbles };
   // build: k runs 0..1 over the layers; w: the waterfall (0..1)
   mtn.build = (k, w, t) => {
+    if (k >= 1 && w >= 1) {
+      clouds.rotation.y = t * .02;
+      foam.children.forEach((f, i) => f.scale.setScalar(.8 + .3 * Math.sin(t * 9 + i * 1.7)));
+      wt.offset.y = (t * 1.6) % 1000;
+      if (poolW) {
+        poolW.position.y = .08 + Math.sin(t * 2.5) * 0.015;
+      }
+      return;
+    }
     root.visible = k > 0;
     bands.forEach((b, i) => { const u = pop(k * (bands.length + 1.2), i, 1.15); b.visible = u > 0; b.scale.set(1, Math.max(.001, u), 1); });
     clouds.visible = k >= 1; clouds.children.forEach((c, i) => c.scale.setScalar(Math.max(.001, pop(k >= 1 ? 1 + (t % 1e3) : 0, 1 + 0 * i, .4))));
@@ -165,7 +174,7 @@ export function makeMountain() {
     const kt = clamp(k * 1.15 - .15); trail.visible = kt > .75; trail.scale.setScalar(1); cliff.visible = k > .25; cliff.scale.set(F, F * Math.max(.001, pop(k, .25, .4)), F);
     stream.visible = fall.visible = w > 0; stream.scale.set(1, 1, 1); fall.scale.y = Math.max(.001, eo(seg(w, .15, .7)));
     pool.visible = k > .3; poolW.scale.setScalar(Math.max(.001, eo(seg(w, .45, 1)))); foam.visible = w > .6; foam.children.forEach((f, i) => f.scale.setScalar(.8 + .3 * Math.sin(t * 9 + i * 1.7)));
-    wt.offset.y = t * 1.3;
+    wt.offset.y = (t * 1.6) % 1000;
   };
   return mtn;
 }
