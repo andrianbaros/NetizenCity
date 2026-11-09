@@ -108,7 +108,7 @@ const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), EU = new THREE.Euler
 function setM(m, i, x, y, z, ry, sx, sy, sz, rx = 0, rz = 0) { Q.setFromEuler(EU.set(rx, ry, rz, 'YXZ')); m.setMatrixAt(i, M4.compose(PV.set(x, y, z), Q, SV.set(sx, sy, sz))); }
 function instanced(geo, material, n, cols) {
   const m = new THREE.InstancedMesh(geo, material, Math.max(1, n)); m.castShadow = false; m.receiveShadow = false; m.frustumCulled = false;
-  if (cols) { const c = new THREE.Color(); cols.forEach((v, i) => m.setColorAt(i, c.set(v))); m.instanceColor.needsUpdate = true; }
+  if (cols && cols.length > 0) { const c = new THREE.Color(); cols.forEach((v, i) => m.setColorAt(i, c.set(v))); if (m.instanceColor) m.instanceColor.needsUpdate = true; }
   for (let i = 0; i < m.count; i++) m.setMatrixAt(i, M4.makeScale(0, 0, 0));
   return m;
 }
@@ -188,8 +188,8 @@ export function buildMetro(scene, C) {
   const poleM = mat('#EEE6F6'), headM = mat('#FFF4D8', { emissive: '#FFD58A', emissiveIntensity: 0 });
   const lampsOK = lamps.filter(([lx, lz]) => !nearRail(lx, lz) && !onRoad(lx, lz));
   const lpole = instanced(new THREE.CylinderGeometry(.05, .065, 2.3, 6).translate(0, 1.15, 0), poleM, lampsOK.length);
-  const lhead = instanced(new THREE.SphereGeometry(.16, 10, 8).translate(.32, 2.25, 0), headM, lamps.length);
-  const larm = instanced(new THREE.BoxGeometry(.4, .05, .05).translate(.16, 2.3, 0), poleM, lamps.length);
+  const lhead = instanced(new THREE.SphereGeometry(.16, 10, 8).translate(.32, 2.25, 0), headM, lampsOK.length);
+  const larm = instanced(new THREE.BoxGeometry(.4, .05, .05).translate(.16, 2.3, 0), poleM, lampsOK.length);
   scene.add(lpole, lhead, larm);
   city.lamps = lampsOK.map(([x, z, ax, side]) => ({ x, z, ry: ax === 'x' ? (side < 0 ? Math.PI / 2 : -Math.PI / 2) : (side < 0 ? 0 : Math.PI) }));
   const tpole = instanced(new THREE.CylinderGeometry(.05, .06, 2.4, 6).translate(0, 1.2, 0), mat('#7F7A86'), tl.length);
@@ -274,22 +274,20 @@ export function buildMetro(scene, C) {
   shopRow(-148, -100, 14.4, 3.6, 1); shopRow(-92, -70, 14.4, 3.6, 1);
   for (let i = shops.length - 1; i >= 0; i--) if (Math.abs(shops[i].z - 14.4) < .1 && shops[i].x > -118 && shops[i].x < -67) shops.splice(i, 1);
   const shopCollidesRoad = (s) => {
-    const hw = s.w / 2 + 0.6;
-    const hd = s.d / 2 + 0.6;
-    if (Math.abs(s.z - RAIL_Z) < hd + 1.8) return true;
+    if (s.z + s.d / 2 > RAIL_Z - 1.5 && s.z - s.d / 2 < RAIL_Z + 1.5) return true;
     for (const r of ROADS) {
-      if (r.ax === 'z') {
-        const minX = r.c - (r.w / 2 + SW + 0.6);
-        const maxX = r.c + (r.w / 2 + SW + 0.6);
-        const minZ = r.a0 - 1.0;
-        const maxZ = r.a1 + 1.0;
-        if (s.x + hw > minX && s.x - hw < maxX && s.z + hd > minZ && s.z - hd < maxZ) return true;
-      } else if (r.ax === 'x') {
-        const minZ = r.c - (r.w / 2 + SW + 0.6);
-        const maxZ = r.c + (r.w / 2 + SW + 0.6);
-        const minX = r.a0 - 1.0;
-        const maxX = r.a1 + 1.0;
-        if (s.z + hd > minZ && s.z - hd < maxZ && s.x + hw > minX && s.x - hw < maxX) return true;
+      if (r.ax === "z") {
+        const minX = r.c - (r.w / 2 + SW);
+        const maxX = r.c + (r.w / 2 + SW);
+        const minZ = r.a0;
+        const maxZ = r.a1;
+        if (s.x + s.w / 2 > minX && s.x - s.w / 2 < maxX && s.z + s.d / 2 > minZ && s.z - s.d / 2 < maxZ) return true;
+      } else if (r.ax === "x") {
+        const minZ = r.c - r.w / 2;
+        const maxZ = r.c + r.w / 2;
+        const minX = r.a0;
+        const maxX = r.a1;
+        if (s.x + s.w / 2 > minX && s.x - s.w / 2 < maxX && s.z + s.d / 2 > minZ && s.z - s.d / 2 < maxZ) return true;
       }
     }
     return false;
