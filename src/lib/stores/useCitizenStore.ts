@@ -17,6 +17,10 @@ interface CitizenState {
   setInventory: (inventory: InventoryItem[]) => void
   addToInventory: (item: InventoryItem) => void
   removeFromInventory: (inventoryId: string) => void
+  batchRemoveFromInventory: (inventoryIds: string[]) => void
+  toggleFavorite: (inventoryId: string) => void
+  equipItem: (inventoryId: string) => void
+  unequipItem: (inventoryId: string) => void
   updateAvatar: (avatarConfig: AvatarConfig) => void
   setLoading: (loading: boolean) => void
   reset: () => void
@@ -41,6 +45,42 @@ export const useCitizenStore = create<CitizenState>((set) => ({
   removeFromInventory: (inventoryId) =>
     set((state) => ({
       inventory: state.inventory.filter((inv) => inv.id !== inventoryId),
+    })),
+  batchRemoveFromInventory: (inventoryIds) => {
+    const idSet = new Set(inventoryIds)
+    set((state) => ({
+      inventory: state.inventory.filter((inv) => !idSet.has(inv.id)),
+    }))
+  },
+  toggleFavorite: (inventoryId) =>
+    set((state) => ({
+      inventory: state.inventory.map((inv) =>
+        inv.id === inventoryId ? { ...inv, isFavorite: !inv.isFavorite } : inv
+      ),
+    })),
+  equipItem: (inventoryId) =>
+    set((state) => {
+      const target = state.inventory.find((inv) => inv.id === inventoryId)
+      if (!target) return state
+      const isRod = target.itemId.startsWith('rod_') || target.category === 'tools'
+
+      return {
+        inventory: state.inventory.map((inv) => {
+          if (isRod && (inv.itemId.startsWith('rod_') || inv.category === 'tools')) {
+            return { ...inv, isEquipped: inv.id === inventoryId }
+          }
+          if (inv.id === inventoryId) {
+            return { ...inv, isEquipped: true }
+          }
+          return inv
+        }),
+      }
+    }),
+  unequipItem: (inventoryId) =>
+    set((state) => ({
+      inventory: state.inventory.map((inv) =>
+        inv.id === inventoryId ? { ...inv, isEquipped: false } : inv
+      ),
     })),
   updateAvatar: (avatarConfig) =>
     set((state) => ({

@@ -7,6 +7,7 @@ import fs from 'fs'
 import path from 'path'
 import { generateKTNNumber } from '@/lib/utils/ktn'
 import type { AvatarConfig } from '@/types/citizen'
+import { FISHING_RODS, getFishingRodById, getStarterRod } from '@/lib/inventory/rodDefinitions'
 
 const DB_PATH = path.join(process.cwd(), 'data', 'local_db.json')
 const TMP_DB_PATH = path.join(
@@ -905,24 +906,64 @@ export function buyShopItem(citizenId: string, itemId: string) {
 
 export function getCitizenInventoryDetailed(citizenId: string) {
   const db = readLocalDB()
-  const list = db.inventory.filter((inv) => inv.citizen_id === citizenId)
+  let list = db.inventory.filter((inv) => inv.citizen_id === citizenId)
+
+  // Auto-grant starter Wooden Rod if citizen owns no fishing rod
+  const hasRod = list.some(
+    (inv) => inv.item_id.startsWith('rod_') || inv.metadata?.category === 'tools'
+  )
+  if (!hasRod) {
+    const starter = getStarterRod()
+    const starterEntry = {
+      id: 'inv-rod-starter-' + citizenId,
+      citizen_id: citizenId,
+      item_id: starter.id,
+      is_equipped: true,
+      acquired_at: new Date().toISOString(),
+      metadata: {
+        name: starter.name,
+        category: 'tools',
+        rarity: starter.rarity,
+        description: starter.description,
+        icon: starter.icon,
+        rodTier: starter.rarity,
+        luck: starter.luck,
+        fishingSpeed: starter.fishingSpeed,
+        maxWeight: starter.maxWeight,
+        specialAbility: starter.specialAbility,
+        sellPrice: 0,
+      },
+    }
+    db.inventory.unshift(starterEntry)
+    writeLocalDB(db)
+    list = [starterEntry, ...list]
+  }
+
   return list.map((inv) => {
     const item = db.items.find((it) => it.id === inv.item_id)
     const meta = inv.metadata || {}
+    const isRod = inv.item_id.startsWith('rod_') || meta.category === 'tools'
+    const isFish = meta.category === 'fish' || inv.item_id.startsWith('fish_')
+
     return {
       id: inv.id,
       citizenId: inv.citizen_id,
       itemId: inv.item_id,
-      isEquipped: inv.is_equipped,
+      isEquipped: Boolean(inv.is_equipped),
       acquiredAt: inv.acquired_at,
       name: meta.name || item?.name || inv.item_id,
-      category: meta.category || item?.category || 'other',
+      category: isFish ? 'fish' : isRod ? 'tools' : meta.category || item?.category || 'other',
       description: meta.description || item?.description || '',
-      icon: meta.icon || (meta.category === 'fish' ? '🐟' : '🎒'),
+      icon: meta.icon || (isFish ? '🐟' : isRod ? '🎣' : '🎒'),
       weight: meta.weight,
+      speciesId: meta.speciesId || (isFish ? inv.item_id : undefined),
       rarity: meta.rarity || item?.rarity || 'common',
       sellPrice: meta.sellPrice ?? (item ? Math.round(item.price * 0.7) : 50),
       quantity: meta.quantity || 1,
+      isFavorite: Boolean(meta.isFavorite),
+      caughtLocation: meta.caughtLocation || (isFish ? 'Sungai Kali Netizen' : undefined),
+      caughtTimestamp: meta.caughtTimestamp || inv.acquired_at,
+      metadata: meta,
       item: item
         ? {
             id: item.id,
@@ -946,32 +987,43 @@ export function getCitizenInventoryDetailed(citizenId: string) {
 export function addCaughtFishToInventory(
   citizenId: string,
   fish: {
+    id?: string
     name: string
     weight: number
     rarity: string
     rewardCoins: number
     color?: string
+    icon?: string
+    desc?: string
+    caughtLocation?: string
   }
 ) {
   const db = readLocalDB()
   const newId = 'fish-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6)
-  const itemKey = 'fish_' + fish.name.toLowerCase().replace(/[^a-z0-9]/g, '_')
+  const itemKey = fish.id || 'fish_' + fish.name.toLowerCase().replace(/[^a-z0-9]/g, '_')
+  const now = new Date().toISOString()
 
   const invEntry = {
     id: newId,
     citizen_id: citizenId,
     item_id: itemKey,
     is_equipped: false,
-    acquired_at: new Date().toISOString(),
+    acquired_at: now,
     metadata: {
       name: fish.name,
       category: 'fish',
+      speciesId: itemKey,
       weight: fish.weight,
       rarity: fish.rarity,
       sellPrice: fish.rewardCoins,
       color: fish.color,
-      icon: '🐟',
-      description: `Tangkapan segar dari Sungai Kali Netizen dengan bobot ${fish.weight} kg.`,
+      icon: fish.icon || '🐟',
+      caughtLocation: fish.caughtLocation || 'Sungai Kali Netizen',
+      caughtTimestamp: now,
+      isFavorite: false,
+      description:
+        fish.desc ||
+        `Tangkapan segar dari ${fish.caughtLocation || 'Sungai Kali Netizen'} dengan bobot ${fish.weight} kg.`,
     },
   }
 
@@ -987,10 +1039,15 @@ export function addCaughtFishToInventory(
     name: fish.name,
     category: 'fish' as const,
     weight: fish.weight,
+    speciesId: itemKey,
     rarity: fish.rarity as any,
     sellPrice: fish.rewardCoins,
-    icon: '🐟',
+    icon: fish.icon || '🐟',
+    caughtLocation: invEntry.metadata.caughtLocation,
+    caughtTimestamp: now,
+    isFavorite: false,
     description: invEntry.metadata.description,
+    metadata: invEntry.metadata,
   }
 }
 
@@ -1005,8 +1062,21 @@ export function sellInventoryItem(citizenId: string, inventoryId: string) {
 
   const inv = db.inventory[index]
   const meta = inv.metadata || {}
-  const item = db.items.find((it) => it.id === inv.item_id)
 
+  // Protection: Favorited items cannot be sold!
+  if (meta.isFavorite) {
+    return {
+      success: false,
+      error: 'Ikan atau barang ini bertanda bintang favorit! Buka favorit terlebih dahulu untuk menjualnya.',
+    }
+  }
+
+  // Protection: Cannot sell starter wooden rod
+  if (inv.item_id === 'rod_wooden') {
+    return { success: false, error: 'Joran kayu warisan warga tidak dapat dijual.' }
+  }
+
+  const item = db.items.find((it) => it.id === inv.item_id)
   const sellPrice =
     typeof meta.sellPrice === 'number'
       ? meta.sellPrice
@@ -1046,6 +1116,199 @@ export function sellInventoryItem(citizenId: string, inventoryId: string) {
     soldItem: { id: inventoryId, name: itemName, sellPrice },
     newBalance: wallet ? wallet.balance : 0,
   }
+}
+
+export function batchSellInventoryItems(citizenId: string, inventoryIds: string[]) {
+  const db = readLocalDB()
+  const wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) return { success: false, error: 'Dompet warga tidak ditemukan.' }
+
+  const idSet = new Set(inventoryIds)
+  let totalCoins = 0
+  const soldList: { id: string; name: string; price: number }[] = []
+
+  db.inventory = db.inventory.filter((inv) => {
+    if (inv.citizen_id === citizenId && idSet.has(inv.id)) {
+      const meta = inv.metadata || {}
+      // Skip if favorite or equipped or wooden rod
+      if (meta.isFavorite || inv.is_equipped || inv.item_id === 'rod_wooden') {
+        return true // keep
+      }
+      const item = db.items.find((it) => it.id === inv.item_id)
+      const sellPrice =
+        typeof meta.sellPrice === 'number'
+          ? meta.sellPrice
+          : item
+          ? Math.round(item.price * 0.7)
+          : 50
+
+      totalCoins += sellPrice
+      soldList.push({
+        id: inv.id,
+        name: meta.name || item?.name || 'Barang',
+        price: sellPrice,
+      })
+      return false // delete from inventory
+    }
+    return true
+  })
+
+  if (soldList.length === 0) {
+    return {
+      success: false,
+      error: 'Tidak ada item yang dapat dijual (mungkin berstatus favorit atau sedang dipakai).',
+    }
+  }
+
+  wallet.balance += totalCoins
+  wallet.total_earned += totalCoins
+  wallet.updated_at = new Date().toISOString()
+
+  db.transactions.unshift({
+    id: 'tx-' + Math.random().toString(36).substring(2, 9),
+    citizen_id: citizenId,
+    type: 'earn',
+    amount: totalCoins,
+    previous_balance: wallet.balance - totalCoins,
+    new_balance: wallet.balance,
+    description: `Menjual ${soldList.length} hasil tangkapan ikan ke Pasar Kota`,
+    reference_type: 'batch_inventory_sale',
+    reference_id: soldList.map((s) => s.id).join(','),
+    created_at: new Date().toISOString(),
+  })
+
+  writeLocalDB(db)
+  return {
+    success: true,
+    soldCount: soldList.length,
+    totalCoins,
+    newBalance: wallet.balance,
+  }
+}
+
+export function equipInventoryItem(citizenId: string, inventoryId: string) {
+  const db = readLocalDB()
+  const target = db.inventory.find(
+    (inv) => inv.id === inventoryId && inv.citizen_id === citizenId
+  )
+  if (!target) return { success: false, error: 'Item tidak ditemukan di tas.' }
+
+  const isRod = target.item_id.startsWith('rod_') || target.metadata?.category === 'tools'
+  if (isRod) {
+    // Unequip all other rods for this citizen
+    db.inventory.forEach((inv) => {
+      if (
+        inv.citizen_id === citizenId &&
+        (inv.item_id.startsWith('rod_') || inv.metadata?.category === 'tools')
+      ) {
+        inv.is_equipped = false
+      }
+    })
+  }
+
+  target.is_equipped = true
+  writeLocalDB(db)
+  return { success: true, item: target }
+}
+
+export function unequipInventoryItem(citizenId: string, inventoryId: string) {
+  const db = readLocalDB()
+  const target = db.inventory.find(
+    (inv) => inv.id === inventoryId && inv.citizen_id === citizenId
+  )
+  if (!target) return { success: false, error: 'Item tidak ditemukan di tas.' }
+
+  target.is_equipped = false
+  writeLocalDB(db)
+  return { success: true, item: target }
+}
+
+export function toggleFavoriteInventoryItem(citizenId: string, inventoryId: string) {
+  const db = readLocalDB()
+  const target = db.inventory.find(
+    (inv) => inv.id === inventoryId && inv.citizen_id === citizenId
+  )
+  if (!target) return { success: false, error: 'Item tidak ditemukan di tas.' }
+
+  if (!target.metadata) target.metadata = {}
+  target.metadata.isFavorite = !target.metadata.isFavorite
+  writeLocalDB(db)
+  return { success: true, isFavorite: target.metadata.isFavorite }
+}
+
+export function buyFishingRod(citizenId: string, rodId: string) {
+  const db = readLocalDB()
+  const rod = getFishingRodById(rodId)
+  if (!rod) return { success: false, error: 'Joran pancing tidak terdaftar di kota.' }
+
+  // Check if citizen already owns this rod
+  const alreadyOwned = db.inventory.some(
+    (inv) => inv.citizen_id === citizenId && inv.item_id === rod.id
+  )
+  if (alreadyOwned) {
+    return { success: false, error: 'Kamu sudah memiliki joran pancing ini di tas!' }
+  }
+
+  const wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet || wallet.balance < rod.price) {
+    return {
+      success: false,
+      error: `Saldo Netizen Coins kamu tidak mencukupi (Butuh ${rod.price.toLocaleString('id-ID')} koin).`,
+    }
+  }
+
+  // Deduct coins & record transaction
+  wallet.balance -= rod.price
+  wallet.total_spent += rod.price
+  wallet.updated_at = new Date().toISOString()
+
+  db.transactions.unshift({
+    id: 'tx-' + Math.random().toString(36).substring(2, 9),
+    citizen_id: citizenId,
+    type: 'spend',
+    amount: rod.price,
+    previous_balance: wallet.balance + rod.price,
+    new_balance: wallet.balance,
+    description: `Membeli ${rod.name} di Toko Pancing NetizenCity`,
+    reference_type: 'fishing_rod',
+    reference_id: rod.id,
+    created_at: new Date().toISOString(),
+  })
+
+  // Unequip currently equipped rods
+  db.inventory.forEach((inv) => {
+    if (
+      inv.citizen_id === citizenId &&
+      (inv.item_id.startsWith('rod_') || inv.metadata?.category === 'tools')
+    ) {
+      inv.is_equipped = false
+    }
+  })
+
+  const newEntry = {
+    id: 'inv-rod-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    citizen_id: citizenId,
+    item_id: rod.id,
+    is_equipped: true,
+    acquired_at: new Date().toISOString(),
+    metadata: {
+      name: rod.name,
+      category: 'tools',
+      rarity: rod.rarity,
+      description: rod.description,
+      icon: rod.icon,
+      rodTier: rod.rarity,
+      luck: rod.luck,
+      fishingSpeed: rod.fishingSpeed,
+      maxWeight: rod.maxWeight,
+      specialAbility: rod.specialAbility,
+      sellPrice: Math.round(rod.price * 0.5),
+    },
+  }
+
+  db.inventory.unshift(newEntry)
+  writeLocalDB(db)
+  return { success: true, item: newEntry, newBalance: wallet.balance }
 }
 
 export function castVote(citizenId: string, voteId: string, optionId: number) {

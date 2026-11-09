@@ -1,0 +1,136 @@
+// ============================================================
+// NETIZENCITY - Fishing Rod Registry (7 Tiers of Fishing Rods)
+// Dari Common (Kayu) hingga Immortal (Trisula Abadi 🔱)
+// ============================================================
+
+import type { FishingRodDefinition } from '@/types/inventory'
+
+export type { FishingRodDefinition }
+
+export const FISHING_RODS: FishingRodDefinition[] = [
+  {
+    id: 'rod_wooden',
+    name: 'Wooden Rod (Joran Kayu)',
+    rarity: 'common',
+    tierName: 'Common',
+    price: 0,
+    luck: 0,
+    fishingSpeed: 1.0,
+    maxWeight: 5.0,
+    specialAbility: 'Joran pemula standar warisan warga ramah Kali Netizen.',
+    description: 'Terbuat dari dahan kayu tepi kali yang diraut halus. Mudah digunakan dan tidak membebani pemula.',
+    color: '#8B5A2B',
+    handleColor: '#5C3818',
+    reelColor: '#4A4A4A',
+    icon: '🎣',
+  },
+  {
+    id: 'rod_bamboo',
+    name: 'Bamboo Rod (Joran Bambu)',
+    rarity: 'uncommon',
+    tierName: 'Uncommon',
+    price: 350,
+    luck: 0.15,
+    fishingSpeed: 1.15,
+    maxWeight: 9.0,
+    specialAbility: '+15% Peluang Ikan Langka & sambaran lebih cepat 1.15x.',
+    description: 'Dianyam dari bambu kuning pilihan tepi sungai. Memiliki lentur alami dan daya tahan prima.',
+    color: '#84CC16',
+    handleColor: '#65A30D',
+    reelColor: '#3F3F46',
+    icon: '🎋',
+  },
+  {
+    id: 'rod_carbon',
+    name: 'Carbon Rod (Joran Karbon)',
+    rarity: 'rare',
+    tierName: 'Rare',
+    price: 1200,
+    luck: 0.35,
+    fishingSpeed: 1.35,
+    maxWeight: 18.0,
+    specialAbility: '+35% Peluang Ikan Langka, kecepatan 1.35x, max 18 kg.',
+    description: 'Material serat karbon komposit modern dengan bobot sangat ringan namun mampu menahan tarikan kuat.',
+    color: '#2563EB',
+    handleColor: '#1E293B',
+    reelColor: '#0EA5E9',
+    glowColor: '#38BDF8',
+    icon: '⚡',
+  },
+  {
+    id: 'rod_professional',
+    name: 'Professional Rod (Joran Turnamen Pro)',
+    rarity: 'epic',
+    tierName: 'Epic',
+    price: 3500,
+    luck: 0.65,
+    fishingSpeed: 1.6,
+    maxWeight: 35.0,
+    specialAbility: '+65% Peluang Ikan Langka & Epik, kecepatan 1.6x, max 35 kg.',
+    description: 'Joran turnamen dengan ceramic line guides dan titanium reel berputar super halus.',
+    color: '#9333EA',
+    handleColor: '#3B0764',
+    reelColor: '#C084FC',
+    glowColor: '#A855F7',
+    icon: '🔮',
+  },
+  {
+    id: 'rod_golden',
+    name: 'Golden Rod (Joran Emas Midas)',
+    rarity: 'legendary',
+    tierName: 'Legendary',
+    price: 9500,
+    luck: 1.1,
+    fishingSpeed: 1.95,
+    maxWeight: 60.0,
+    specialAbility: '+110% Peluang Ikan Legendaris, sambaran kilat 1.95x, max 60 kg.',
+    description: 'Berlapis emas murni 24 karat berhiaskan ukiran kuno penguasa sungai kota NetizenCity.',
+    color: '#EAB308',
+    handleColor: '#78350F',
+    reelColor: '#FDE047',
+    glowColor: '#FACC15',
+    icon: '👑',
+  },
+  {
+    id: 'rod_mythic',
+    name: 'Mythic Rod (Joran Naga Api Merah)',
+    rarity: 'mythic',
+    tierName: 'Mythic',
+    price: 25000,
+    luck: 1.85,
+    fishingSpeed: 2.35,
+    maxWeight: 100.0,
+    specialAbility: '+185% Peluang Spesies Mitos, kecepatan 2.35x, max 100 kg.',
+    description: 'Ditempa dari sisik naga merah purba dan bara api abadi penghuni palung terdalam kali.',
+    color: '#DC2626',
+    handleColor: '#450A0A',
+    reelColor: '#F87171',
+    glowColor: '#EF4444',
+    icon: '🐉',
+  },
+  {
+    id: 'rod_immortal',
+    name: 'Immortal Rod (Trisula Pancing Abadi 🔱)',
+    rarity: 'immortal',
+    tierName: 'Immortal',
+    price: 75000,
+    luck: 3.0,
+    fishingSpeed: 2.9,
+    maxWeight: 250.0,
+    specialAbility: 'Kekuatan dewata abadi (+300% Luck, kecepatan 2.9x, tangkapan kolosal hingga 250 kg).',
+    description: 'Pusaka pancing tertinggi bermahkota kristal kosmik yang memancarkan aura suci dewa laut abadi.',
+    color: '#EC4899',
+    handleColor: '#083344',
+    reelColor: '#06B6D4',
+    glowColor: '#F43F5E',
+    icon: '🔱',
+  },
+]
+
+export function getFishingRodById(id: string): FishingRodDefinition {
+  return FISHING_RODS.find((r) => r.id === id) || FISHING_RODS[0]
+}
+
+export function getStarterRod(): FishingRodDefinition {
+  return FISHING_RODS[0]
+}

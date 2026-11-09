@@ -19,6 +19,7 @@ import { resolveAvatarColors } from '@/game/utils/characterRenderer';
 import { useGameStore } from '@/lib/stores/useGameStore';
 import { useUIStore } from '@/lib/stores/useUIStore';
 import { useCitizenStore } from '@/lib/stores/useCitizenStore';
+import { FISHING_RODS, getFishingRodById, type FishingRodDefinition } from '@/lib/inventory/rodDefinitions';
 
 export type TimeOfDay = 'morning' | 'noon' | 'sunset' | 'night';
 export type CameraMode = 'orbit' | 'follow' | 'cinematic';
@@ -561,7 +562,12 @@ export class City3DManager {
     depth: number;
   }> = [];
   private riverRipples: Array<{ mesh: THREE.Mesh; maxScale: number; speed: number; curScale: number }> = [];
+  private currentEquippedRod: FishingRodDefinition | null = FISHING_RODS[0];
   private fishingRodGroup: THREE.Group | null = null;
+  private rodHandleMesh: THREE.Mesh | null = null;
+  private rodBlankMesh: THREE.Mesh | null = null;
+  private rodReelMesh: THREE.Mesh | null = null;
+  private rodTipGlowMesh: THREE.Mesh | null = null;
   private rodTip: THREE.Object3D | null = null;
   private fishingBobber: THREE.Group | null = null;
   private fishingLine: THREE.Line | null = null;
@@ -2182,27 +2188,55 @@ export class City3DManager {
     this.fishingRodGroup = new THREE.Group();
     this.fishingRodGroup.name = 'FishingRod';
 
+    const rodConfig = this.currentEquippedRod || FISHING_RODS[0];
+
     // Handle (cork grip) centered at (0, 0, 0)
-    const handleMat = new THREE.MeshStandardMaterial({ color: '#784620', roughness: 0.8 });
-    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.036, 0.38, 8), handleMat);
-    handle.position.set(0, 0, 0);
-    this.fishingRodGroup.add(handle);
+    const handleMat = new THREE.MeshStandardMaterial({
+      color: rodConfig.handleColor,
+      roughness: 0.8,
+    });
+    this.rodHandleMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.032, 0.036, 0.38, 8),
+      handleMat
+    );
+    this.rodHandleMesh.position.set(0, 0, 0);
+    this.fishingRodGroup.add(this.rodHandleMesh);
 
     // Reel seat & mini reel
-    const reelMat = new THREE.MeshStandardMaterial({ color: '#27272A', metalness: 0.8, roughness: 0.25 });
-    const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.08, 12), reelMat);
-    reel.rotation.z = Math.PI / 2;
-    reel.position.set(0.05, 0.12, 0);
-    this.fishingRodGroup.add(reel);
+    const reelMat = new THREE.MeshStandardMaterial({
+      color: rodConfig.reelColor,
+      metalness: 0.8,
+      roughness: 0.25,
+    });
+    this.rodReelMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 0.08, 12),
+      reelMat
+    );
+    this.rodReelMesh.rotation.z = Math.PI / 2;
+    this.rodReelMesh.position.set(0.05, 0.12, 0);
+    this.fishingRodGroup.add(this.rodReelMesh);
 
     // Blank (tapered flexible rod shaft, height 2.0, center at y = 1.19)
-    const rodMat = new THREE.MeshStandardMaterial({ color: '#D97706', roughness: 0.4, metalness: 0.3 });
-    const blank = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.028, 2.0, 8), rodMat);
-    blank.position.set(0, 1.19, 0);
-    this.fishingRodGroup.add(blank);
+    const rodMat = new THREE.MeshStandardMaterial({
+      color: rodConfig.color,
+      roughness: 0.4,
+      metalness: rodConfig.rarity === 'legendary' || rodConfig.rarity === 'immortal' ? 0.85 : 0.3,
+      emissive: new THREE.Color(rodConfig.glowColor || '#000000'),
+      emissiveIntensity: rodConfig.glowColor ? 0.55 : 0,
+    });
+    this.rodBlankMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.028, 2.0, 8),
+      rodMat
+    );
+    this.rodBlankMesh.position.set(0, 1.19, 0);
+    this.fishingRodGroup.add(this.rodBlankMesh);
 
     // Line Guide rings
-    const ringMat = new THREE.MeshStandardMaterial({ color: '#D1D5DB', metalness: 0.9, roughness: 0.2 });
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: '#D1D5DB',
+      metalness: 0.9,
+      roughness: 0.2,
+    });
     const rod = this.fishingRodGroup;
     [0.55, 0.95, 1.35, 1.75, 2.15].forEach((gy) => {
       const ring = new THREE.Mesh(
@@ -2217,6 +2251,15 @@ export class City3DManager {
     this.rodTip = new THREE.Object3D();
     this.rodTip.name = 'RodTipMarker';
     this.rodTip.position.set(0, 2.2, 0);
+
+    // Glowing tip bead for enchanted / higher tier rods
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: rodConfig.glowColor || '#FFFFFF',
+    });
+    this.rodTipGlowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), glowMat);
+    this.rodTipGlowMesh.visible = Boolean(rodConfig.glowColor);
+    this.rodTip.add(this.rodTipGlowMesh);
+
     this.fishingRodGroup.add(this.rodTip);
 
     // Fishing Bobber (Classic red & white float)
@@ -3008,6 +3051,19 @@ export class City3DManager {
   }
 
   public castFishingLine(targetWaterPos?: THREE.Vector3) {
+    if (!this.currentEquippedRod) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('fishing-no-rod', {
+            detail: {
+              message:
+                'Kamu belum memasang Joran Pancing! Buka Tas Barang (🎒) dan pasang joran terlebih dahulu.',
+            },
+          })
+        );
+      }
+      return;
+    }
     if (this.fishingState !== 'idle') return;
 
     // 1. Determine landing spot on river water surface (GUARANTEED OPEN WATER - NEVER ON PIER WOOD OR SHORE)
@@ -3135,24 +3191,36 @@ export class City3DManager {
   }
 
   private determineCaughtFish(): RiverFishCatch {
-    // 7 RPG Rarity Tiers: Common -> Immortal
+    // Read stats from equipped fishing rod
+    const luck = this.currentEquippedRod ? this.currentEquippedRod.luck : 0;
+    const maxRodWeight = this.currentEquippedRod ? this.currentEquippedRod.maxWeight : 5.0;
+
+    // 7 RPG Rarity Tiers dynamically scaled by rod Luck
+    // Base chances: Immortal 0.4%, Mythic 1.6%, Legendary 5%, Epic 10%, Rare 18%, Uncommon 25%
+    const pImmortal = 0.004 * (1 + luck * 1.5);
+    const pMythic = pImmortal + 0.016 * (1 + luck * 1.2);
+    const pLegendary = pMythic + 0.050 * (1 + luck * 1.0);
+    const pEpic = pLegendary + 0.100 * (1 + luck * 0.7);
+    const pRare = pEpic + 0.180 * (1 + luck * 0.5);
+    const pUncommon = pRare + 0.250 * (1 + luck * 0.2);
+
     const rand = Math.random();
     let selectedTier: FishRarityTier = 'common';
 
-    if (rand < 0.004) {
-      selectedTier = 'immortal'; // 0.4% chance
-    } else if (rand < 0.020) {
-      selectedTier = 'mythic'; // 1.6% chance
-    } else if (rand < 0.070) {
-      selectedTier = 'legendary'; // 5.0% chance
-    } else if (rand < 0.170) {
-      selectedTier = 'epic'; // 10.0% chance
-    } else if (rand < 0.350) {
-      selectedTier = 'rare'; // 18.0% chance
-    } else if (rand < 0.600) {
-      selectedTier = 'uncommon'; // 25.0% chance
+    if (rand < pImmortal) {
+      selectedTier = 'immortal';
+    } else if (rand < pMythic) {
+      selectedTier = 'mythic';
+    } else if (rand < pLegendary) {
+      selectedTier = 'legendary';
+    } else if (rand < pEpic) {
+      selectedTier = 'epic';
+    } else if (rand < pRare) {
+      selectedTier = 'rare';
+    } else if (rand < pUncommon) {
+      selectedTier = 'uncommon';
     } else {
-      selectedTier = 'common'; // 40.0% chance
+      selectedTier = 'common';
     }
 
     const tierSpecies = RIVER_FISH_SPECIES.filter((s) => s.tier === selectedTier);
@@ -3161,9 +3229,15 @@ export class City3DManager {
         ? tierSpecies[Math.floor(Math.random() * tierSpecies.length)]
         : RIVER_FISH_SPECIES[0];
 
-    const weightVariation = 0.88 + Math.random() * 0.28;
-    const finalWeight = Number((selected.weight * weightVariation).toFixed(2));
-    const finalReward = Math.round(selected.rewardCoins * weightVariation);
+    // High luck rods give bonus weight potential
+    const weightBonus = 1.0 + Math.min(0.5, luck * 0.12);
+    const weightVariation = (0.88 + Math.random() * 0.28) * weightBonus;
+    const calculatedWeight = selected.weight * weightVariation;
+    // Bounded by rod max weight tolerance with margin
+    const finalWeight = Number(
+      Math.min(maxRodWeight * 1.35, Math.max(0.4, calculatedWeight)).toFixed(2)
+    );
+    const finalReward = Math.round(selected.rewardCoins * (finalWeight / selected.weight));
 
     return {
       id: selected.id,
@@ -3176,6 +3250,60 @@ export class City3DManager {
       icon: selected.icon,
       desc: selected.desc,
     };
+  }
+
+  public updateEquippedRod(rodDef: FishingRodDefinition | null) {
+    this.currentEquippedRod = rodDef;
+    if (!rodDef) {
+      if (this.fishingRodGroup) {
+        this.fishingRodGroup.visible = false;
+      }
+      return;
+    }
+
+    if (this.fishingRodGroup) {
+      this.fishingRodGroup.visible = this.viewMode === 'river';
+
+      if (this.rodBlankMesh) {
+        const mat = this.rodBlankMesh.material as THREE.MeshStandardMaterial;
+        mat.color.set(rodDef.color);
+        mat.metalness =
+          rodDef.rarity === 'legendary' || rodDef.rarity === 'immortal' ? 0.85 : 0.25;
+        mat.roughness =
+          rodDef.rarity === 'rare' || rodDef.rarity === 'epic' ? 0.25 : 0.45;
+        if (rodDef.glowColor) {
+          mat.emissive.set(rodDef.glowColor);
+          mat.emissiveIntensity = 0.55;
+        } else {
+          mat.emissive.set('#000000');
+          mat.emissiveIntensity = 0;
+        }
+      }
+
+      if (this.rodHandleMesh) {
+        const mat = this.rodHandleMesh.material as THREE.MeshStandardMaterial;
+        mat.color.set(rodDef.handleColor);
+      }
+
+      if (this.rodReelMesh) {
+        const mat = this.rodReelMesh.material as THREE.MeshStandardMaterial;
+        mat.color.set(rodDef.reelColor);
+        mat.metalness = rodDef.rarity === 'common' ? 0.5 : 0.85;
+      }
+
+      if (this.rodTipGlowMesh) {
+        if (rodDef.glowColor) {
+          this.rodTipGlowMesh.visible = true;
+          (this.rodTipGlowMesh.material as THREE.MeshBasicMaterial).color.set(rodDef.glowColor);
+        } else {
+          this.rodTipGlowMesh.visible = false;
+        }
+      }
+    }
+  }
+
+  public getEquippedRod(): FishingRodDefinition | null {
+    return this.currentEquippedRod;
   }
 
   public resetFishing() {
@@ -3329,7 +3457,8 @@ export class City3DManager {
             setTimeout(() => this.spawnRiverRipple(this.targetBobberPos), 150);
           }
           this.fishingState = 'waiting';
-          this.fishBiteTimer = 2.8 + Math.random() * 3.5;
+          const speedMult = this.currentEquippedRod?.fishingSpeed ?? 1.0;
+          this.fishBiteTimer = (2.8 + Math.random() * 3.5) / speedMult;
 
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('river-fishing-state', { detail: { state: 'waiting' } }));

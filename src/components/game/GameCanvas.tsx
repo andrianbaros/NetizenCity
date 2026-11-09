@@ -48,6 +48,7 @@ import {
 import { useCitizenStore } from '@/lib/stores/useCitizenStore'
 import { useGameStore } from '@/lib/stores/useGameStore'
 import { useUIStore } from '@/lib/stores/useUIStore'
+import { getFishingRodById } from '@/lib/inventory/rodDefinitions'
 
 function getClientSessionId(): string {
   if (typeof window === 'undefined') return ''
@@ -209,6 +210,22 @@ export default function GameCanvas() {
   const lastSentChatRef = useRef<string | null>(null)
   const isSyncingRef = useRef(false)
   const lastSyncReqTimeRef = useRef(0)
+
+  const inventory = useCitizenStore((s) => s.inventory)
+
+  // Synchronize equipped rod with 3D City3DManager in river area
+  useEffect(() => {
+    if (!cityManagerRef.current) return
+    const equipped = inventory.find(
+      (item) => item.isEquipped && (item.itemId.startsWith('rod_') || item.category === 'tools')
+    )
+    if (equipped) {
+      const rodDef = getFishingRodById(equipped.itemId)
+      cityManagerRef.current.updateEquippedRod(rodDef)
+    } else {
+      cityManagerRef.current.updateEquippedRod(null)
+    }
+  }, [inventory])
 
   useEffect(() => {
     setMounted(true)
@@ -441,34 +458,35 @@ export default function GameCanvas() {
     const onRiverFishCaught = (e: CustomEvent) => {
       const fish = e.detail?.fish as RiverFishCatch
       if (fish) {
-        const wallet = useCitizenStore.getState().wallet
-        const updateBalance = useCitizenStore.getState().updateBalance
         const addToInventory = useCitizenStore.getState().addToInventory
         const setInventory = useCitizenStore.getState().setInventory
         const profile = useCitizenStore.getState().profile
         const addNotification = useUIStore.getState().addNotification
 
-        const cur = wallet?.balance ?? 500
-        updateBalance(cur + fish.rewardCoins)
-
-        // Optimistically add to citizen backpack inventory
-        const tempId = 'fish-' + Date.now()
+        // Optimistically add individual catch to citizen backpack inventory
+        const tempId = 'fish-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6)
         addToInventory({
           id: tempId,
           citizenId: profile?.id || 'citizen',
-          itemId: 'fish_' + fish.name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+          itemId: fish.id || 'fish_' + fish.name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
           name: fish.name,
           category: 'fish',
           weight: fish.weight,
+          speciesId: fish.id,
           rarity: fish.rarity as any,
           sellPrice: fish.rewardCoins,
-          icon: '🐟',
+          icon: fish.icon || '🐟',
           isEquipped: false,
+          isFavorite: false,
+          caughtLocation: 'Sungai Kali Netizen',
+          caughtTimestamp: new Date().toISOString(),
           acquiredAt: new Date().toISOString(),
-          description: `Tangkapan segar dari Sungai Kali Netizen (${fish.weight} kg).`,
+          description:
+            fish.desc ||
+            `Tangkapan segar dari Sungai Kali Netizen dengan bobot ${fish.weight} kg.`,
         })
 
-        // Persist fish catch to local DB / API
+        // Persist individual fish catch to local DB / API
         fetch('/api/inventory', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -484,10 +502,24 @@ export default function GameCanvas() {
 
         addNotification({
           title: `Berhasil Menangkap ${fish.name}! 🎣`,
-          message: `Berat: ${fish.weight} kg • Disimpan ke Tas Barang (+${fish.rewardCoins} Netizen Coins)!`,
+          message: `Bobot: ${fish.weight} kg • Masuk ke Tas Barang (Nilai Jual: +${fish.rewardCoins} Koin)!`,
           type: 'success',
         })
       }
+    }
+
+    const onFishingNoRod = (e: CustomEvent) => {
+      const addNotification = useUIStore.getState().addNotification
+      const openModal = useUIStore.getState().openModal
+      setIsAutoFishing(false)
+      addNotification({
+        title: 'Perlu Joran Pancing! 🎣',
+        message:
+          e.detail?.message ||
+          'Kamu belum memasang joran pancing. Buka Tas Barang (🎒) untuk memasang joranmu!',
+        type: 'warning',
+      })
+      openModal('inventory')
     }
 
     window.addEventListener('open-tugu-confirm', onOpenConfirm)
@@ -500,6 +532,7 @@ export default function GameCanvas() {
     window.addEventListener('river-mode-changed', onRiverModeChanged as EventListener)
     window.addEventListener('river-fishing-state', onRiverFishingState as EventListener)
     window.addEventListener('river-fish-caught', onRiverFishCaught as EventListener)
+    window.addEventListener('fishing-no-rod', onFishingNoRod as EventListener)
 
     window.addEventListener('enter-stadium-area', onEnterStadium)
     window.addEventListener('exit-stadium-area', onExitStadium)
@@ -516,6 +549,7 @@ export default function GameCanvas() {
       window.removeEventListener('river-mode-changed', onRiverModeChanged as EventListener)
       window.removeEventListener('river-fishing-state', onRiverFishingState as EventListener)
       window.removeEventListener('river-fish-caught', onRiverFishCaught as EventListener)
+      window.removeEventListener('fishing-no-rod', onFishingNoRod as EventListener)
 
       window.removeEventListener('enter-stadium-area', onEnterStadium)
       window.removeEventListener('exit-stadium-area', onExitStadium)
@@ -1059,7 +1093,22 @@ export default function GameCanvas() {
                 {/* Main Centered Throw Button */}
                 <button
                   type="button"
-                  onClick={() => cityManagerRef.current?.castFishingLine()}
+                  onClick={() => {
+                    const hasRod = inventory.some(
+                      (i) => i.isEquipped && (i.itemId.startsWith('rod_') || i.category === 'tools')
+                    )
+                    if (!hasRod) {
+                      useUIStore.getState().addNotification({
+                        title: 'Perlu Joran Pancing! 🎣',
+                        message:
+                          'Kamu belum memasang joran pancing. Buka Tas Barang (🎒) untuk memasang joran terlebih dahulu!',
+                        type: 'warning',
+                      })
+                      useUIStore.getState().openModal('inventory')
+                      return
+                    }
+                    cityManagerRef.current?.castFishingLine()
+                  }}
                   className="flex items-center space-x-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-gradient-to-r from-[#267385] to-[#1E5D6C] text-white font-black text-xs sm:text-sm shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/30"
                 >
                   <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-[#80DEEA] animate-pulse" />
@@ -1070,6 +1119,19 @@ export default function GameCanvas() {
                 <button
                   type="button"
                   onClick={() => {
+                    const hasRod = inventory.some(
+                      (i) => i.isEquipped && (i.itemId.startsWith('rod_') || i.category === 'tools')
+                    )
+                    if (!hasRod && !isAutoFishing) {
+                      useUIStore.getState().addNotification({
+                        title: 'Perlu Joran Pancing! 🎣',
+                        message:
+                          'Kamu belum memasang joran pancing. Buka Tas Barang (🎒) untuk memasang joran terlebih dahulu!',
+                        type: 'warning',
+                      })
+                      useUIStore.getState().openModal('inventory')
+                      return
+                    }
                     const next = !isAutoFishing
                     setIsAutoFishing(next)
                     if (next) {

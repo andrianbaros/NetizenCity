@@ -68,10 +68,11 @@ export interface InventoryItem {
   isEquipped: boolean
   acquiredAt: string
   name?: string
-  category?: 'fish' | 'fashion' | 'crop' | 'other' | ItemCategory
+  category?: 'tools' | 'fish' | 'clothing' | 'accessories' | 'special' | 'fashion' | 'crop' | 'other' | ItemCategory
   description?: string
   icon?: string
   weight?: number // for fish (e.g. 3.45 kg)
+  speciesId?: string
   rarity?:
     | 'common'
     | 'uncommon'
@@ -86,6 +87,10 @@ export interface InventoryItem {
     | string
   sellPrice?: number
   quantity?: number
+  isFavorite?: boolean
+  caughtLocation?: string
+  caughtTimestamp?: string
+  metadata?: any
 }
 
 /** Price display helper */
