@@ -1030,7 +1030,7 @@ export default function GameCanvas() {
       {/* 3D RIVER FISHING CONTROLS & HUD                              */}
       {/* ============================================================ */}
       {viewMode === 'river' && (
-        <div className="absolute bottom-16 sm:bottom-8 left-1/2 -translate-x-1/2 z-30 pointer-events-auto font-sans flex flex-col items-center gap-2.5 w-full max-w-md px-3">
+        <div className="absolute bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto font-sans flex flex-col items-center gap-2 w-full max-w-sm px-3">
           {/* Active Auto-Fishing Notification Badge */}
           {isAutoFishing && (
             <div className="flex items-center space-x-2.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-xl border border-white/30 animate-pulse font-sans">
@@ -1211,27 +1211,39 @@ export default function GameCanvas() {
                 </div>
               </div>
 
-              <div className="mt-3.5 pt-2.5 border-t border-[#D8CEBE] flex items-center justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAutoFishing(false)
-                    cityManagerRef.current?.resetFishing()
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#78634B] hover:bg-[#EFE9D8] cursor-pointer"
-                >
-                  Selesai
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    cityManagerRef.current?.resetFishing()
-                    setTimeout(() => cityManagerRef.current?.castFishingLine(), 150)
-                  }}
-                  className="px-4 py-1.5 rounded-xl bg-[#267385] hover:bg-[#1E5D6C] text-white text-xs font-extrabold shadow-sm cursor-pointer"
-                >
-                  Mancing Lagi 🎣
-                </button>
+              <div className="mt-3 pt-2.5 border-t border-[#D8CEBE] flex items-center justify-between">
+                {isAutoFishing ? (
+                  <span className="flex items-center space-x-1 text-[11px] font-bold text-amber-600 animate-pulse">
+                    <span>⚡</span>
+                    <span>Mancing otomatis dalam 2s...</span>
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-[#78634B]">Disimpan ke Tas</span>
+                )}
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAutoFishing(false)
+                      cityManagerRef.current?.resetFishing()
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#78634B] hover:bg-[#EFE9D8] cursor-pointer"
+                  >
+                    {isAutoFishing ? 'Stop Auto' : 'Selesai'}
+                  </button>
+                  {!isAutoFishing && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        cityManagerRef.current?.resetFishing()
+                        setTimeout(() => cityManagerRef.current?.castFishingLine(), 150)
+                      }}
+                      className="px-4 py-1.5 rounded-xl bg-[#267385] hover:bg-[#1E5D6C] text-white text-xs font-extrabold shadow-sm cursor-pointer"
+                    >
+                      Mancing Lagi 🎣
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

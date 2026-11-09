@@ -52,6 +52,7 @@ import InventoryModal from './InventoryModal'
 import BGMPlayer from './BGMPlayer'
 
 export default function GameHUD() {
+  const viewMode = useGameStore((s) => s.viewMode)
   const cityStats = useGameStore((s) => s.cityStats)
   const setCityStats = useGameStore((s) => s.setCityStats)
   const currentDistrict = useGameStore((s) => s.currentDistrict)
@@ -694,10 +695,14 @@ export default function GameHUD() {
 
       {/* ============================================================ */}
       {/* BOTTOM AREA: CHAT OVERLAY                                    */}
+      {/* In river and stadium modes, dock chat leftward so center HUD */}
+      {/* (fishing controls & cards) never collide with chat button     */}
       {/* ============================================================ */}
       <div
-        className={`fixed z-40 pointer-events-auto flex items-center justify-center ${
-          isTuguMode
+        className={`fixed z-40 pointer-events-auto flex items-center justify-center transition-all ${
+          viewMode === 'river' || viewMode === 'stadium'
+            ? 'bottom-24 left-3.5 sm:bottom-5 sm:left-28 sm:right-auto sm:translate-x-0'
+            : isTuguMode
             ? 'bottom-5 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2'
             : 'bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2'
         }`}
