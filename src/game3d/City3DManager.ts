@@ -714,9 +714,9 @@ export class City3DManager {
       name: 'Monumen Netizen City & Taman Air Mancur',
       district: 'Pusat Kota',
       type: 'monument',
-      position: new THREE.Vector3(0, 0, -82),
-      cameraTarget: new THREE.Vector3(0, 6, -82),
-      cameraPos: new THREE.Vector3(0, 16, -50),
+      position: new THREE.Vector3(-44, 0, -82),
+      cameraTarget: new THREE.Vector3(-44, 6, -82),
+      cameraPos: new THREE.Vector3(-44, 16, -50),
       radius: 16,
     },
     {
@@ -3911,7 +3911,7 @@ private setupAirplanes() {
     this.colliders.push({ x: 0, z: 27.6, radius: 2.2 });
 
     // 3. Monumen Netizen City (center plinth and fountain)
-    this.colliders.push({ x: 0, z: -82, radius: 4.8 });
+    this.colliders.push({ x: -44, z: -82, radius: 4.8 });
 
     // 4. Mall Perbelanjaan Netizen
     this.colliders.push({ x: MALL.x, z: MALL.z, radius: 9.2 });
@@ -5493,7 +5493,7 @@ private setupAirplanes() {
         this.spherical.phi = Math.PI / 2.25;
         this.spherical.theta = this.playerFacing + Math.PI;
       } else {
-        this.target.set(0, 2, -82);
+        this.target.set(-44, 2, -82);
         this.spherical.radius = 7.5;
         this.spherical.phi = Math.PI / 2.25;
         this.spherical.theta = 0;
@@ -5505,7 +5505,7 @@ private setupAirplanes() {
         this.spherical.phi = Math.PI / 3.2;
         this.spherical.theta = Math.PI * 0.75;
       } else {
-        this.target.set(0, 4, -82);
+        this.target.set(-44, 4, -82);
         this.spherical.radius = 32.0;
         this.spherical.phi = Math.PI / 3.2;
         this.spherical.theta = Math.PI * 0.75;
@@ -5516,7 +5516,7 @@ private setupAirplanes() {
         this.spherical.radius = 26.0;
         this.spherical.phi = Math.PI / 6.5;
       } else {
-        this.target.set(0, 0, -82);
+        this.target.set(-44, 0, -82);
         this.spherical.radius = 60.0;
         this.spherical.phi = Math.PI / 6.5;
       }
@@ -5526,7 +5526,7 @@ private setupAirplanes() {
         this.spherical.radius = 8.0;
         this.spherical.phi = Math.PI / 2.05;
       } else {
-        this.target.set(0, 1, -82);
+        this.target.set(-44, 1, -82);
         this.spherical.radius = 20.0;
         this.spherical.phi = Math.PI / 2.05;
       }

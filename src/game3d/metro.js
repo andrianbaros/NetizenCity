@@ -12,7 +12,7 @@ import { PAL, signTex } from './world.js';
 const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: .78, metalness: 0, flatShading: true, ...o });
 const sh = m => { m.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } }); return m; };
 const pop = (tw, t0, d = .22) => tw < t0 ? 0 : back(seg(tw, t0, t0 + d), 2.2);
-export const MYST = new THREE.Vector3(0, 0, -82), CENTER = new THREE.Vector2(0, 16);
+export const MYST = new THREE.Vector3(-44, 0, -82), CENTER = new THREE.Vector2(0, 16);
 export const KERUK = new THREE.Vector3(-75, 0, -35), HOSP = new THREE.Vector3(-60, 0, 12.6), POLICE = new THREE.Vector3(-72, 0, 25.6), FIRE = new THREE.Vector3(-55, 0, 25.9);   // fronts right on the sidewalks
 export const STATION = new THREE.Vector3(12, 0, 39.3), GAPURA = new THREE.Vector3(39.5, 0, 19.5), RAIL_Z = 44;
 // Day 6: the lot of Netizen Mall (mall.js) and its parking, at the north-west corner of the crossing (-44, -3): no trees or street furniture there
@@ -458,8 +458,8 @@ export function buildMetro(scene, C) {
   city.monument = makeMonument(); city.monument.root.position.copy(MYST); scene.add(city.monument.root);
   city.mpark = makeMonumentPark(); city.mpark.root.position.copy(MYST); scene.add(city.mpark.root);
   // the promenade from the north avenue to the Monument garden
-  { const pv = new THREE.Mesh(new THREE.BoxGeometry(5, .1, 18), mat('#E9DFCD', { roughness: .95 })); pv.position.set(0, .05, -59); pv.receiveShadow = true; scene.add(pv); city.promenade = pv;
-    for (let z = -51.5; z > -67; z -= 3.5) for (const s of [-1, 1]) { const tr = makeParkTree(s * 3.4, z, z * 7 + s); scene.add(tr); city.promenadeTrees = (city.promenadeTrees || []).concat(tr); } }
+  { const pv = new THREE.Mesh(new THREE.BoxGeometry(5, .1, 14), mat('#E9DFCD', { roughness: .95 })); pv.position.set(-44, .05, -64.5); pv.receiveShadow = true; scene.add(pv); city.promenade = pv;
+    for (let z = -61.5; z > -67; z -= 3.5) for (const s of [-1, 1]) { const tr = makeParkTree(-44 + s * 3.4, z, z * 7 + s); scene.add(tr); city.promenadeTrees = (city.promenadeTrees || []).concat(tr); } }
 
   // ---------- update: growth on the time-lapse clock, traffic, the train ----------
   const stack = (bt, it) => { if (bt < it.t0) return 0; const k = seg(bt, it.t0, it.t0 + it.dur); return Math.max(1 / it.floors, Math.ceil(k * it.floors - 1e-6) / it.floors); };
