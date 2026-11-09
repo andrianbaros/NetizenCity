@@ -182,6 +182,77 @@
       "onboarding_completed": true,
       "joined_at": "2026-11-06T12:30:01.083Z",
       "updated_at": "2026-11-06T12:37:01.750Z"
+    },
+    {
+      "id": "c-mzn1zym",
+      "user_id": "u-vbx8m2x",
+      "email": "tamu_1098@netizencity.id",
+      "password_hash": "guest_1098_pass",
+      "username": "tamu_1098",
+      "display_name": "Wisatawan 1098",
+      "ktn_number": "KTN-20261109-DKZD2",
+      "avatar_config": {
+        "skinTone": "#f5d0b0",
+        "hairStyle": "short",
+        "hairColor": "#1e293b",
+        "shirtColor": "#2563eb",
+        "pantsColor": "#1e293b",
+        "shoesColor": "#f1f5f9",
+        "expression": "happy"
+      },
+      "level": 1,
+      "xp": 0,
+      "job": "Warga Baru",
+      "housing_id": "house-downtown-01",
+      "housing_name": "Menara Sudirman Netizen - Penthouse #01",
+      "district": "Downtown",
+      "biography": "Warga resmi baru NETIZENCITY.",
+      "is_online": true,
+      "role": "citizen",
+      "onboarding_completed": true,
+      "joined_at": "2026-11-09T05:23:06.396Z",
+      "updated_at": "2026-11-09T05:23:06.396Z"
+    },
+    {
+      "id": "c-8x5lwnp",
+      "user_id": "u-kzc3quc",
+      "email": "blueroseinthefield@instagram.netizencity.id",
+      "instagram_handle": "blueroseinthefield",
+      "is_ig_verified": true,
+      "password_hash": "aaaa",
+      "username": "blueroseinthefield",
+      "display_name": "ryuuou",
+      "ktn_number": "KTN-20261109-628QU",
+      "avatar_config": {
+        "skinTone": "#f5d0b0",
+        "hairStyle": "ponytail",
+        "hairColor": "#d97706",
+        "shirtColor": "#dc2626",
+        "pantsColor": "#1e3a8a",
+        "shoesColor": "#f1f5f9",
+        "expression": "happy",
+        "accessory": "wings",
+        "outfit": {
+          "top": "#dc2626",
+          "bottom": "#1e3a8a",
+          "shoes": "#f1f5f9",
+          "accessory": "wings"
+        },
+        "outfitPattern": "jersey",
+        "backpack": null
+      },
+      "level": 1,
+      "xp": 0,
+      "job": "Warga Baru",
+      "housing_id": "house-apt-01",
+      "housing_name": "Rusunawa Harapan Baru Blok A - Unit 304",
+      "district": "Perumahan Utara",
+      "biography": "Warga resmi NETIZENCITY terverifikasi dari Instagram @blueroseinthefield.",
+      "is_online": true,
+      "role": "citizen",
+      "onboarding_completed": true,
+      "joined_at": "2026-11-09T05:51:25.566Z",
+      "updated_at": "2026-11-09T05:55:04.493Z"
     }
   ],
   "wallets": [
@@ -224,9 +295,49 @@
       "total_earned": 550,
       "total_spent": 250,
       "updated_at": "2026-11-06T12:37:00.903Z"
+    },
+    {
+      "id": "w-c-mzn1zym",
+      "citizen_id": "c-mzn1zym",
+      "balance": 550,
+      "total_earned": 550,
+      "total_spent": 0,
+      "updated_at": "2026-11-09T05:23:31.046Z"
+    },
+    {
+      "id": "w-c-8x5lwnp",
+      "citizen_id": "c-8x5lwnp",
+      "balance": 350,
+      "total_earned": 600,
+      "total_spent": 250,
+      "updated_at": "2026-11-09T05:55:00.443Z"
     }
   ],
   "transactions": [
+    {
+      "id": "tx-haziep7",
+      "citizen_id": "c-8x5lwnp",
+      "type": "spend",
+      "amount": 250,
+      "previous_balance": 600,
+      "new_balance": 350,
+      "description": "Membeli item: Jersey Timnas Garuda Netizen",
+      "reference_type": "item",
+      "reference_id": "top_jersey_garuda",
+      "created_at": "2026-11-09T05:55:00.443Z"
+    },
+    {
+      "id": "tx-lwdunm1",
+      "citizen_id": "c-mzn1zym",
+      "type": "reward",
+      "amount": 50,
+      "previous_balance": 500,
+      "new_balance": 550,
+      "description": "Hadiah Login Harian Hari ke-1",
+      "reference_type": "daily_reward",
+      "reference_id": null,
+      "created_at": "2026-11-09T05:23:31.046Z"
+    },
     {
       "id": "tx-0rvvstp",
       "citizen_id": "c-120jskg",
@@ -682,6 +793,30 @@
       "reference_type": "onboarding",
       "reference_id": null,
       "created_at": "2026-11-06T12:30:01.083Z"
+    },
+    {
+      "id": "tx-jdobogi",
+      "citizen_id": "c-mzn1zym",
+      "type": "reward",
+      "amount": 500,
+      "previous_balance": 0,
+      "new_balance": 500,
+      "description": "Bonus Selamat Datang Balai Kota",
+      "reference_type": "onboarding",
+      "reference_id": null,
+      "created_at": "2026-11-09T05:23:06.396Z"
+    },
+    {
+      "id": "tx-l9bbrud",
+      "citizen_id": "c-8x5lwnp",
+      "type": "reward",
+      "amount": 600,
+      "previous_balance": 0,
+      "new_balance": 600,
+      "description": "Bonus Selamat Datang Balai Kota & Verifikasi Follow Instagram",
+      "reference_type": "onboarding",
+      "reference_id": null,
+      "created_at": "2026-11-09T05:51:25.566Z"
     }
   ],
   "housing_units": [
@@ -731,7 +866,7 @@
       "type": "premium",
       "district": "Downtown",
       "unit_number": "Penthouse #01",
-      "status": "available"
+      "status": "occupied"
     }
   ],
   "housing_assignments": [
@@ -1237,6 +1372,13 @@
       "item_id": "top_jersey_garuda",
       "is_equipped": true,
       "acquired_at": "2026-11-06T12:37:00.903Z"
+    },
+    {
+      "id": "inv-r1618xk",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "top_jersey_garuda",
+      "is_equipped": true,
+      "acquired_at": "2026-11-09T05:55:00.443Z"
     }
   ],
   "daily_login_rewards": [
@@ -1275,6 +1417,15 @@
       "streak_count": 1,
       "claimed_date": "2026-11-06",
       "claimed_at": "2026-11-06T12:36:52.979Z"
+    },
+    {
+      "id": "dlr-es0ag2d",
+      "citizen_id": "c-mzn1zym",
+      "day_number": 1,
+      "reward_coins": 50,
+      "streak_count": 1,
+      "claimed_date": "2026-11-09",
+      "claimed_at": "2026-11-09T05:23:31.046Z"
     }
   ],
   "missions": [
@@ -1390,104 +1541,7 @@
       "submitted_at": "2026-11-04T03:18:34.938Z"
     }
   ],
-  "chat_messages": [
-    {
-      "id": "msg-01",
-      "citizen_id": "system",
-      "sender_name": "Mayor",
-      "channel": "global",
-      "content": "Selamat datang di NETIZENCITY! Jelajahi kota, kunjungi Alun-Alun Tugu, dan jadilah warga aktif.",
-      "created_at": "2026-11-03T15:37:43.878Z"
-    },
-    {
-      "id": "msg-02",
-      "citizen_id": "c-admin",
-      "sender_name": "Admin Kota",
-      "channel": "global",
-      "content": "Selamat datang di Alun-Alun Tugu! Kunjungi Monumen, berinteraksi, dan saling mengobrol bersama seluruh warga Netizen City!",
-      "created_at": "2026-11-03T15:37:43.878Z"
-    },
-    {
-      "id": "msg-uzrndco",
-      "citizen_id": "c-netizen-01",
-      "sender_name": "Warga Netizen",
-      "channel": "global",
-      "content": "Halo warga Netizen City! Kota ini keren banget!",
-      "created_at": "2026-11-03T15:44:26.014Z"
-    },
-    {
-      "id": "msg-onhfbrw",
-      "citizen_id": "c-rewlc5s",
-      "sender_name": "budi_netizen",
-      "channel": "global",
-      "content": "hi",
-      "created_at": "2026-11-04T03:47:38.632Z"
-    },
-    {
-      "id": "msg-zfnsrdb",
-      "citizen_id": "c-netizen-01",
-      "sender_name": "warga_netizen",
-      "channel": "global",
-      "content": "Halo teman-teman Netizen City! Karakter saya keren sekali sekarang.",
-      "created_at": "2026-11-04T03:48:41.891Z"
-    },
-    {
-      "id": "msg-4v2lwea",
-      "citizen_id": "c-jy3hvn1",
-      "sender_name": "baros",
-      "channel": "global",
-      "content": "hi",
-      "created_at": "2026-11-06T12:06:10.207Z"
-    },
-    {
-      "id": "msg-v0tqjpa",
-      "citizen_id": "c-jy3hvn1",
-      "sender_name": "baros",
-      "channel": "global",
-      "content": "halo",
-      "created_at": "2026-11-06T12:06:11.847Z"
-    },
-    {
-      "id": "msg-agphzi3",
-      "citizen_id": "c-jy3hvn1",
-      "sender_name": "baros",
-      "channel": "global",
-      "content": "tes",
-      "created_at": "2026-11-06T12:06:13.089Z"
-    },
-    {
-      "id": "msg-068xlx4",
-      "citizen_id": "c-120jskg",
-      "sender_name": "ali",
-      "channel": "global",
-      "content": "halo",
-      "created_at": "2026-11-06T12:36:44.896Z"
-    },
-    {
-      "id": "msg-vzjvsv1",
-      "citizen_id": "c-120jskg",
-      "sender_name": "ali",
-      "channel": "global",
-      "content": "revi galing",
-      "created_at": "2026-11-06T12:37:23.054Z"
-    },
-    {
-      "id": "msg-tw3zv3h",
-      "citizen_id": "c-120jskg",
-      "sender_name": "ali",
-      "channel": "global",
-      "content": "revi galing bgt",
-      "created_at": "2026-11-06T12:37:41.012Z"
-    },
-    {
-      "id": "msg-nzqegsr",
-      "citizen_id": "c-120jskg",
-      "sender_name": "ali",
-      "channel": "global",
-      "content": "revi galing bgt",
-      "created_at": "2026-11-06T12:37:57.320Z"
-    }
-  ],
+  "chat_messages": [],
   "announcements": [
     {
       "id": "ann-01",

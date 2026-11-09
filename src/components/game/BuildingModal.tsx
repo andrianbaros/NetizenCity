@@ -29,6 +29,7 @@ import {
   Mountain,
   Sun,
   Church,
+  Fish,
 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -51,6 +52,7 @@ interface PollData {
 
 export default function BuildingModal() {
   const activeModal = useUIStore((s) => s.activeModal)
+  const openModal = useUIStore((s) => s.openModal)
   const closeModal = useUIStore((s) => s.closeModal)
   const addNotification = useUIStore((s) => s.addNotification)
   const selectedBuilding = useGameStore((s) => s.selectedBuilding)
@@ -119,7 +121,7 @@ export default function BuildingModal() {
       district: string
       desc: string
       actionName: string
-      actionType: 'work' | 'vote' | 'inspect'
+      actionType: 'work' | 'vote' | 'inspect' | 'investor' | 'freekick' | 'fishing'
     }
   > = {
     city_hall: {
@@ -175,8 +177,8 @@ export default function BuildingModal() {
       icon: <Building2 className="w-6 h-6 text-purple-400" />,
       district: 'Distrik Investor (Day 8)',
       desc: 'Menara spiral 11 lantai berlapis opal dengan 100 jendela menyala untuk para investor, 3 Crown Windows emas di puncak, cincin halo terapung, dan sign neon "TERIMA KASIH, INVESTOR KOTA".',
-      actionName: 'Lihat Daftar Investor',
-      actionType: 'inspect',
+      actionName: 'Buka Hall of Fame & Trakteer ☕',
+      actionType: 'investor',
     },
     hospital: {
       title: 'RSUD NETIZEN CITY',
@@ -230,9 +232,9 @@ export default function BuildingModal() {
       title: 'STADION & KOMPLEKS OLAHRAGA',
       icon: <Trophy className="w-6 h-6 text-emerald-400" />,
       district: 'Olahraga & Hiburan (Day 7)',
-      desc: 'Kompleks olahraga megah usulan @rznn8619 dengan stadion atletik, lintasan lari tartan, GOR serbaguna, dan lapangan basket terbuka.',
-      actionName: 'Mulai Latihan',
-      actionType: 'inspect',
+      desc: 'Kompleks olahraga megah usulan @rznn8619 dengan stadion atletik, lintasan lari tartan, GOR serbaguna, dan lapangan adu penalti freekick.',
+      actionName: 'Adu Penalti Freekick ⚽',
+      actionType: 'freekick',
     },
     science_lab: {
       title: 'LABORATORIUM RISET & OBSERVATORIUM',
@@ -281,6 +283,14 @@ export default function BuildingModal() {
       desc: 'Pantai tropis eksotis usulan @njemaa_28: pasir krem halus, ombak pastel, deretan payung santai, menara penjaga pantai, dan gapura berpita pink.',
       actionName: 'Bersantai di Pantai',
       actionType: 'inspect',
+    },
+    river_spot: {
+      title: 'SUNGAI KALI NETIZEN & DERMAGA PANCING',
+      icon: <Fish className="w-6 h-6 text-sky-400" />,
+      district: 'Kawasan Alam',
+      desc: 'Sungai Kali Netizen adalah aliran air bersih nan asri yang melintasi pusat kota dari kaki pegunungan hingga bermuara ke pantai. Konon sungai ini dihuni berbagai jenis ikan air tawar legendaris seperti Ikan Lele Sultan dan Mas Koki Alun-Alun.',
+      actionName: 'Masuk ke Sungai & Mulai Mancing 🎣',
+      actionType: 'fishing',
     },
   }
 
@@ -367,7 +377,18 @@ export default function BuildingModal() {
   }
 
   const handleAction = () => {
-    if (current.actionType === 'work') {
+    if (current.actionType === 'investor' || selectedBuilding === 'investor_tower') {
+      closeModal()
+      openModal('investor')
+    } else if (current.actionType === 'freekick' || selectedBuilding === 'sports_stadium') {
+      closeModal()
+      openModal('freekick')
+    } else if (current.actionType === 'fishing' || selectedBuilding === 'river_spot') {
+      closeModal()
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('enter-river-area'))
+      }
+    } else if (current.actionType === 'work') {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('start-courier-job'))
       }

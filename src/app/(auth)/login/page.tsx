@@ -3,8 +3,8 @@
 import React, { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Mail, Lock, LogIn, ArrowRight } from 'lucide-react'
-import { Input } from '@/components/ui/Input'
+import { Lock, LogIn, ArrowRight, Loader2 } from 'lucide-react'
+import { InstagramIcon } from '@/components/ui/InstagramIcon'
 import { Button } from '@/components/ui/Button'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/lib/stores/useAuthStore'
@@ -14,7 +14,7 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') || '/city'
 
-  const [email, setEmail] = useState('')
+  const [instagramHandle, setInstagramHandle] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -26,21 +26,23 @@ function LoginForm() {
     setError(null)
     setLoading(true)
 
+    const clean = instagramHandle.trim().replace(/^@/, '')
+
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const isPlaceholder =
         !supabaseUrl || supabaseUrl.includes('your_supabase_url_here')
 
       if (isPlaceholder) {
-        // Authenticate via persistent local database
+        // Authenticate via local database
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ instagramHandle: clean, password }),
         })
         const data = await res.json()
         if (!res.ok || data.error) {
-          setError(data.error || 'Email atau kata sandi tidak cocok')
+          setError(data.error || 'Username Instagram atau kata sandi tidak cocok')
           return
         }
 
@@ -51,7 +53,7 @@ function LoginForm() {
       const supabase = createClient()
       const { data, error: signInError } =
         await supabase.auth.signInWithPassword({
-          email,
+          email: `${clean}@instagram.netizencity.id`,
           password,
         })
 
@@ -79,7 +81,7 @@ function LoginForm() {
           Masuk ke Netizen City
         </h2>
         <p className="text-xs text-[#6F6675] mt-1 font-medium">
-          Lanjutkan petualangan virtualmu di dalam kota
+          Masuk menggunakan akun Instagram terdaftar
         </p>
       </div>
 
@@ -90,64 +92,68 @@ function LoginForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Email Warga"
-          type="email"
-          required
-          placeholder="nama@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          leftIcon={<Mail className="w-4 h-4 text-[#A89E92]" />}
-        />
-
-        <Input
-          label="Kata Sandi"
-          type="password"
-          required
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          leftIcon={<Lock className="w-4 h-4 text-[#A89E92]" />}
-        />
-
-        <div className="flex items-center justify-between text-xs">
-          <label className="flex items-center text-[#6F6675] hover:text-[#3B3340] cursor-pointer font-semibold">
-            <input
-              type="checkbox"
-              className="rounded bg-[#FFFDF9] border-[#EADBCC] text-[#F4A98C] focus:ring-0 mr-2"
-            />
-            Ingat saya
+        <div>
+          <label className="block text-xs font-bold text-[#343B35] mb-1">
+            Username Instagram
           </label>
-          <Link
-            href="/forgot-password"
-            className="text-[#2C6ECB] hover:text-[#1D60A6] font-bold"
-          >
-            Lupa kata sandi?
-          </Link>
+          <div className="relative">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-600">
+              <InstagramIcon className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              placeholder="@username_kamu"
+              value={instagramHandle}
+              onChange={(e) => setInstagramHandle(e.target.value)}
+              required
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-[#D8CEBE] bg-[#F7F4E9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-[#343B35] mb-1">
+            Kata Sandi Akun
+          </label>
+          <div className="relative">
+            <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#78634B]" />
+            <input
+              type="password"
+              placeholder="Kata sandi akunmu"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-[#D8CEBE] bg-[#F7F4E9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
+            />
+          </div>
         </div>
 
         <Button
           type="submit"
-          variant="peach"
+          variant="primary"
           size="lg"
-          isLoading={loading}
-          className="w-full mt-2"
+          disabled={loading}
+          className="w-full py-3 font-bold text-xs bg-[#668B65] hover:bg-[#527051]"
         >
-          <LogIn className="w-4 h-4" />
-          <span>Masuk Sekarang</span>
+          {loading ? (
+            <span className="flex items-center justify-center">
+              <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+              Menghubungkan ke Kota...
+            </span>
+          ) : (
+            <span className="flex items-center justify-center">
+              <LogIn className="w-4 h-4 mr-1.5" />
+              Masuk ke NetizenCity
+            </span>
+          )}
         </Button>
       </form>
 
-      <div className="mt-6 pt-6 border-t-2 border-[#EADBCC] text-center">
-        <p className="text-xs text-[#6F6675] font-medium">
-          Belum punya identitas warga?{' '}
-          <Link
-            href="/register"
-            className="text-[#2C6ECB] hover:text-[#1D60A6] font-black inline-flex items-center ml-1"
-          >
-            Daftar KTN <ArrowRight className="w-3 h-3 ml-0.5" />
-          </Link>
-        </p>
+      <div className="mt-6 text-center text-xs text-[#78634B] border-t border-[#D8CEBE] pt-4">
+        Belum punya akun warga?{' '}
+        <Link href="/register" className="font-bold text-[#668B65] hover:underline">
+          Daftar via Instagram di sini
+        </Link>
       </div>
     </div>
   )
@@ -155,7 +161,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="text-[#6F6675] text-xs text-center py-8">Memuat form login...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-xs text-[#78634B]">
+          Memuat formulir masuk...
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   )

@@ -34,9 +34,19 @@ import {
   Minus,
   Users,
   Check,
+  Fish,
+  Waves,
 } from 'lucide-react'
-import { City3DManager, TimeOfDay, CameraMode } from '@/game3d/City3DManager'
+import {
+  City3DManager,
+  TimeOfDay,
+  CameraMode,
+  RiverFishCatch,
+  FishingState,
+} from '@/game3d/City3DManager'
 import { useCitizenStore } from '@/lib/stores/useCitizenStore'
+import { useGameStore } from '@/lib/stores/useGameStore'
+import { useUIStore } from '@/lib/stores/useUIStore'
 
 function getClientSessionId(): string {
   if (typeof window === 'undefined') return ''
@@ -61,12 +71,12 @@ function AnalogJoystick({
   onMove: (dir: { x: number; y: number } | null) => void
 }) {
   const baseRef = useRef<HTMLDivElement>(null)
-  const [knobPos, setKnobPos] = useState({ x: 0, y: 0 })
-  const [isDragging, setIsDragging] = useState(false)
+  const knobRef = useRef<HTMLDivElement>(null)
+  const isDraggingRef = useRef(false)
   const activePointerId = useRef<number | null>(null)
 
   const updateKnob = useCallback((clientX: number, clientY: number) => {
-    if (!baseRef.current) return
+    if (!baseRef.current || !knobRef.current) return
     const rect = baseRef.current.getBoundingClientRect()
     const centerX = rect.left + rect.width / 2
     const centerY = rect.top + rect.height / 2
@@ -82,8 +92,10 @@ function AnalogJoystick({
       clampedY = (dy / dist) * maxRadius
     }
 
-    setKnobPos({ x: clampedX, y: clampedY })
-    // Send normalized proportional vector (-1.0 to 1.0)
+    // Direct hardware-accelerated transform with zero CSS transition or React state latency
+    knobRef.current.style.transform = `translate3d(${clampedX}px, ${clampedY}px, 0)`
+
+    // Send normalized proportional vector (-1.0 to 1.0) instantly
     onMove({
       x: clampedX / maxRadius,
       y: clampedY / maxRadius,
@@ -93,14 +105,14 @@ function AnalogJoystick({
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDragging(true)
+    isDraggingRef.current = true
     activePointerId.current = e.pointerId
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     updateKnob(e.clientX, e.clientY)
   }
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging || e.pointerId !== activePointerId.current) return
+    if (!isDraggingRef.current || e.pointerId !== activePointerId.current) return
     e.preventDefault()
     e.stopPropagation()
     updateKnob(e.clientX, e.clientY)
@@ -110,9 +122,11 @@ function AnalogJoystick({
     if (e.pointerId !== activePointerId.current) return
     e.preventDefault()
     e.stopPropagation()
-    setIsDragging(false)
+    isDraggingRef.current = false
     activePointerId.current = null
-    setKnobPos({ x: 0, y: 0 })
+    if (knobRef.current) {
+      knobRef.current.style.transform = 'translate3d(0px, 0px, 0)'
+    }
     onMove(null)
   }
 
@@ -123,19 +137,17 @@ function AnalogJoystick({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="relative w-22 h-22 sm:w-26 sm:h-26 rounded-full bg-[#F7F4E9]/95 border-2 border-[#D8CEBE] shadow-xl backdrop-blur-xs flex items-center justify-center touch-none select-none pointer-events-auto"
-      title="Analog Joystick Karakter"
+      className="relative w-22 h-22 sm:w-26 sm:h-26 rounded-full bg-[#F7F4E9]/95 border-2 border-[#D8CEBE] shadow-xl backdrop-blur-xs flex items-center justify-center touch-none select-none pointer-events-auto cursor-grab active:cursor-grabbing"
+      title="Analog Joystick Karakter (Sentuh & Gerakkan)"
     >
       {/* Decorative concentric indicator */}
       <div className="absolute w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-[#D8CEBE]/80 pointer-events-none" />
       <div className="absolute w-2 h-2 rounded-full bg-[#78634B]/30 pointer-events-none" />
 
-      {/* Movable Knob */}
+      {/* Movable Knob (Zero-latency direct 1:1 hardware transform) */}
       <div
-        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#668B65] border-2 border-[#527251] shadow-md flex items-center justify-center pointer-events-none transition-transform duration-75"
-        style={{
-          transform: `translate3d(${knobPos.x}px, ${knobPos.y}px, 0)`,
-        }}
+        ref={knobRef}
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#668B65] border-2 border-[#527251] shadow-md flex items-center justify-center pointer-events-none will-change-transform"
       >
         <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white/40" />
       </div>
@@ -150,12 +162,17 @@ export default function GameCanvas() {
   const [mounted, setMounted] = useState(false)
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('noon')
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit')
-  const [viewMode, setViewMode] = useState<'city' | 'tugu'>('city')
+  const [viewMode, setViewMode] = useState<'city' | 'tugu' | 'river'>('city')
   const [showLandmarkMenu, setShowLandmarkMenu] = useState(false)
   const [showHelpHint, setShowHelpHint] = useState(false)
   const [tuguConfirmOpen, setTuguConfirmOpen] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [transitionMessage, setTransitionMessage] = useState('')
+
+  // 3D River Map Fishing States
+  const [fishingState, setFishingState] = useState<FishingState>('idle')
+  const [reelProgress, setReelProgress] = useState(0)
+  const [caughtFish, setCaughtFish] = useState<RiverFishCatch | null>(null)
   const [selectedLandmarkInfo, setSelectedLandmarkInfo] = useState<{
     id: string
     name: string
@@ -331,14 +348,74 @@ export default function GameCanvas() {
         setSelectedLandmarkInfo(null)
       }
     }
-    const onLandmarkSelected = (e: CustomEvent) => {
-      if (e.detail) {
-        setSelectedLandmarkInfo(e.detail)
-      }
+    const onLandmarkSelected = (_e: CustomEvent) => {
+      // Direct 3D taps open BuildingModal directly; clear any floating destination card
+      setSelectedLandmarkInfo(null)
     }
     const onTimeChanged = (e: CustomEvent) => {
       const t = e.detail?.time
       if (t) setTimeOfDay(t)
+    }
+
+    const onEnterRiver = () => {
+      setSelectedLandmarkInfo(null)
+      setIsTransitioning(true)
+      setTransitionMessage('Memuat Sungai Kali Netizen & Dermaga Pancing...')
+      setTimeout(() => {
+        cityManagerRef.current?.enterRiverArea()
+        setViewMode('river')
+        setTimeout(() => {
+          setIsTransitioning(false)
+        }, 400)
+      }, 450)
+    }
+
+    const onExitRiver = () => {
+      setIsTransitioning(true)
+      setTransitionMessage('Kembali ke Kota Utama...')
+      setTimeout(() => {
+        cityManagerRef.current?.exitRiverArea()
+        setViewMode('city')
+        setTimeout(() => {
+          setIsTransitioning(false)
+        }, 400)
+      }, 450)
+    }
+
+    const onRiverModeChanged = (e: CustomEvent) => {
+      const mode = e.detail?.mode || 'city'
+      setViewMode(mode)
+      if (mode === 'river') {
+        setSelectedLandmarkInfo(null)
+      }
+    }
+
+    const onRiverFishingState = (e: CustomEvent) => {
+      if (e.detail?.state) {
+        setFishingState(e.detail.state)
+      }
+      if (typeof e.detail?.progress === 'number') {
+        setReelProgress(e.detail.progress)
+      }
+      if (e.detail?.fish) {
+        setCaughtFish(e.detail.fish)
+      }
+    }
+
+    const onRiverFishCaught = (e: CustomEvent) => {
+      const fish = e.detail?.fish as RiverFishCatch
+      if (fish) {
+        const wallet = useCitizenStore.getState().wallet
+        const updateBalance = useCitizenStore.getState().updateBalance
+        const addNotification = useUIStore.getState().addNotification
+        const cur = wallet?.balance ?? 500
+        updateBalance(cur + fish.rewardCoins)
+        addNotification({
+          title: `Berhasil Menangkap ${fish.name}! 🎣`,
+          message: `Berat: ${fish.weight} kg • +${fish.rewardCoins} Netizen Coins masuk ke dompetmu!`,
+          type: 'success',
+        })
+      }
     }
 
     window.addEventListener('open-tugu-confirm', onOpenConfirm)
@@ -346,11 +423,24 @@ export default function GameCanvas() {
     window.addEventListener('landmark-selected', onLandmarkSelected as EventListener)
     window.addEventListener('time-of-day-changed', onTimeChanged as EventListener)
 
+    window.addEventListener('enter-river-area', onEnterRiver)
+    window.addEventListener('exit-river-area', onExitRiver)
+    window.addEventListener('river-mode-changed', onRiverModeChanged as EventListener)
+    window.addEventListener('river-fishing-state', onRiverFishingState as EventListener)
+    window.addEventListener('river-fish-caught', onRiverFishCaught as EventListener)
+
     return () => {
       window.removeEventListener('open-tugu-confirm', onOpenConfirm)
       window.removeEventListener('tugu-mode-changed', onModeChanged as EventListener)
       window.removeEventListener('landmark-selected', onLandmarkSelected as EventListener)
       window.removeEventListener('time-of-day-changed', onTimeChanged as EventListener)
+
+      window.removeEventListener('enter-river-area', onEnterRiver)
+      window.removeEventListener('exit-river-area', onExitRiver)
+      window.removeEventListener('river-mode-changed', onRiverModeChanged as EventListener)
+      window.removeEventListener('river-fishing-state', onRiverFishingState as EventListener)
+      window.removeEventListener('river-fish-caught', onRiverFishCaught as EventListener)
+
       if (cityManagerRef.current) {
         cityManagerRef.current.destroy()
         cityManagerRef.current = null
@@ -417,6 +507,17 @@ export default function GameCanvas() {
     }, 450)
   }
 
+  const handleExitRiver = () => {
+    setIsTransitioning(true)
+    setTransitionMessage('Kembali ke Kota Utama...')
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('exit-river-area'))
+      setTimeout(() => {
+        setIsTransitioning(false)
+      }, 400)
+    }, 450)
+  }
+
   const handleAnalogMove = useCallback((dir: { x: number; y: number } | null) => {
     cityManagerRef.current?.setVirtualMovement(dir)
   }, [])
@@ -442,6 +543,21 @@ export default function GameCanvas() {
             <Navigation className="w-3.5 h-3.5 text-[#668B65]" />
             <span>Kembali ke Kota</span>
           </button>
+        ) : viewMode === 'river' ? (
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={handleExitRiver}
+              className="flex items-center space-x-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] text-[#343B35] font-bold text-[11px] sm:text-xs shadow-sm transition-transform cursor-pointer"
+            >
+              <Navigation className="w-3.5 h-3.5 text-[#668B65]" />
+              <span>Kembali ke Kota</span>
+            </button>
+            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#F7F4E9]/90 border border-[#D8CEBE] text-[#343B35] text-xs font-semibold shadow-xs">
+              <Fish className="w-3.5 h-3.5 text-[#267385]" />
+              <span>Dermaga Pancing Sungai Kali Netizen</span>
+            </div>
+          </div>
         ) : (
           <div className="flex items-center space-x-1.5 flex-wrap gap-y-1.5">
             {/* 4-Segment Time of Day Control */}
@@ -733,11 +849,168 @@ export default function GameCanvas() {
       </div>
 
       {/* ============================================================ */}
-      {/* VIRTUAL ANALOG JOYSTICK (Tugu Mode on Touch/Mobile Screens)  */}
+      {/* VIRTUAL ANALOG JOYSTICK (Tugu & River Maps on Touch Screens) */}
       {/* ============================================================ */}
-      {viewMode === 'tugu' && (
+      {(viewMode === 'tugu' || viewMode === 'river') && (
         <div className="absolute bottom-5 sm:bottom-6 left-3 sm:left-6 z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 3D RIVER FISHING CONTROLS & HUD                              */}
+      {/* ============================================================ */}
+      {viewMode === 'river' && (
+        <div className="absolute bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-28 z-30 pointer-events-auto font-sans flex flex-col items-center sm:items-end gap-2.5 max-w-sm">
+          {/* 1. IDLE STATE: Cast Button */}
+          {fishingState === 'idle' && (
+            <div className="flex flex-col items-center sm:items-end gap-1.5">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-[#343B35] bg-[#F7F4E9]/90 backdrop-blur-xs px-2.5 py-1 rounded-full border border-[#D8CEBE] shadow-xs">
+                💡 Sentuh air sungai atau klik tombol
+              </span>
+              <button
+                type="button"
+                onClick={() => cityManagerRef.current?.castFishingLine()}
+                className="flex items-center space-x-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl bg-gradient-to-r from-[#267385] to-[#1E5D6C] text-white font-bold text-xs sm:text-sm shadow-lg hover:shadow-xl active:scale-95 transition-all cursor-pointer border border-white/20"
+              >
+                <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-[#80DEEA] animate-pulse" />
+                <span>Lempar Kail ke Air 🎣</span>
+              </button>
+            </div>
+          )}
+
+          {/* 2. CASTING STATE */}
+          {fishingState === 'casting' && (
+            <div className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-[#F7F4E9] border border-[#D8CEBE] shadow-md text-xs font-bold text-[#267385] animate-pulse">
+              <Waves className="w-4 h-4 text-[#267385] animate-spin" />
+              <span>Melempar kail ke sungai...</span>
+            </div>
+          )}
+
+          {/* 3. WAITING STATE */}
+          {fishingState === 'waiting' && (
+            <div className="flex items-center space-x-2 bg-[#F7F4E9]/95 backdrop-blur-xs border border-[#D8CEBE] rounded-2xl p-2 sm:p-2.5 shadow-lg">
+              <div className="flex items-center space-x-2 px-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444] animate-ping" />
+                <span className="text-xs font-bold text-[#343B35]">
+                  Menunggu ikan menyambar...
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => cityManagerRef.current?.resetFishing()}
+                className="px-2.5 py-1 text-[11px] font-semibold text-[#78634B] hover:text-[#343B35] hover:bg-[#EFE9D8] rounded-xl transition-colors cursor-pointer"
+              >
+                Batal ✕
+              </button>
+            </div>
+          )}
+
+          {/* 4. BITE / STRIKE STATE */}
+          {fishingState === 'bite' && (
+            <button
+              type="button"
+              onClick={() => cityManagerRef.current?.reelFishingTap()}
+              className="px-6 py-3.5 sm:px-8 sm:py-4 rounded-2xl bg-gradient-to-r from-[#EF4444] via-[#F59E0B] to-[#EF4444] text-white font-black text-sm sm:text-base shadow-2xl animate-bounce hover:scale-105 active:scale-95 transition-transform cursor-pointer border-2 border-white ring-4 ring-[#EF4444]/40"
+            >
+              ⚡ STRIKE! TARIK SEKARANG! ⚡
+            </button>
+          )}
+
+          {/* 5. REELING MINIGAME STATE */}
+          {fishingState === 'reeling' && (
+            <div className="w-56 sm:w-64 bg-[#F7F4E9] border-2 border-[#267385] rounded-2xl p-3 shadow-2xl flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-bold text-[#343B35]">
+                <span className="flex items-center gap-1">
+                  <Fish className="w-3.5 h-3.5 text-[#267385]" />
+                  Tensi Tarikan
+                </span>
+                <span className="text-[#267385] font-black">{Math.round(reelProgress)}%</span>
+              </div>
+              {/* Progress Bar */}
+              <div className="w-full h-3 bg-[#D8CEBE] rounded-full overflow-hidden p-0.5">
+                <div
+                  className="h-full rounded-full transition-all duration-100 bg-gradient-to-r from-[#22C55E] via-[#EAB308] to-[#EF4444]"
+                  style={{ width: `${Math.min(100, Math.max(0, reelProgress))}%` }}
+                />
+              </div>
+              {/* Fast Tap Action Button */}
+              <button
+                type="button"
+                onClick={() => cityManagerRef.current?.reelFishingTap()}
+                className="w-full py-2.5 rounded-xl bg-[#267385] hover:bg-[#1E5D6C] active:scale-95 text-white font-black text-xs sm:text-sm tracking-wide shadow-md transition-transform cursor-pointer border border-[#1E5D6C]"
+              >
+                TARIK! 🎣 (Tap Cepat!)
+              </button>
+            </div>
+          )}
+
+          {/* 6. CAUGHT CELEBRATION CARD */}
+          {fishingState === 'caught' && caughtFish && (
+            <div className="w-64 sm:w-72 bg-[#F7F4E9] border-2 border-[#668B65] rounded-2xl p-3.5 sm:p-4 shadow-2xl animate-in zoom-in-95 font-sans">
+              <div className="flex items-start justify-between">
+                <div className="text-2xl sm:text-3xl">{caughtFish.icon}</div>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-xs"
+                  style={{ backgroundColor: caughtFish.rarityColor || '#27AE60' }}
+                >
+                  {caughtFish.rarity}
+                </span>
+              </div>
+
+              <h4 className="font-black text-sm sm:text-base text-[#343B35] mt-1.5">
+                {caughtFish.name}
+              </h4>
+              <p className="text-[11px] text-[#78634B] mt-0.5 line-clamp-2 leading-relaxed">
+                {caughtFish.desc}
+              </p>
+
+              <div className="mt-2.5 p-2 bg-[#EFE9D8] rounded-xl flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-[10px] text-[#78634B] block">Berat</span>
+                  <span className="font-bold text-[#343B35]">{caughtFish.weight} kg</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-[#78634B] block">Hadiah</span>
+                  <span className="font-black text-[#668B65]">+{caughtFish.rewardCoins} Koin</span>
+                </div>
+              </div>
+
+              <div className="mt-3 pt-2 border-t border-[#D8CEBE] flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => cityManagerRef.current?.resetFishing()}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-[#78634B] hover:bg-[#EFE9D8] cursor-pointer"
+                >
+                  Selesai
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    cityManagerRef.current?.resetFishing()
+                    setTimeout(() => cityManagerRef.current?.castFishingLine(), 150)
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#267385] hover:bg-[#1E5D6C] text-white text-xs font-bold shadow-sm cursor-pointer"
+                >
+                  Mancing Lagi 🎣
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 7. ESCAPED STATE */}
+          {fishingState === 'escaped' && (
+            <div className="flex items-center space-x-2 px-3.5 py-2 rounded-2xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] text-xs font-bold shadow-md">
+              <span>Ikan terlepas! Jangan menyerah!</span>
+              <button
+                type="button"
+                onClick={() => cityManagerRef.current?.resetFishing()}
+                className="underline ml-1 cursor-pointer text-[#343B35]"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -746,7 +1019,7 @@ export default function GameCanvas() {
       {/* ============================================================ */}
       <div
         className={`absolute z-20 pointer-events-auto font-sans ${
-          viewMode === 'tugu'
+          viewMode === 'tugu' || viewMode === 'river'
             ? 'bottom-16 sm:bottom-5 right-3 sm:right-4'
             : 'bottom-4 sm:bottom-5 right-3 sm:right-4'
         }`}
@@ -756,7 +1029,11 @@ export default function GameCanvas() {
             <div className="flex items-center justify-between pb-1.5 border-b border-[#D8CEBE] mb-1.5">
               <span className="font-bold text-xs flex items-center gap-1.5 text-[#343B35]">
                 <Info className="w-3.5 h-3.5 text-[#668B65]" />
-                {viewMode === 'city' ? 'Panduan Kota 3D' : 'Panduan Alun-Alun'}
+                {viewMode === 'city'
+                  ? 'Panduan Kota 3D'
+                  : viewMode === 'river'
+                  ? 'Panduan Sungai Kali Netizen'
+                  : 'Panduan Alun-Alun'}
               </span>
               <button
                 type="button"
@@ -774,6 +1051,13 @@ export default function GameCanvas() {
                   <div>• <strong className="text-[#343B35]">Cubit 2 Jari / Scroll:</strong> Zoom in &amp; out</div>
                   <div>• <strong className="text-[#343B35]">Geser 2 Jari:</strong> Pindah pandangan kamera</div>
                   <div>• <strong className="text-[#343B35]">Klik Landmark / Tugu:</strong> Kunjungi Alun-Alun Warga</div>
+                </>
+              ) : viewMode === 'river' ? (
+                <>
+                  <div>• <strong className="text-[#343B35]">Analog / WASD:</strong> Jelajahi dermaga &amp; tepian sungai</div>
+                  <div>• <strong className="text-[#343B35]">Tap Air Sungai:</strong> Lempar kail langsung ke air</div>
+                  <div>• <strong className="text-[#343B35]">STRIKE:</strong> Tap secepatnya saat kail disambar ikan!</div>
+                  <div>• <strong className="text-[#343B35]">Tensi Tarikan:</strong> Tap tombol berulang kali sampai 100%</div>
                 </>
               ) : (
                 <>
@@ -845,12 +1129,14 @@ export default function GameCanvas() {
                 type="button"
                 onClick={() => {
                   cityManagerRef.current?.flyToLandmark(selectedLandmarkInfo.id)
+                  useGameStore.getState().setSelectedBuilding(selectedLandmarkInfo.id)
+                  useUIStore.getState().openModal('building_details')
                   setSelectedLandmarkInfo(null)
                 }}
                 className="px-3.5 py-1.5 rounded-lg bg-[#668B65] hover:bg-[#557754] text-white font-semibold text-xs border border-[#557754] flex items-center space-x-1 cursor-pointer transition-colors shadow-xs"
               >
                 <Eye className="w-3.5 h-3.5 mr-1" />
-                <span>Arahkan Kamera</span>
+                <span>Kunjungi Fasilitas</span>
               </button>
             </div>
           </div>
@@ -930,6 +1216,8 @@ export default function GameCanvas() {
           <p className="text-xs text-[#A9C9D8] font-normal text-center max-w-xs">
             {transitionMessage.includes('Alun-Alun')
               ? 'Menghubungkan ke server ruangan Alun-Alun Tugu...'
+              : transitionMessage.includes('Sungai')
+              ? 'Mempersiapkan alat pancing & dermaga kayu sungai...'
               : 'Memuat peta diorama 3D kota utama...'}
           </p>
           <div className="w-36 h-1 bg-white/20 rounded-full mt-3 overflow-hidden">

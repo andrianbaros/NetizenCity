@@ -25,6 +25,10 @@ import {
   MoreHorizontal,
   X,
   User,
+  Camera,
+  Fish,
+  Sprout,
+  Trophy,
 } from 'lucide-react'
 import { InstagramIcon } from '@/components/ui/InstagramIcon'
 import { useGameStore } from '@/lib/stores/useGameStore'
@@ -37,6 +41,13 @@ import MallModal from './MallModal'
 import DailyRewardModal from './DailyRewardModal'
 import BuildingModal from './BuildingModal'
 import MissionsModal from './MissionsModal'
+import PhotoStudioModal from './PhotoStudioModal'
+import CatHuntModal from './CatHuntModal'
+import FishingModal from './FishingModal'
+import FreekickModal from './FreekickModal'
+import GardenModal from './GardenModal'
+import InvestorModal from './InvestorModal'
+import BGMPlayer from './BGMPlayer'
 
 export default function GameHUD() {
   const cityStats = useGameStore((s) => s.cityStats)
@@ -51,7 +62,9 @@ export default function GameHUD() {
   const setWallet = useCitizenStore((s) => s.setWallet)
   const setInventory = useCitizenStore((s) => s.setInventory)
 
+  const activeModal = useUIStore((s) => s.activeModal)
   const openModal = useUIStore((s) => s.openModal)
+  const closeModal = useUIStore((s) => s.closeModal)
   const notifications = useUIStore((s) => s.notifications)
   const removeNotification = useUIStore((s) => s.removeNotification)
 
@@ -346,11 +359,29 @@ export default function GameHUD() {
           {/* Primary Quick Actions always visible */}
           <button
             type="button"
+            onClick={() => openModal('photo_studio')}
+            title="Mode Foto Bersama (POV & Polaroid)"
+            className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition-all active:translate-y-0.5 cursor-pointer shrink-0"
+          >
+            <Camera className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
             onClick={() => openModal('mall')}
             title="Mall Busana"
             className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => openModal('cat_hunt')}
+            title="Misi Cari Kucing Kota (5/5)"
+            className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0 text-xs flex items-center justify-center"
+          >
+            🐱
           </button>
 
           {/* Missions button: Available on sm+, in mobile menu on small screens */}
@@ -365,6 +396,24 @@ export default function GameHUD() {
 
           {/* Desktop-only secondary toolbar actions */}
           <div className="hidden lg:flex items-center space-x-1">
+            <button
+              type="button"
+              onClick={() => openModal('garden')}
+              title="Kebun Netizen (Shopee Tanam)"
+              className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer"
+            >
+              <Sprout className="w-3.5 h-3.5 text-emerald-600" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => openModal('investor')}
+              title="Menara Investor (103 Pendukung Kota & Trakteer)"
+              className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-purple-700 border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+            </button>
+
             <button
               type="button"
               onClick={handleOpenCityHall}
@@ -411,6 +460,9 @@ export default function GameHUD() {
               <Moon className="w-3.5 h-3.5" />
             </button>
 
+            {/* BGM Player Component */}
+            <BGMPlayer />
+
             {/* Logout / Home */}
             {profile ? (
               <button
@@ -450,6 +502,54 @@ export default function GameHUD() {
             {/* Dropdown sheet for mobile */}
             {mobileMenuOpen && (
               <div className="absolute right-0 top-full mt-2 w-52 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl shadow-xl p-1.5 z-50 flex flex-col space-y-1 animate-in fade-in zoom-in-95 text-xs font-heading font-bold text-[#343B35]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('photo_studio')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                >
+                  <Camera className="w-4 h-4 text-amber-600" />
+                  <span>Foto Bersama Alun-Alun</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('cat_hunt')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                >
+                  <span className="text-sm">🐱</span>
+                  <span>Cari Kucing Kota</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('garden')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                >
+                  <Sprout className="w-4 h-4 text-emerald-600" />
+                  <span>Kebun Netizen (Tanam)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('investor')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                >
+                  <Building2 className="w-4 h-4 text-purple-700" />
+                  <span>Menara Investor Kota</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleOpenCityHall}
@@ -581,6 +681,32 @@ export default function GameHUD() {
       <DailyRewardModal />
       <BuildingModal />
       <MissionsModal />
+
+      {/* NEW FEATURES MODALS */}
+      <PhotoStudioModal
+        isOpen={activeModal === 'photo_studio'}
+        onClose={closeModal}
+      />
+      <CatHuntModal
+        isOpen={activeModal === 'cat_hunt'}
+        onClose={closeModal}
+      />
+      <FishingModal
+        isOpen={activeModal === 'fishing'}
+        onClose={closeModal}
+      />
+      <FreekickModal
+        isOpen={activeModal === 'freekick'}
+        onClose={closeModal}
+      />
+      <GardenModal
+        isOpen={activeModal === 'garden'}
+        onClose={closeModal}
+      />
+      <InvestorModal
+        isOpen={activeModal === 'investor'}
+        onClose={closeModal}
+      />
     </div>
   )
 }

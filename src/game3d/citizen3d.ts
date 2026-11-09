@@ -330,11 +330,11 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       body.position.y = breath;
       body.rotation.z = 0;
 
-      leftArm.rotation.x = THREE.MathUtils.lerp(leftArm.rotation.x, 0, 0.15);
-      rightArm.rotation.x = THREE.MathUtils.lerp(rightArm.rotation.x, 0, 0.15);
-      leftLeg.rotation.x = THREE.MathUtils.lerp(leftLeg.rotation.x, 0, 0.15);
-      rightLeg.rotation.x = THREE.MathUtils.lerp(rightLeg.rotation.x, 0, 0.15);
-      head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, 0, 0.1);
+      leftArm.rotation.x = THREE.MathUtils.lerp(leftArm.rotation.x, 0, 0.35);
+      rightArm.rotation.x = THREE.MathUtils.lerp(rightArm.rotation.x, 0, 0.35);
+      leftLeg.rotation.x = THREE.MathUtils.lerp(leftLeg.rotation.x, 0, 0.35);
+      rightLeg.rotation.x = THREE.MathUtils.lerp(rightLeg.rotation.x, 0, 0.35);
+      head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, 0, 0.25);
     }
   };
 
@@ -543,10 +543,10 @@ export function createPakMayorNPC(scene: THREE.Scene | THREE.Group, position: TH
       body.position.y = breath;
       body.rotation.z = 0;
 
-      leftArm.rotation.x = THREE.MathUtils.lerp(leftArm.rotation.x, 0, 0.15);
-      rightArm.rotation.x = THREE.MathUtils.lerp(rightArm.rotation.x, 0, 0.15);
-      leftLeg.rotation.x = THREE.MathUtils.lerp(leftLeg.rotation.x, 0, 0.15);
-      rightLeg.rotation.x = THREE.MathUtils.lerp(rightLeg.rotation.x, 0, 0.15);
+      leftArm.rotation.x = THREE.MathUtils.lerp(leftArm.rotation.x, 0, 0.35);
+      rightArm.rotation.x = THREE.MathUtils.lerp(rightArm.rotation.x, 0, 0.35);
+      leftLeg.rotation.x = THREE.MathUtils.lerp(leftLeg.rotation.x, 0, 0.35);
+      rightLeg.rotation.x = THREE.MathUtils.lerp(rightLeg.rotation.x, 0, 0.35);
       head.rotation.y = Math.sin(elapsed * 0.8) * 0.15;
     }
   };

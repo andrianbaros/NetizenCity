@@ -4,16 +4,17 @@ import { loginLocalCitizen } from '@/lib/db/localDb'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password } = body
+    const rawIdentifier = body.instagramHandle || body.username || body.email || ''
+    const password = body.password
 
-    if (!email || !password) {
+    if (!rawIdentifier || !password) {
       return NextResponse.json(
-        { error: 'Email dan kata sandi wajib diisi' },
+        { error: 'Username Instagram dan kata sandi wajib diisi' },
         { status: 400 }
       )
     }
 
-    const result = loginLocalCitizen(email, password)
+    const result = loginLocalCitizen(rawIdentifier, password)
     if (!result.success || !result.citizen) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }

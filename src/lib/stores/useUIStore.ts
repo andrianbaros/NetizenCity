@@ -15,6 +15,13 @@ export type ActiveModal =
   | 'ktn_card'
   | 'settings'
   | 'building_details'
+  | 'photo_studio'
+  | 'cat_hunt'
+  | 'fishing'
+  | 'freekick'
+  | 'garden'
+  | 'investor'
+  | 'city_gate'
 
 interface UIState {
   activeModal: ActiveModal

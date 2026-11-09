@@ -1083,11 +1083,19 @@ export function registerLocalCitizen(
   displayName: string
 ) {
   const db = readLocalDB()
+  const cleanHandle = (username || email).trim().toLowerCase().replace(/^@/, '')
+  const emailVal = email.includes('@') && !email.startsWith('@')
+    ? email
+    : `${cleanHandle}@instagram.netizencity.id`
+
   const existing = db.citizens.find(
-    (c) => c.username.toLowerCase() === username.toLowerCase() || c.email === email
+    (c) =>
+      c.username.toLowerCase() === cleanHandle ||
+      (c as any).instagram_handle?.toLowerCase() === cleanHandle ||
+      c.email.toLowerCase() === emailVal.toLowerCase()
   )
   if (existing) {
-    return { success: false, error: 'Username atau email sudah digunakan' }
+    return { success: false, error: `Akun Instagram @${cleanHandle} sudah terdaftar sebagai warga!` }
   }
 
   const citizenId = 'c-' + Math.random().toString(36).substring(2, 9)
@@ -1101,10 +1109,12 @@ export function registerLocalCitizen(
   const newCitizen = {
     id: citizenId,
     user_id: userId,
-    email,
+    email: emailVal,
+    instagram_handle: cleanHandle,
+    is_ig_verified: true,
     password_hash: passwordHash,
-    username: username.toLowerCase(),
-    display_name: displayName,
+    username: cleanHandle,
+    display_name: displayName || cleanHandle,
     ktn_number: ktn,
     avatar_config: {
       skinTone: '#f5d0b0',
@@ -1121,7 +1131,7 @@ export function registerLocalCitizen(
     housing_id: housing ? housing.id : null,
     housing_name: housing ? `${housing.name} - ${housing.unit_number}` : 'Rusunawa Harapan Baru',
     district: housing ? housing.district : 'Perumahan Utara',
-    biography: 'Warga resmi baru NETIZENCITY.',
+    biography: `Warga resmi NETIZENCITY terverifikasi dari Instagram @${cleanHandle}.`,
     is_online: true,
     role: 'citizen' as const,
     onboarding_completed: true,
@@ -1131,12 +1141,12 @@ export function registerLocalCitizen(
 
   db.citizens.push(newCitizen)
 
-  // Auto-create wallet with +500 welcome bonus
+  // Auto-create wallet with +600 bonus (500 kota + 100 Instagram bonus)
   db.wallets.push({
     id: 'w-' + citizenId,
     citizen_id: citizenId,
-    balance: 500,
-    total_earned: 500,
+    balance: 600,
+    total_earned: 600,
     total_spent: 0,
     updated_at: new Date().toISOString(),
   })
@@ -1145,10 +1155,10 @@ export function registerLocalCitizen(
     id: 'tx-' + Math.random().toString(36).substring(2, 9),
     citizen_id: citizenId,
     type: 'reward',
-    amount: 500,
+    amount: 600,
     previous_balance: 0,
-    new_balance: 500,
-    description: 'Bonus Selamat Datang Balai Kota',
+    new_balance: 600,
+    description: 'Bonus Selamat Datang Balai Kota & Verifikasi Follow Instagram',
     reference_type: 'onboarding',
     reference_id: null,
     created_at: new Date().toISOString(),
@@ -1158,13 +1168,20 @@ export function registerLocalCitizen(
   return { success: true, citizen: newCitizen }
 }
 
-export function loginLocalCitizen(email: string, passwordHash: string) {
+export function loginLocalCitizen(identifier: string, passwordHash: string) {
   const db = readLocalDB()
+  const clean = identifier.trim().toLowerCase().replace(/^@/, '')
   const citizen = db.citizens.find(
-    (c) => c.email === email && c.password_hash === passwordHash
+    (c) =>
+      (c.username.toLowerCase() === clean ||
+        (c as any).instagram_handle?.toLowerCase() === clean ||
+        c.email.toLowerCase() === clean ||
+        c.email.toLowerCase() === `${clean}@instagram.netizencity.id` ||
+        c.ktn_number === identifier.trim()) &&
+      c.password_hash === passwordHash
   )
   if (!citizen) {
-    return { success: false, error: 'Email atau kata sandi tidak cocok' }
+    return { success: false, error: 'Username Instagram atau kata sandi tidak cocok' }
   }
   citizen.is_online = true
   writeLocalDB(db)

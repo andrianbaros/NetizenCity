@@ -22,6 +22,81 @@ import { useCitizenStore } from '@/lib/stores/useCitizenStore';
 
 export type TimeOfDay = 'morning' | 'noon' | 'sunset' | 'night';
 export type CameraMode = 'orbit' | 'follow' | 'cinematic';
+export type FishingState = 'idle' | 'casting' | 'waiting' | 'bite' | 'reeling' | 'caught' | 'escaped';
+
+export interface RiverFishCatch {
+  id: string;
+  name: string;
+  rarity: string;
+  rarityColor: string;
+  weight: number;
+  rewardCoins: number;
+  icon: string;
+  desc: string;
+}
+
+export const RIVER_FISH_SPECIES: RiverFishCatch[] = [
+  {
+    id: 'fish_lele_sultan',
+    name: 'Ikan Lele Sultan',
+    rarity: 'Langka (Rare)',
+    rarityColor: '#F39C12',
+    weight: 4.2,
+    rewardCoins: 150,
+    icon: '🐟',
+    desc: 'Lele berkumis emas legendaris penghuni palung terdalam Sungai Kali Netizen.',
+  },
+  {
+    id: 'fish_mas_koki',
+    name: 'Ikan Mas Koki Alun-Alun',
+    rarity: 'Biasa (Common)',
+    rarityColor: '#27AE60',
+    weight: 1.1,
+    rewardCoins: 65,
+    icon: '🐠',
+    desc: 'Ikan mas berenang anggun yang sering terlihat di sekitar dermaga kayu.',
+  },
+  {
+    id: 'fish_arwana_emas',
+    name: 'Arwana Emas Harapan',
+    rarity: 'Legendaris (Super Rare)',
+    rarityColor: '#E74C3C',
+    weight: 5.8,
+    rewardCoins: 250,
+    icon: '✨',
+    desc: 'Ikan pembawa keberuntungan berharga tinggi dengan sisik berkilau keemasan!',
+  },
+  {
+    id: 'fish_patin_deras',
+    name: 'Ikan Patin Sungai Deras',
+    rarity: 'Menengah (Uncommon)',
+    rarityColor: '#2980B9',
+    weight: 2.8,
+    rewardCoins: 95,
+    icon: '🐡',
+    desc: 'Ikan bertenaga besar yang gemar melawan arus air jernih bebatuan.',
+  },
+  {
+    id: 'fish_mujair_kali',
+    name: 'Mujair Kali Netizen',
+    rarity: 'Biasa (Common)',
+    rarityColor: '#27AE60',
+    weight: 0.8,
+    rewardCoins: 50,
+    icon: '🐟',
+    desc: 'Ikan air tawar lincah yang mudah ditemukan warga di sepanjang tepian sungai.',
+  },
+  {
+    id: 'fish_nila_tropis',
+    name: 'Ikan Nila Danau Tropis',
+    rarity: 'Biasa (Common)',
+    rarityColor: '#27AE60',
+    weight: 1.4,
+    rewardCoins: 55,
+    icon: '🐟',
+    desc: 'Ikan nila air tawar sehat dan lincah, santapan favorit warga NetizenCity.',
+  },
+];
 
 export interface LandmarkLocation {
   id: string;
@@ -281,9 +356,38 @@ export class City3DManager {
   private clock = new THREE.Clock();
   private timeOfDay: TimeOfDay = 'noon';
   private cameraMode: CameraMode = 'orbit'; // Main city starts in free Orbit overview
-  public viewMode: 'city' | 'tugu' = 'city';
+  public viewMode: 'city' | 'tugu' | 'river' = 'city';
   public cityWorldGroup = new THREE.Group();
   public tuguWorldGroup = new THREE.Group();
+  public riverWorldGroup = new THREE.Group();
+
+  // 3D River Map & Fishing System State
+  public fishingState: FishingState = 'idle';
+  public reelProgress = 0;
+  public activeCaughtFish: RiverFishCatch | null = null;
+  private riverFishList: Array<{
+    mesh: THREE.Group;
+    tail: THREE.Mesh;
+    center: THREE.Vector3;
+    radius: number;
+    angle: number;
+    speed: number;
+    depth: number;
+  }> = [];
+  private riverRipples: Array<{ mesh: THREE.Mesh; maxScale: number; speed: number; curScale: number }> = [];
+  private fishingRodGroup: THREE.Group | null = null;
+  private rodTip: THREE.Object3D | null = null;
+  private fishingBobber: THREE.Group | null = null;
+  private fishingLine: THREE.Line | null = null;
+  private targetBobberPos = new THREE.Vector3(0, -0.05, -6);
+  private castStartTipPos = new THREE.Vector3();
+  private castAnimTimer = 0;
+  private caughtFishMesh: THREE.Group | null = null;
+  private isPlayerWalking = false;
+  private fishBiteTimer = 0;
+  private biteReactTimer = 0;
+  private handleEnterRiverEvent?: () => void;
+  private handleExitRiverEvent?: () => void;
   private gateBoard: any = null;
   private unsubscribeGameStore?: () => void;
   private tuguMonument: any = null;
@@ -346,8 +450,29 @@ export class City3DManager {
     globeMat: THREE.MeshStandardMaterial;
     light: THREE.PointLight | null;
   }> = [];
+  private riverLamps: Array<{
+    root: THREE.Group | THREE.Mesh;
+    headMat: THREE.MeshStandardMaterial;
+    light: THREE.PointLight;
+  }> = [];
   private handleTimeOfDayEvent?: (e: any) => void;
   private handleToggleDayNightEvent?: () => void;
+
+  // Scavenger Hunt Cats
+  public cats: Array<{
+    id: string;
+    name: string;
+    locationHint: string;
+    root: THREE.Group;
+    tail: THREE.Mesh;
+    head: THREE.Group;
+    baseY: number;
+    bounceTimer: number;
+  }> = [];
+  public interactiveCatMeshes: Array<{ mesh: THREE.Mesh; catId: string }> = [];
+
+  // Photo Studio Camera Adjustment
+  private handleAdjustCameraPOV?: (e: any) => void;
 
   // Character movement state
   private playerPos = new THREE.Vector3(0, 0, 14);
@@ -546,6 +671,16 @@ export class City3DManager {
       cameraPos: new THREE.Vector3(SHORE.x + 35, 18, SHORE.z + 25),
       radius: 25,
     },
+    {
+      id: 'river_spot',
+      name: 'Sungai Kali Netizen & Dermaga Pancing',
+      district: 'Kawasan Alam',
+      type: 'nature',
+      position: new THREE.Vector3(-175, 0, 24),
+      cameraTarget: new THREE.Vector3(-175, 1, 24),
+      cameraPos: new THREE.Vector3(-150, 14, 45),
+      radius: 28,
+    },
   ];
 
   constructor(container: HTMLElement, options?: City3DOptions) {
@@ -562,7 +697,7 @@ export class City3DManager {
     this.renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
       antialias: true,
-      preserveDrawingBuffer: false,
+      preserveDrawingBuffer: true,
       logarithmicDepthBuffer: true,
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -585,6 +720,11 @@ export class City3DManager {
     this.tuguWorldGroup.name = 'TuguWorldGroup';
     this.scene.add(this.tuguWorldGroup);
     this.tuguWorldGroup.visible = false; // Initially hidden
+
+    this.riverWorldGroup = new THREE.Group();
+    this.riverWorldGroup.name = 'RiverWorldGroup';
+    this.scene.add(this.riverWorldGroup);
+    this.riverWorldGroup.visible = false; // Initially hidden
 
     // 3. Camera Setup (near 0.5 and far 1400 combined with logarithmic depth eliminates Z-fighting & flicker)
     this.camera = new THREE.PerspectiveCamera(40, W / H, 0.5, 1400);
@@ -614,6 +754,7 @@ export class City3DManager {
     // 5. Build Complete City Assets (Days 1 to 9)
     this.buildCityDiorama();
     this.buildTuguMap();
+    this.buildRiverMap();
 
     // 6. Setup Characters, Living Citizens & Airplanes
     this.setupCharacters();
@@ -622,6 +763,7 @@ export class City3DManager {
     // 7. Setup Interactive Raycasting & Colliders for Buildings
     this.registerInteractiveLandmarks();
     this.setupColliders();
+    this.setupCats();
 
     // 8. Event Listeners (Resize, Controls, Click, Prevent ContextMenu)
     this.setupEventListeners();
@@ -1167,6 +1309,497 @@ export class City3DManager {
     this.tuguWorldGroup.add(portal);
   }
 
+  private buildRiverMap() {
+    this.riverLamps = [];
+
+    // 1. Riverbed (underwater bottom)
+    const riverbed = new THREE.Mesh(
+      new THREE.PlaneGeometry(160, 70, 1, 1).rotateX(-Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: '#1B261E', roughness: 0.95 })
+    );
+    riverbed.position.set(0, -1.8, -32);
+    riverbed.receiveShadow = false;
+    this.riverWorldGroup.add(riverbed);
+
+    // 2. Translucent River Water Surface
+    // Extends from z = -62 up to z = 0.0 (Does NOT overlap with grassy shore!)
+    const waterGeom = new THREE.PlaneGeometry(160, 62, 1, 1).rotateX(-Math.PI / 2);
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: '#1D687A',
+      roughness: 0.45, // Soft matte water sheen, prevents blinding white glare hotspots
+      metalness: 0.04,
+      transparent: true,
+      opacity: 0.86,
+      depthWrite: false, // Clean rendering with fish and riverbed underwater
+    });
+    const riverWater = new THREE.Mesh(waterGeom, waterMat);
+    riverWater.position.set(0, -0.01, -31);
+    riverWater.receiveShadow = false;
+    this.riverWorldGroup.add(riverWater);
+
+    // 3. Sandy Riverbank Strip (along z = 0.0 to 1.4)
+    const bank = new THREE.Mesh(
+      new THREE.BoxGeometry(160, 0.4, 1.6),
+      new THREE.MeshStandardMaterial({ color: '#C6B599', roughness: 0.95 })
+    );
+    bank.position.set(0, -0.15, 0.8);
+    bank.receiveShadow = false;
+    this.riverWorldGroup.add(bank);
+
+    // 4. Grassy Shoreline Meadow (South, z = 1.0 to 45.0)
+    // Mutually exclusive Z range from water -> 100% immune to Z-fighting!
+    const shore = new THREE.Mesh(
+      new THREE.BoxGeometry(160, 1.4, 44),
+      new THREE.MeshStandardMaterial({ color: '#559A36', roughness: 0.9 })
+    );
+    shore.position.set(0, -0.7, 23.0);
+    shore.receiveShadow = false;
+    this.riverWorldGroup.add(shore);
+
+    // Stone pathway from city portal to pier
+    const pathMat = new THREE.MeshStandardMaterial({
+      color: '#E6D7BE',
+      roughness: 0.85,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+    const stonePath = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.04, 11.5), pathMat);
+    stonePath.position.set(0, 0.02, 8.5);
+    stonePath.receiveShadow = false;
+    this.riverWorldGroup.add(stonePath);
+
+    // Shoreline rocks & river stones along water edge (Z ~ 0)
+    const rockMat = new THREE.MeshStandardMaterial({ color: '#7E8B85', roughness: 0.9 });
+    for (let i = 0; i < 28; i++) {
+      const rx = (i - 14) * 2.6 + (Math.random() - 0.5) * 0.8;
+      if (Math.abs(rx) < 3.2) continue; // Leave pier entrance clear
+      const rock = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.35 + Math.random() * 0.45),
+        rockMat
+      );
+      rock.position.set(rx, 0.12, 0.5 + (Math.random() - 0.5) * 0.6);
+      rock.rotation.set(Math.random(), Math.random(), Math.random());
+      rock.scale.set(1.2, 0.7, 1);
+      this.riverWorldGroup.add(rock);
+    }
+
+    // 5. Wooden Pier (Dermaga Pancing)
+    const pierDeckGroup = new THREE.Group();
+    const woodPlankMat1 = new THREE.MeshStandardMaterial({ color: '#7A4B26', roughness: 0.85 });
+    const woodPlankMat2 = new THREE.MeshStandardMaterial({ color: '#8C562E', roughness: 0.85 });
+
+    // Approach Steps connecting Shore (y = 0.0) up to Pier (y = 0.35)
+    const stepMat = new THREE.MeshStandardMaterial({ color: '#6A4122', roughness: 0.85 });
+    const step1 = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.12, 0.55), stepMat);
+    step1.position.set(0, 0.06, 2.75);
+    const step2 = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.12, 0.55), stepMat);
+    step2.position.set(0, 0.18, 2.25);
+    pierDeckGroup.add(step1, step2);
+
+    // Main structural under-beams
+    const beamMat = new THREE.MeshStandardMaterial({ color: '#54321A', roughness: 0.9 });
+    const leftBeam = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 12.6), beamMat);
+    leftBeam.position.set(-2.4, 0.15, -3.8);
+    const rightBeam = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 12.6), beamMat);
+    rightBeam.position.set(2.4, 0.15, -3.8);
+    pierDeckGroup.add(leftBeam, rightBeam);
+
+    // Wooden planks (laid across X axis)
+    const plankCount = 30;
+    for (let i = 0; i < plankCount; i++) {
+      const zPos = 1.95 - i * (11.5 / plankCount);
+      const plank = new THREE.Mesh(
+        new THREE.BoxGeometry(5.2, 0.1, 0.36),
+        i % 2 === 0 ? woodPlankMat1 : woodPlankMat2
+      );
+      plank.position.set(0, 0.35, zPos);
+      plank.receiveShadow = false;
+      pierDeckGroup.add(plank);
+    }
+
+    // Pier Pilings (wooden stilts in water)
+    const postMat = new THREE.MeshStandardMaterial({ color: '#4A2D17', roughness: 0.9 });
+    const pilingsZ = [1.8, -0.8, -3.6, -6.4, -9.4];
+    pilingsZ.forEach((pz) => {
+      [-2.4, 2.4].forEach((px) => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 2.4, 8), postMat);
+        post.position.set(px, -0.6, pz);
+        pierDeckGroup.add(post);
+      });
+    });
+
+    // Pier Railings (Left & Right sides)
+    const railMat = new THREE.MeshStandardMaterial({ color: '#6A4122', roughness: 0.85 });
+    pilingsZ.forEach((pz) => {
+      [-2.45, 2.45].forEach((px) => {
+        const railPost = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 8), railMat);
+        railPost.position.set(px, 0.8, pz);
+        pierDeckGroup.add(railPost);
+      });
+    });
+    const leftRail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 11.4), railMat);
+    leftRail.position.set(-2.45, 1.15, -3.8);
+    const rightRail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 11.4), railMat);
+    rightRail.position.set(2.45, 1.15, -3.8);
+    pierDeckGroup.add(leftRail, rightRail);
+
+    // Front edge bumper beam at fishing spot (z = -9.5)
+    const frontBumper = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.22, 0.25), railMat);
+    frontBumper.position.set(0, 0.45, -9.55);
+    pierDeckGroup.add(frontBumper);
+
+    // Dock Lanterns (3 lamps on posts with day/night integration)
+    [
+      { x: -2.4, z: -9.4 },
+      { x: 2.4, z: -9.4 },
+      { x: -2.4, z: -0.8 },
+    ].forEach((pos) => {
+      const lampPost = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 1.6, 8), postMat);
+      lampPost.position.set(pos.x, 1.15, pos.z);
+      pierDeckGroup.add(lampPost);
+
+      const lampHeadMat = new THREE.MeshStandardMaterial({
+        color: '#FFA94D',
+        emissive: '#FF8800',
+        emissiveIntensity: 0.3,
+        roughness: 0.5,
+      });
+      const lampHead = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.16, 0.12, 0.25, 6),
+        lampHeadMat
+      );
+      lampHead.position.set(pos.x, 1.9, pos.z);
+      pierDeckGroup.add(lampHead);
+
+      // PointLight starts at 0 during day, preventing specular flares!
+      const lampLight = new THREE.PointLight('#FFA94D', 0, 6, 2);
+      lampLight.position.set(pos.x, 2.1, pos.z);
+      pierDeckGroup.add(lampLight);
+
+      this.riverLamps.push({ root: lampHead, headMat: lampHeadMat, light: lampLight });
+    });
+
+    // Decorative Barrels & Crates on Pier
+    const barrel = new THREE.Group();
+    const barrelBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3, 0.28, 0.7, 10),
+      woodPlankMat1
+    );
+    const ringMat = new THREE.MeshStandardMaterial({ color: '#374151', metalness: 0.6 });
+    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.02, 6, 12).rotateX(Math.PI / 2), ringMat);
+    ring1.position.y = 0.2;
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.02, 6, 12).rotateX(Math.PI / 2), ringMat);
+    ring2.position.y = -0.2;
+    barrel.add(barrelBody, ring1, ring2);
+    barrel.position.set(-1.8, 0.7, -4.5);
+    pierDeckGroup.add(barrel);
+
+    const fishCrate = new THREE.Mesh(
+      new THREE.BoxGeometry(0.7, 0.4, 0.5),
+      new THREE.MeshStandardMaterial({ color: '#A06E3B', roughness: 0.9 })
+    );
+    fishCrate.position.set(1.7, 0.55, -5.2);
+    fishCrate.rotation.y = 0.2;
+    pierDeckGroup.add(fishCrate);
+
+    this.riverWorldGroup.add(pierDeckGroup);
+
+    // 6. Water Lilies & Lotus Blossoms floating on River
+    const lilyMat = new THREE.MeshStandardMaterial({ color: '#2E7D32', roughness: 0.8 });
+    const flowerMat = new THREE.MeshStandardMaterial({ color: '#FFB6C1', roughness: 0.6 });
+    const lilySpots = [
+      { x: -5.5, z: -7.5 },
+      { x: -7.2, z: -9.0 },
+      { x: 5.8, z: -8.0 },
+      { x: 7.5, z: -6.5 },
+      { x: 4.8, z: -12.0 },
+      { x: -6.0, z: -13.5 },
+    ];
+    lilySpots.forEach((lp, idx) => {
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.02, 12), lilyMat);
+      pad.position.set(lp.x, 0.015, lp.z);
+      this.riverWorldGroup.add(pad);
+      if (idx % 2 === 0) {
+        const fl = new THREE.Mesh(new THREE.DodecahedronGeometry(0.12), flowerMat);
+        fl.position.set(lp.x, 0.07, lp.z);
+        this.riverWorldGroup.add(fl);
+      }
+    });
+
+    // 7. Mountain Ridge, Waterfall & Surrounding Landscape (Eliminates all void gaps!)
+    // North Mountain Massif
+    const mountainMassif = new THREE.Mesh(
+      new THREE.BoxGeometry(160, 26, 18),
+      new THREE.MeshStandardMaterial({ color: '#3A483B', roughness: 0.95 })
+    );
+    mountainMassif.position.set(0, 9.0, -42);
+    this.riverWorldGroup.add(mountainMassif);
+
+    // Rolling Mountain Peaks
+    const peakMat = new THREE.MeshStandardMaterial({ color: '#4B5A4D', roughness: 0.95 });
+    [
+      { x: -42, y: 13, z: -38, r: 18, h: 18 },
+      { x: 2, y: 17, z: -44, r: 24, h: 24 },
+      { x: 46, y: 14, z: -40, r: 20, h: 20 },
+    ].forEach((pk) => {
+      const peak = new THREE.Mesh(new THREE.ConeGeometry(pk.r, pk.h, 6), peakMat);
+      peak.position.set(pk.x, pk.y, pk.z);
+      this.riverWorldGroup.add(peak);
+    });
+
+    // Low-poly Waterfall cascade on North Cliff
+    const waterfallMat = new THREE.MeshStandardMaterial({
+      color: '#99F6E4',
+      emissive: '#38BDF8',
+      emissiveIntensity: 0.25,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.85,
+    });
+    const waterfall = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 16), waterfallMat);
+    waterfall.position.set(-14, 6.0, -32.8);
+    this.riverWorldGroup.add(waterfall);
+
+    const mistPool = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.6, 4.2, 0.35, 12),
+      new THREE.MeshStandardMaterial({
+        color: '#F0FDFA',
+        transparent: true,
+        opacity: 0.7,
+        roughness: 0.3,
+      })
+    );
+    mistPool.position.set(-14, 0.08, -32.2);
+    this.riverWorldGroup.add(mistPool);
+
+    // North Mountain Trees (24 trees along mountain slopes)
+    for (let i = 0; i < 24; i++) {
+      const px = (i - 12) * 5.6 + (Math.random() - 0.5) * 2.0;
+      const tree = this.createParkTree(i % 3);
+      tree.position.set(px, 7.5 + (Math.random() - 0.5) * 1.5, -30 + (Math.random() - 0.5) * 3);
+      this.riverWorldGroup.add(tree);
+    }
+
+    // West & East Valley Ridge Bluffs
+    const sideRidgeMat = new THREE.MeshStandardMaterial({ color: '#445741', roughness: 0.95 });
+    const westRidge = new THREE.Mesh(new THREE.BoxGeometry(24, 12, 70), sideRidgeMat);
+    westRidge.position.set(-52, 4.0, -5);
+    const eastRidge = new THREE.Mesh(new THREE.BoxGeometry(24, 12, 70), sideRidgeMat);
+    eastRidge.position.set(52, 4.0, -5);
+    this.riverWorldGroup.add(westRidge, eastRidge);
+
+    // Trees on West and East Ridges
+    for (let i = 0; i < 8; i++) {
+      const zPos = -25 + i * 8.0 + (Math.random() - 0.5) * 2;
+      const treeW = this.createParkTree(i % 3);
+      treeW.position.set(-42 + (Math.random() - 0.5) * 3, 5.0, zPos);
+      const treeE = this.createParkTree((i + 1) % 3);
+      treeE.position.set(42 + (Math.random() - 0.5) * 3, 5.0, zPos);
+      this.riverWorldGroup.add(treeW, treeE);
+    }
+
+    // South Boundary Trees (Behind Exit Portal, z = 21 to 26)
+    for (let i = 0; i < 14; i++) {
+      const px = (i - 7) * 4.5 + (Math.random() - 0.5) * 1.2;
+      const tree = this.createParkTree(i % 3);
+      tree.position.set(px, 0.0, 22.0 + (Math.random() - 0.5) * 2.5);
+      this.riverWorldGroup.add(tree);
+    }
+
+    // 8. Shore Exit Portal back to City (at Z = 13.5)
+    const exitArch = this.createRiverExitPortal();
+    exitArch.position.set(0, 0, 13.5);
+    this.riverWorldGroup.add(exitArch);
+
+    // 9. Swimming 3D Fish Instances
+    this.setupRiverFish();
+
+    // 10. Fishing Rod, Bobber, and Line
+    this.setupFishingGear();
+  }
+
+  private setupRiverFish() {
+    this.riverFishList = [];
+    const fishColors = ['#F59E0B', '#EF4444', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
+    const swimCenters = [
+      new THREE.Vector3(-4.5, -0.65, -8.5),
+      new THREE.Vector3(4.5, -0.75, -9.0),
+      new THREE.Vector3(0, -0.85, -12.5),
+      new THREE.Vector3(-6.5, -0.6, -13.0),
+      new THREE.Vector3(5.5, -0.9, -14.0),
+      new THREE.Vector3(1.5, -0.7, -7.5),
+    ];
+
+    swimCenters.forEach((center, i) => {
+      const color = fishColors[i % fishColors.length];
+      const fishGroup = new THREE.Group();
+
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.4,
+        metalness: 0.3,
+      });
+      const bodyGeom = new THREE.ConeGeometry(0.14, 0.45, 8);
+      bodyGeom.rotateX(Math.PI / 2);
+      const body = new THREE.Mesh(bodyGeom, bodyMat);
+      fishGroup.add(body);
+
+      const tailGeom = new THREE.ConeGeometry(0.12, 0.22, 3);
+      tailGeom.rotateZ(Math.PI / 2);
+      const tail = new THREE.Mesh(tailGeom, bodyMat);
+      tail.position.set(0, 0, 0.28);
+      fishGroup.add(tail);
+
+      const eyeMat = new THREE.MeshBasicMaterial({ color: '#111827' });
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), eyeMat);
+      eyeL.position.set(0.08, 0.04, -0.15);
+      const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), eyeMat);
+      eyeR.position.set(-0.08, 0.04, -0.15);
+      fishGroup.add(eyeL, eyeR);
+
+      fishGroup.position.copy(center);
+      this.riverWorldGroup.add(fishGroup);
+
+      this.riverFishList.push({
+        mesh: fishGroup,
+        tail,
+        center,
+        radius: 1.8 + Math.random() * 1.6,
+        angle: Math.random() * Math.PI * 2,
+        speed: 0.6 + Math.random() * 0.5,
+        depth: center.y,
+      });
+    });
+  }
+
+  private setupFishingGear() {
+    this.fishingRodGroup = new THREE.Group();
+    this.fishingRodGroup.name = 'FishingRod';
+
+    // Handle (cork grip) centered at (0, 0, 0)
+    const handleMat = new THREE.MeshStandardMaterial({ color: '#784620', roughness: 0.8 });
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.036, 0.38, 8), handleMat);
+    handle.position.set(0, 0, 0);
+    this.fishingRodGroup.add(handle);
+
+    // Reel seat & mini reel
+    const reelMat = new THREE.MeshStandardMaterial({ color: '#27272A', metalness: 0.8, roughness: 0.25 });
+    const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.08, 12), reelMat);
+    reel.rotation.z = Math.PI / 2;
+    reel.position.set(0.05, 0.12, 0);
+    this.fishingRodGroup.add(reel);
+
+    // Blank (tapered flexible rod shaft, height 2.0, center at y = 1.19)
+    const rodMat = new THREE.MeshStandardMaterial({ color: '#D97706', roughness: 0.4, metalness: 0.3 });
+    const blank = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.028, 2.0, 8), rodMat);
+    blank.position.set(0, 1.19, 0);
+    this.fishingRodGroup.add(blank);
+
+    // Line Guide rings
+    const ringMat = new THREE.MeshStandardMaterial({ color: '#D1D5DB', metalness: 0.9, roughness: 0.2 });
+    const rod = this.fishingRodGroup;
+    [0.55, 0.95, 1.35, 1.75, 2.15].forEach((gy) => {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.022, 0.005, 6, 8),
+        ringMat
+      );
+      ring.position.set(0, gy, 0.03);
+      rod.add(ring);
+    });
+
+    // Rod Tip Marker (EXACT 3D tip of the fishing rod at y = 2.2)
+    this.rodTip = new THREE.Object3D();
+    this.rodTip.name = 'RodTipMarker';
+    this.rodTip.position.set(0, 2.2, 0);
+    this.fishingRodGroup.add(this.rodTip);
+
+    // Fishing Bobber (Classic red & white float)
+    this.fishingBobber = new THREE.Group();
+    this.fishingBobber.name = 'FishingBobber';
+    const redMat = new THREE.MeshStandardMaterial({ color: '#EF4444', roughness: 0.3 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.3 });
+
+    const topHemisphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 14, 14, 0, Math.PI * 2, 0, Math.PI / 2),
+      redMat
+    );
+    const bottomHemisphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 14, 14, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
+      whiteMat
+    );
+    const bobberPin = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.014, 0.014, 0.28, 6),
+      new THREE.MeshStandardMaterial({ color: '#1F2937' })
+    );
+    this.fishingBobber.add(topHemisphere, bottomHemisphere, bobberPin);
+    this.fishingBobber.position.set(0, -0.05, -7.5);
+    this.fishingBobber.visible = false;
+    this.riverWorldGroup.add(this.fishingBobber);
+
+    // Dynamic 3D Fishing Line with 12 points
+    const LINE_POINT_COUNT = 12;
+    const linePositions = new Float32Array(LINE_POINT_COUNT * 3);
+    const lineGeom = new THREE.BufferGeometry();
+    lineGeom.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    const lineMat = new THREE.LineBasicMaterial({
+      color: '#E0F2FE',
+      transparent: true,
+      opacity: 0.95,
+      linewidth: 2,
+      depthWrite: false,
+    });
+    this.fishingLine = new THREE.Line(lineGeom, lineMat);
+    this.fishingLine.visible = false;
+    this.riverWorldGroup.add(this.fishingLine);
+
+    // Caught Fish Trophy mesh
+    this.caughtFishMesh = new THREE.Group();
+    this.caughtFishMesh.name = 'CaughtFishTrophy';
+    const fishBody = new THREE.Mesh(
+      new THREE.ConeGeometry(0.14, 0.45, 8).rotateX(Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: '#F59E0B', roughness: 0.4, metalness: 0.3 })
+    );
+    const fishTail = new THREE.Mesh(
+      new THREE.ConeGeometry(0.12, 0.2, 3).rotateZ(Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: '#F59E0B', roughness: 0.4 })
+    );
+    fishTail.position.set(0, 0, 0.26);
+    this.caughtFishMesh.add(fishBody, fishTail);
+    this.caughtFishMesh.visible = false;
+    this.riverWorldGroup.add(this.caughtFishMesh);
+  }
+
+  private createRiverExitPortal(): THREE.Group {
+    const group = new THREE.Group();
+    const woodMat = new THREE.MeshStandardMaterial({ color: '#6A4122', roughness: 0.85 });
+
+    const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 3.2, 8), woodMat);
+    postL.position.set(-2.2, 1.6, 0);
+    const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 3.2, 8), woodMat);
+    postR.position.set(2.2, 1.6, 0);
+
+    const crossbeam = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.35, 0.35), woodMat);
+    crossbeam.position.set(0, 3.0, 0);
+    group.add(postL, postR, crossbeam);
+
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: '#4ADE80',
+      transparent: true,
+      opacity: 0.65,
+    });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.4, 1.8, 24).rotateX(-Math.PI / 2), ringMat);
+    ring.position.set(0, 0.06, 0);
+    group.add(ring);
+
+    const signSprite = makeNameTagSprite('← Keluar ke Netizen City', false, true);
+    signSprite.position.set(0, 3.6, 0);
+    signSprite.scale.set(3.2, 0.75, 1);
+    group.add(signSprite);
+
+    return group;
+  }
+
   private setupCharacters() {
     const profile = useCitizenStore.getState().profile;
     this.isPlayerAdmin = profile?.role === 'admin' || profile?.role === 'mayor';
@@ -1271,6 +1904,7 @@ export class City3DManager {
   public enterTuguArea() {
     this.viewMode = 'tugu';
     this.cityWorldGroup.visible = false;
+    this.riverWorldGroup.visible = false;
     this.tuguWorldGroup.visible = true;
 
     // Slight random spawn offset so multiple entering citizens do not overlap identically
@@ -1280,16 +1914,23 @@ export class City3DManager {
     this.playerFacing = Math.PI;
 
     if (this.playerCitizen) {
+      this.tuguWorldGroup.add(this.playerCitizen.root);
       this.playerCitizen.root.position.copy(this.playerPos);
       this.playerCitizen.root.rotation.y = this.playerFacing;
       this.playerCitizen.root.visible = true;
+      if (this.fishingRodGroup) {
+        this.fishingRodGroup.visible = false;
+        this.fishingRodGroup.parent?.remove(this.fishingRodGroup);
+      }
     }
     if (this.mayorPlayer) {
+      this.tuguWorldGroup.add(this.mayorPlayer.root);
       this.mayorPlayer.root.position.copy(this.playerPos);
       this.mayorPlayer.root.rotation.y = this.playerFacing;
       this.mayorPlayer.root.visible = true;
     }
     if (this.cat) {
+      this.tuguWorldGroup.add(this.cat.root);
       this.cat.root.position.set(1.2, 0, 13.2);
       this.cat.root.visible = true;
     }
@@ -1483,6 +2124,7 @@ export class City3DManager {
     this.clearRemotePlayers();
 
     this.tuguWorldGroup.visible = false;
+    this.riverWorldGroup.visible = false;
     this.cityWorldGroup.visible = true;
 
     if (this.playerCitizen) this.playerCitizen.root.visible = false;
@@ -1508,6 +2150,562 @@ export class City3DManager {
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('tugu-mode-changed', { detail: { mode: 'city' } }));
+    }
+  }
+
+  public enterRiverArea() {
+    this.viewMode = 'river';
+    this.cityWorldGroup.visible = false;
+    this.tuguWorldGroup.visible = false;
+    this.riverWorldGroup.visible = true;
+
+    // Spawn player avatar on the pier facing North towards the river
+    this.playerPos.set(0, 0.35, -5.5);
+    this.playerFacing = Math.PI;
+
+    if (this.playerCitizen) {
+      this.riverWorldGroup.add(this.playerCitizen.root);
+      this.playerCitizen.root.position.copy(this.playerPos);
+      this.playerCitizen.root.rotation.y = this.playerFacing;
+      this.playerCitizen.root.visible = true;
+
+      // Attach rod directly to citizen's right hand!
+      if (this.fishingRodGroup) {
+        this.playerCitizen.rightArm.add(this.fishingRodGroup);
+        // Hand sphere center is at y = -0.32 in rightArm
+        this.fishingRodGroup.position.set(0, -0.32, 0.05);
+        // Tilt rod forward in a natural ready angling pose (forward and angled upward)
+        this.fishingRodGroup.rotation.set(Math.PI / 3.2, 0, 0);
+        this.fishingRodGroup.visible = true;
+      }
+      // Set initial arm pose: angled forward and slightly inward
+      this.playerCitizen.rightArm.rotation.set(0.35, -0.15, 0);
+      this.playerCitizen.leftArm.rotation.set(0.25, 0.15, 0);
+    }
+    if (this.mayorPlayer) {
+      if (this.isPlayerAdmin) {
+        this.riverWorldGroup.add(this.mayorPlayer.root);
+        this.mayorPlayer.root.position.copy(this.playerPos);
+        this.mayorPlayer.root.rotation.y = this.playerFacing;
+        this.mayorPlayer.root.visible = true;
+        if (this.playerCitizen) this.playerCitizen.root.visible = false;
+      } else {
+        this.mayorPlayer.root.visible = false;
+      }
+    }
+    if (this.cat) {
+      this.riverWorldGroup.add(this.cat.root);
+      this.cat.root.position.set(1.2, 0.35, -5.2);
+      this.cat.root.visible = true;
+    }
+
+    this.resetFishing();
+
+    this.cameraMode = 'follow';
+    this.onCameraModeChange?.('follow');
+    this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.2, 0));
+    this.spherical.radius = 16;
+    this.spherical.phi = Math.PI / 3.4;
+    this.spherical.theta = this.playerFacing + Math.PI;
+    this.updateCameraTransform();
+
+    this.applyTimeOfDay(this.timeOfDay);
+
+    useGameStore.getState().setSelectedBuilding('river_spot');
+    useGameStore.getState().setCurrentDistrict('Kawasan Alam');
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('river-mode-changed', { detail: { mode: 'river' } }));
+      window.dispatchEvent(new CustomEvent('river-fishing-state', { detail: { state: 'idle' } }));
+    }
+  }
+
+  public exitRiverArea() {
+    this.resetFishing();
+    this.viewMode = 'city';
+    this.targetPosition = null;
+
+    if (this.fishingRodGroup) {
+      this.fishingRodGroup.visible = false;
+      this.fishingRodGroup.parent?.remove(this.fishingRodGroup);
+    }
+
+    this.riverWorldGroup.visible = false;
+    this.tuguWorldGroup.visible = false;
+    this.cityWorldGroup.visible = true;
+
+    if (this.playerCitizen) this.playerCitizen.root.visible = false;
+    if (this.mayorPlayer) this.mayorPlayer.root.visible = false;
+    if (this.cat) this.cat.root.visible = false;
+
+    this.cameraMode = 'orbit';
+    this.onCameraModeChange?.('orbit');
+    this.target.set(0, 0, 0);
+    this.spherical.radius = 120;
+    this.spherical.phi = Math.PI / 3.5;
+    this.spherical.theta = Math.PI * 0.75;
+    this.updateCameraTransform();
+
+    this.applyTimeOfDay(this.timeOfDay);
+
+    useGameStore.getState().setSelectedBuilding(null);
+    useGameStore.getState().setCurrentDistrict('town_square');
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('river-mode-changed', { detail: { mode: 'city' } }));
+    }
+  }
+
+  public spawnRiverRipple(pos: THREE.Vector3) {
+    const rippleMat = new THREE.MeshBasicMaterial({
+      color: '#FFFFFF',
+      transparent: true,
+      opacity: 0.8,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const rippleGeom = new THREE.RingGeometry(0.08, 0.14, 24).rotateX(-Math.PI / 2);
+    const ripple = new THREE.Mesh(rippleGeom, rippleMat);
+    ripple.position.set(pos.x, 0.02, pos.z);
+    this.riverWorldGroup.add(ripple);
+    this.riverRipples.push({
+      mesh: ripple,
+      curScale: 1.0,
+      maxScale: 3.5 + Math.random() * 1.5,
+      speed: 1.6 + Math.random() * 0.8,
+    });
+  }
+
+  public castFishingLine(targetWaterPos?: THREE.Vector3) {
+    if (this.fishingState !== 'idle') return;
+
+    // 1. Determine landing spot on river water surface
+    const targetX = targetWaterPos
+      ? THREE.MathUtils.clamp(targetWaterPos.x, -7.5, 7.5)
+      : (Math.random() - 0.5) * 4;
+    const targetZ = targetWaterPos
+      ? THREE.MathUtils.clamp(targetWaterPos.z, -14, -6.5)
+      : -8.5 - Math.random() * 3;
+    this.targetBobberPos.set(targetX, -0.05, targetZ);
+
+    // 2. Rotate avatar to face the exact water target direction!
+    const dx = this.targetBobberPos.x - this.playerPos.x;
+    const dz = this.targetBobberPos.z - this.playerPos.z;
+    this.playerFacing = Math.atan2(dx, dz);
+    if (this.playerCitizen) {
+      this.playerCitizen.root.rotation.y = this.playerFacing;
+    }
+    if (this.mayorPlayer) {
+      this.mayorPlayer.root.rotation.y = this.playerFacing;
+    }
+
+    // 3. Initiate casting state & timers
+    this.fishingState = 'casting';
+    this.castAnimTimer = 0;
+
+    // Get current rod tip world position converted to riverWorldGroup space!
+    if (this.rodTip) {
+      this.rodTip.updateWorldMatrix(true, false);
+      const tipWorld = new THREE.Vector3();
+      this.rodTip.getWorldPosition(tipWorld);
+      this.castStartTipPos.copy(tipWorld);
+      this.riverWorldGroup.worldToLocal(this.castStartTipPos);
+    } else {
+      this.castStartTipPos.copy(this.playerPos).add(new THREE.Vector3(0, 1.4, 0));
+    }
+
+    if (this.fishingBobber) {
+      this.fishingBobber.position.copy(this.castStartTipPos);
+      this.fishingBobber.visible = true;
+    }
+    if (this.fishingLine) {
+      this.fishingLine.visible = true;
+    }
+    if (this.caughtFishMesh) {
+      this.caughtFishMesh.visible = false;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('river-fishing-state', { detail: { state: 'casting' } }));
+    }
+  }
+
+  public reelFishingTap() {
+    if (this.fishingState === 'bite') {
+      this.fishingState = 'reeling';
+      this.reelProgress = 38;
+      this.spawnRiverRipple(this.targetBobberPos);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('river-fishing-state', {
+            detail: { state: 'reeling', progress: this.reelProgress },
+          })
+        );
+      }
+      return;
+    }
+
+    if (this.fishingState === 'reeling') {
+      this.reelProgress = Math.min(100, this.reelProgress + 8.5);
+      this.spawnRiverRipple(this.targetBobberPos);
+
+      if (this.reelProgress >= 100) {
+        this.fishingState = 'caught';
+        this.activeCaughtFish = this.determineCaughtFish();
+
+        if (this.fishingBobber) {
+          this.fishingBobber.visible = false;
+        }
+        if (this.caughtFishMesh) {
+          this.caughtFishMesh.visible = true;
+        }
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('river-fishing-state', {
+              detail: { state: 'caught', fish: this.activeCaughtFish },
+            })
+          );
+          window.dispatchEvent(
+            new CustomEvent('river-fish-caught', {
+              detail: { fish: this.activeCaughtFish },
+            })
+          );
+        }
+      } else {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('river-fishing-state', {
+              detail: { state: 'reeling', progress: this.reelProgress },
+            })
+          );
+        }
+      }
+    }
+  }
+
+  private determineCaughtFish(): RiverFishCatch {
+    const weights = [0.18, 0.32, 0.05, 0.20, 0.25];
+    const rand = Math.random();
+    let cumulative = 0;
+    let selected = RIVER_FISH_SPECIES[0];
+
+    for (let i = 0; i < RIVER_FISH_SPECIES.length; i++) {
+      cumulative += weights[i] || 0.15;
+      if (rand <= cumulative) {
+        selected = RIVER_FISH_SPECIES[i];
+        break;
+      }
+    }
+
+    const weightVariation = 0.85 + Math.random() * 0.35;
+    const finalWeight = Number((selected.weight * weightVariation).toFixed(2));
+    const finalReward = Math.round(selected.rewardCoins * weightVariation);
+
+    return {
+      id: selected.id,
+      name: selected.name,
+      rarity: selected.rarity,
+      rarityColor: selected.rarityColor,
+      weight: finalWeight,
+      rewardCoins: finalReward,
+      icon: selected.icon,
+      desc: selected.desc,
+    };
+  }
+
+  public resetFishing() {
+    this.fishingState = 'idle';
+    this.reelProgress = 0;
+    this.activeCaughtFish = null;
+    this.fishBiteTimer = 0;
+    this.biteReactTimer = 0;
+    this.castAnimTimer = 0;
+
+    if (this.fishingBobber) {
+      this.fishingBobber.visible = false;
+    }
+    if (this.fishingLine) {
+      this.fishingLine.visible = false;
+    }
+    if (this.caughtFishMesh) {
+      this.caughtFishMesh.visible = false;
+    }
+    if (this.playerCitizen) {
+      this.playerCitizen.rightArm.rotation.set(0.35, -0.15, 0);
+      this.playerCitizen.leftArm.rotation.set(0, 0, 0);
+      this.playerCitizen.body.rotation.set(0, 0, 0);
+      this.playerCitizen.body.position.set(0, 0, 0);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('river-fishing-state', { detail: { state: 'idle' } }));
+    }
+  }
+
+  private updateRiver(delta: number, elapsed: number) {
+    // 1. Update River Ripples
+    for (let i = this.riverRipples.length - 1; i >= 0; i--) {
+      const rip = this.riverRipples[i];
+      rip.curScale += rip.speed * delta;
+      rip.mesh.scale.set(rip.curScale, rip.curScale, rip.curScale);
+      const op = Math.max(0, 1 - rip.curScale / rip.maxScale);
+      (rip.mesh.material as THREE.MeshBasicMaterial).opacity = op * 0.7;
+      if (rip.curScale >= rip.maxScale) {
+        this.riverWorldGroup.remove(rip.mesh);
+        rip.mesh.geometry.dispose();
+        (rip.mesh.material as THREE.Material).dispose();
+        this.riverRipples.splice(i, 1);
+      }
+    }
+
+    // 2. Update Swimming Fish
+    this.riverFishList.forEach((fish) => {
+      fish.angle += fish.speed * delta;
+      const fx = fish.center.x + Math.cos(fish.angle) * fish.radius;
+      const fz = fish.center.z + Math.sin(fish.angle) * fish.radius;
+      fish.mesh.position.set(fx, fish.depth + Math.sin(elapsed * 2 + fish.angle) * 0.05, fz);
+      fish.mesh.rotation.y = -fish.angle + Math.PI / 2;
+      fish.tail.rotation.y = Math.sin(elapsed * 9 + fish.angle) * 0.42;
+    });
+
+    // 3. CASTING ANIMATION (3-Phase Dynamic Motion)
+    if (this.fishingState === 'casting') {
+      this.castAnimTimer += delta;
+      const totalCastDuration = 1.15;
+
+      if (this.playerCitizen) {
+        if (this.castAnimTimer < 0.4) {
+          // Phase 1 (0.0s - 0.4s): Wind-up / Tarik ke Belakang
+          const p = this.castAnimTimer / 0.4;
+          const ease = p * p * (3 - 2 * p);
+          this.playerCitizen.rightArm.rotation.set(
+            THREE.MathUtils.lerp(0.35, -1.35, ease),
+            -0.15,
+            THREE.MathUtils.lerp(0, 0.15, ease)
+          );
+          this.playerCitizen.leftArm.rotation.set(
+            THREE.MathUtils.lerp(0.25, -0.5, ease),
+            0.15,
+            0
+          );
+          this.playerCitizen.body.rotation.x = THREE.MathUtils.lerp(0, -0.15, ease);
+
+          if (this.rodTip && this.fishingBobber) {
+            this.rodTip.updateWorldMatrix(true, false);
+            const tipWorld = new THREE.Vector3();
+            this.rodTip.getWorldPosition(tipWorld);
+            this.castStartTipPos.copy(tipWorld);
+            this.riverWorldGroup.worldToLocal(this.castStartTipPos);
+            this.fishingBobber.position.copy(this.castStartTipPos);
+          }
+        } else if (this.castAnimTimer < 0.65) {
+          // Phase 2 (0.4s - 0.65s): Power Whip Forward / Ayunan Bertenaga ke Depan!
+          const p = (this.castAnimTimer - 0.4) / 0.25;
+          const whip = Math.sin((p * Math.PI) / 2);
+          this.playerCitizen.rightArm.rotation.set(
+            THREE.MathUtils.lerp(-1.35, 0.85, whip),
+            -0.15,
+            0
+          );
+          this.playerCitizen.leftArm.rotation.set(
+            THREE.MathUtils.lerp(-0.5, 0.35, whip),
+            0.15,
+            0
+          );
+          this.playerCitizen.body.rotation.x = THREE.MathUtils.lerp(-0.15, 0.12, whip);
+
+          if (this.rodTip && this.fishingBobber) {
+            this.rodTip.updateWorldMatrix(true, false);
+            const tipWorld = new THREE.Vector3();
+            this.rodTip.getWorldPosition(tipWorld);
+            this.castStartTipPos.copy(tipWorld);
+            this.riverWorldGroup.worldToLocal(this.castStartTipPos);
+            this.fishingBobber.position.copy(this.castStartTipPos);
+          }
+        } else if (this.castAnimTimer < totalCastDuration) {
+          // Phase 3 (0.65s - 1.15s): Parabolic flight of bobber & arm settling
+          const p = (this.castAnimTimer - 0.65) / (totalCastDuration - 0.65);
+
+          this.playerCitizen.rightArm.rotation.set(
+            THREE.MathUtils.lerp(0.85, 0.35, p),
+            -0.15,
+            0
+          );
+          this.playerCitizen.leftArm.rotation.set(
+            THREE.MathUtils.lerp(0.35, 0.25, p),
+            0.15,
+            0
+          );
+          this.playerCitizen.body.rotation.x = THREE.MathUtils.lerp(0.12, 0, p);
+
+          if (this.fishingBobber) {
+            const arcHeight = 3.2 * Math.sin(p * Math.PI);
+            this.fishingBobber.position.x = THREE.MathUtils.lerp(this.castStartTipPos.x, this.targetBobberPos.x, p);
+            this.fishingBobber.position.z = THREE.MathUtils.lerp(this.castStartTipPos.z, this.targetBobberPos.z, p);
+            this.fishingBobber.position.y = THREE.MathUtils.lerp(this.castStartTipPos.y, this.targetBobberPos.y, p) + arcHeight;
+          }
+        } else {
+          // Splashdown!
+          if (this.fishingBobber) {
+            this.fishingBobber.position.copy(this.targetBobberPos);
+            this.spawnRiverRipple(this.targetBobberPos);
+            setTimeout(() => this.spawnRiverRipple(this.targetBobberPos), 150);
+          }
+          this.fishingState = 'waiting';
+          this.fishBiteTimer = 2.8 + Math.random() * 3.5;
+
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('river-fishing-state', { detail: { state: 'waiting' } }));
+          }
+        }
+      }
+    } else if (this.fishingState === 'waiting') {
+      // Steady Angler Stance
+      if (this.playerCitizen && !this.isPlayerWalking) {
+        this.playerCitizen.rightArm.rotation.set(
+          0.35 + Math.sin(elapsed * 1.5) * 0.02,
+          -0.15,
+          0
+        );
+        this.playerCitizen.leftArm.rotation.set(
+          0.25 + Math.sin(elapsed * 1.5) * 0.02,
+          0.15,
+          0
+        );
+        this.playerCitizen.body.rotation.set(0, 0, 0);
+      }
+      if (this.fishingBobber) {
+        this.fishingBobber.position.y = -0.05 + Math.sin(elapsed * 3.5) * 0.035;
+      }
+
+      this.fishBiteTimer -= delta;
+      if (this.fishBiteTimer <= 0) {
+        this.fishingState = 'bite';
+        this.biteReactTimer = 2.8;
+        this.spawnRiverRipple(this.targetBobberPos);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('river-fishing-state', { detail: { state: 'bite' } }));
+        }
+      }
+    } else if (this.fishingState === 'bite') {
+      // Urgent Strike Twitch!
+      if (this.playerCitizen) {
+        this.playerCitizen.rightArm.rotation.set(0.55 + Math.sin(elapsed * 25) * 0.08, -0.15, 0);
+        this.playerCitizen.leftArm.rotation.set(0.35 + Math.sin(elapsed * 25) * 0.08, 0.15, 0);
+      }
+      if (this.fishingBobber) {
+        this.fishingBobber.position.y = -0.25 + Math.sin(elapsed * 16) * 0.06;
+        if (Math.random() < 0.15) {
+          this.spawnRiverRipple(this.targetBobberPos);
+        }
+      }
+
+      this.biteReactTimer -= delta;
+      if (this.biteReactTimer <= 0) {
+        this.resetFishing();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('river-fishing-state', { detail: { state: 'escaped' } }));
+        }
+      }
+    } else if (this.fishingState === 'reeling') {
+      // Active Reeling Animation (pumping rod + cranking reel)
+      if (this.playerCitizen) {
+        this.playerCitizen.rightArm.rotation.set(0.52 + Math.sin(elapsed * 12) * 0.2, -0.15, 0);
+        this.playerCitizen.leftArm.rotation.set(0.35 + Math.sin(elapsed * 18) * 0.15, 0.2 + Math.cos(elapsed * 18) * 0.15, 0);
+      }
+      if (this.fishingBobber) {
+        this.fishingBobber.position.y = -0.15 + Math.sin(elapsed * 12) * 0.05;
+      }
+
+      this.reelProgress = Math.max(0, this.reelProgress - 15.0 * delta);
+
+      if (this.reelProgress <= 0) {
+        this.resetFishing();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('river-fishing-state', { detail: { state: 'escaped' } }));
+        }
+      } else {
+        if (typeof window !== 'undefined' && Math.random() < 0.15) {
+          window.dispatchEvent(
+            new CustomEvent('river-fishing-state', {
+              detail: { state: 'reeling', progress: this.reelProgress },
+            })
+          );
+        }
+      }
+    } else if (this.fishingState === 'caught') {
+      // Victory Pose: Arms Raised in Triumph!
+      if (this.playerCitizen) {
+        this.playerCitizen.rightArm.rotation.set(-2.4, 0, 0);
+        this.playerCitizen.leftArm.rotation.set(-2.4, 0, 0);
+        this.playerCitizen.body.position.y = 0.08 * Math.abs(Math.sin(elapsed * 8));
+      }
+      if (this.rodTip && this.caughtFishMesh) {
+        this.rodTip.updateWorldMatrix(true, false);
+        const tipWorld = new THREE.Vector3();
+        this.rodTip.getWorldPosition(tipWorld);
+        const tipLocal = tipWorld.clone();
+        this.riverWorldGroup.worldToLocal(tipLocal);
+        this.caughtFishMesh.position.set(tipLocal.x, tipLocal.y - 0.75, tipLocal.z);
+        this.caughtFishMesh.rotation.y = elapsed * 3;
+        this.caughtFishMesh.visible = true;
+      }
+    } else if (this.fishingState === 'idle') {
+      // Idle rod holding pose
+      if (this.playerCitizen && !this.isPlayerWalking) {
+        this.playerCitizen.rightArm.rotation.set(0.35, -0.15, 0);
+        this.playerCitizen.leftArm.rotation.set(0, 0, 0);
+        this.playerCitizen.body.rotation.set(0, 0, 0);
+      }
+    }
+
+    // 4. PRECISE 3D FISHING LINE GEOMETRY UPDATE (Anchored directly to Rod Tip Marker)
+    if (
+      this.fishingLine &&
+      this.fishingLine.visible &&
+      this.rodTip &&
+      this.fishingBobber &&
+      this.fishingBobber.visible
+    ) {
+      // Always force matrix update for exact current frame coordinates
+      this.rodTip.updateWorldMatrix(true, false);
+      const rodTipWorld = new THREE.Vector3();
+      this.rodTip.getWorldPosition(rodTipWorld);
+      const startPos = rodTipWorld.clone();
+      this.riverWorldGroup.worldToLocal(startPos);
+
+      this.fishingBobber.updateWorldMatrix(true, false);
+      const bobberWorld = new THREE.Vector3();
+      this.fishingBobber.getWorldPosition(bobberWorld);
+      const endPos = bobberWorld.clone();
+      this.riverWorldGroup.worldToLocal(endPos);
+      endPos.y += 0.12; // Top pin of bobber float
+
+      // Midpoint for catenary sag or tension
+      const midPos = startPos.clone().lerp(endPos, 0.5);
+      const dist = startPos.distanceTo(endPos);
+
+      if (this.fishingState === 'waiting') {
+        midPos.y -= Math.min(0.45, dist * 0.05);
+      } else if (this.fishingState === 'bite' || this.fishingState === 'reeling') {
+        midPos.y += Math.sin(elapsed * 50) * 0.02;
+        midPos.x += Math.cos(elapsed * 50) * 0.02;
+      } else if (this.fishingState === 'casting') {
+        if (this.castAnimTimer > 0.4) {
+          midPos.y += 0.25;
+        }
+      }
+
+      // Smooth 12-point quadratic bezier curve
+      const curve = new THREE.QuadraticBezierCurve3(startPos, midPos, endPos);
+      const points = curve.getPoints(11); // 12 points
+
+      const posAttr = this.fishingLine.geometry.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < points.length; i++) {
+        posAttr.setXYZ(i, points[i].x, points[i].y, points[i].z);
+      }
+      posAttr.needsUpdate = true;
     }
   }
 
@@ -1740,6 +2938,16 @@ private setupAirplanes() {
         }
       });
     }
+    if (this.riverLamps) {
+      this.riverLamps.forEach((lamp) => {
+        if (lamp.headMat) {
+          lamp.headMat.emissiveIntensity = nightAmount > 0.3 ? 1.2 : 0.15;
+        }
+        if (lamp.light) {
+          lamp.light.intensity = nightAmount > 0.3 ? 0.6 : 0.0;
+        }
+      });
+    }
   }
 
   public zoomIn(factor = 0.82) {
@@ -1822,6 +3030,11 @@ private setupAirplanes() {
     this.handleExitTuguEvent = () => this.exitTuguArea();
     window.addEventListener('enter-tugu-area', this.handleEnterTuguEvent);
     window.addEventListener('exit-tugu-area', this.handleExitTuguEvent);
+
+    this.handleEnterRiverEvent = () => this.enterRiverArea();
+    this.handleExitRiverEvent = () => this.exitRiverArea();
+    window.addEventListener('enter-river-area', this.handleEnterRiverEvent);
+    window.addEventListener('exit-river-area', this.handleExitRiverEvent);
     this.handlePlayerChat = (e: any) => {
       const text = e.detail?.text;
       if (text) this.showPlayerSpeechBubble(text);
@@ -1842,8 +3055,15 @@ private setupAirplanes() {
     window.addEventListener('time-of-day-changed', this.handleTimeOfDayEvent);
     window.addEventListener('toggle-day-night', this.handleToggleDayNightEvent);
 
+    this.handleAdjustCameraPOV = (e: any) => {
+      const { preset, yaw, pitch, distance } = e.detail || {};
+      this.handlePhotoStudioPOV(preset, yaw, pitch, distance);
+    };
+    window.addEventListener('adjust-camera-pov', this.handleAdjustCameraPOV);
+
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('blur', this.onWindowBlur);
     window.addEventListener('resize', this.onResize);
     this.renderer.domElement.addEventListener('webglcontextlost', this.onContextLost, false);
     this.renderer.domElement.addEventListener('webglcontextrestored', this.onContextRestored, false);
@@ -1970,6 +3190,83 @@ private setupAirplanes() {
       this.activePointers.clear();
     }
 
+    if (e && this.viewMode === 'tugu') {
+      const dragDist = Math.hypot(
+        e.clientX - (this.pointerDownPos?.x ?? e.clientX),
+        e.clientY - (this.pointerDownPos?.y ?? e.clientY)
+      );
+      // Tap responsif seketika (zero-delay di mobile/touch/mouse)
+      if (dragDist <= 12) {
+        const rect = this.container.getBoundingClientRect();
+        this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        // Cek interaksi Pak Mayor
+        if (this.mayorNPC?.root && this.mayorNPC.root.visible) {
+          const hits = this.raycaster.intersectObject(this.mayorNPC.root, true);
+          if (hits.length > 0) {
+            const dir = this.playerPos.clone().sub(this.mayorNPC.root.position);
+            if (dir.lengthSq() > 0.01) {
+              this.mayorNPC.root.rotation.y = Math.atan2(dir.x, dir.z);
+            }
+            this.triggerMayorSpeech('Senang sekali bertemu denganmu di sini, warga tercinta!');
+            this.isPointerDown = false;
+            this.isPanning = false;
+            return;
+          }
+        }
+
+        // Tap tanah: Buat langkahnya jadi sedikit (pendek & terkontrol maksimal 2.0 meter per tap)
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const target = new THREE.Vector3();
+        if (this.raycaster.ray.intersectPlane(plane, target)) {
+          const distFromCenter = Math.hypot(target.x, target.z);
+          if (distFromCenter <= 24) {
+            const diff = target.clone().sub(this.playerPos);
+            diff.y = 0;
+            const dist = diff.length();
+            if (dist > 0.2) {
+              const maxStep = Math.min(dist, 2.0);
+              this.targetPosition = this.playerPos.clone().add(diff.normalize().multiplyScalar(maxStep));
+            }
+          }
+        }
+      }
+    } else if (e && this.viewMode === 'river') {
+      const dragDist = Math.hypot(
+        e.clientX - (this.pointerDownPos?.x ?? e.clientX),
+        e.clientY - (this.pointerDownPos?.y ?? e.clientY)
+      );
+      if (dragDist <= 12) {
+        const rect = this.container.getBoundingClientRect();
+        this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const target = new THREE.Vector3();
+        if (this.raycaster.ray.intersectPlane(plane, target)) {
+          // If tap in the river water area (z < -6.0) and fishing state is idle, directly cast!
+          if (target.z < -6.0 && this.fishingState === 'idle') {
+            this.castFishingLine(target);
+            this.isPointerDown = false;
+            this.isPanning = false;
+            return;
+          }
+
+          // If tap on pier or shore, step avatar towards tap position (clamped to 2.0m max step)
+          const diff = target.clone().sub(this.playerPos);
+          diff.y = 0;
+          const dist = diff.length();
+          if (dist > 0.2) {
+            const maxStep = Math.min(dist, 2.0);
+            this.targetPosition = this.playerPos.clone().add(diff.normalize().multiplyScalar(maxStep));
+          }
+        }
+      }
+    }
+
     if (this.activePointers.size === 0) {
       this.isPointerDown = false;
       this.isPanning = false;
@@ -2002,6 +3299,34 @@ private setupAirplanes() {
         -((e.clientY - rect.top) / rect.height) * 2 + 1
       );
       this.raycaster.setFromCamera(clickMouse, this.camera);
+
+      // 0. Raycast against Scavenger Hunt Cats
+      if (this.interactiveCatMeshes.length > 0) {
+        const catHits = this.raycaster.intersectObjects(
+          this.interactiveCatMeshes.map((c) => c.mesh)
+        );
+        if (catHits.length > 0) {
+          const hit = this.interactiveCatMeshes.find((c) => c.mesh === catHits[0].object);
+          if (hit) {
+            const cat = this.cats.find((c) => c.id === hit.catId);
+            if (cat) {
+              cat.bounceTimer = 1.0;
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(
+                  new CustomEvent('cat-clicked', {
+                    detail: {
+                      id: cat.id,
+                      name: cat.name,
+                      hint: cat.locationHint,
+                    },
+                  })
+                );
+              }
+              return;
+            }
+          }
+        }
+      }
 
       // 1. Raycast directly against interactive landmark hitboxes
       const intersects = this.raycaster.intersectObjects(
@@ -2059,6 +3384,7 @@ private setupAirplanes() {
         // For every other landmark: update Zustand store and dispatch landmark-selected
         useGameStore.getState().setSelectedBuilding(targetLandmark.id);
         useGameStore.getState().setCurrentDistrict(targetLandmark.district);
+        useUIStore.getState().openModal('building_details');
         if (typeof window !== 'undefined') {
           window.dispatchEvent(
             new CustomEvent('landmark-selected', { detail: targetLandmark })
@@ -2068,43 +3394,41 @@ private setupAirplanes() {
       }
     }
 
-    if (this.viewMode === 'tugu') {
-      const rect = this.container.getBoundingClientRect();
-      this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-      this.raycaster.setFromCamera(this.mouse, this.camera);
-
-      // Check if clicking on Pak Mayor to interact & chat
-      if (this.mayorNPC?.root && this.mayorNPC.root.visible) {
-        const hits = this.raycaster.intersectObject(this.mayorNPC.root, true);
-        if (hits.length > 0) {
-          const dir = this.playerPos.clone().sub(this.mayorNPC.root.position);
-          if (dir.lengthSq() > 0.01) {
-            this.mayorNPC.root.rotation.y = Math.atan2(dir.x, dir.z);
-          }
-          this.triggerMayorSpeech('Senang sekali bertemu denganmu di sini, warga tercinta!');
-          return;
-        }
-      }
-
-      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-      const target = new THREE.Vector3();
-      if (this.raycaster.ray.intersectPlane(plane, target)) {
-        const distFromCenter = Math.hypot(target.x, target.z);
-        if (distFromCenter <= 24) {
-          this.targetPosition = target;
-        }
-      }
+    if (this.viewMode === 'tugu' || this.viewMode === 'river') {
+      // Tap input di alun-alun tugu dan sungai sudah ditangani instan (0ms delay) di onPointerUp
+      return;
     }
   };
 
   private onKeyDown = (e: KeyboardEvent) => {
-    this.keysPressed[e.key.toLowerCase()] = true;
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+      return;
+    }
+    const key = e.key.toLowerCase();
+    const code = e.code.toLowerCase();
+    this.keysPressed[key] = true;
+    this.keysPressed[code] = true;
+
+    if (
+      ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(code) ||
+      ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)
+    ) {
+      e.preventDefault();
+    }
   };
 
   private onKeyUp = (e: KeyboardEvent) => {
-    this.keysPressed[e.key.toLowerCase()] = false;
+    const key = e.key.toLowerCase();
+    const code = e.code.toLowerCase();
+    this.keysPressed[key] = false;
+    this.keysPressed[code] = false;
+  };
+
+  private onWindowBlur = () => {
+    this.keysPressed = {};
+    this.virtualMove = null;
+    this.targetPosition = null;
   };
 
   private onResize = () => {
@@ -2286,7 +3610,7 @@ private setupAirplanes() {
   }
 
   private updateCharacter(delta: number, elapsed: number) {
-    if (this.viewMode !== 'tugu') {
+    if (this.viewMode !== 'tugu' && this.viewMode !== 'river') {
       return;
     }
 
@@ -2317,42 +3641,29 @@ private setupAirplanes() {
         moveVec.addScaledVector(camRight, vx);
       }
     }
-    if (this.keysPressed['w'] || this.keysPressed['arrowup']) moveVec.add(camDir);
-    if (this.keysPressed['s'] || this.keysPressed['arrowdown']) moveVec.sub(camDir);
-    if (this.keysPressed['d'] || this.keysPressed['arrowright']) moveVec.add(camRight);
-    if (this.keysPressed['a'] || this.keysPressed['arrowleft']) moveVec.sub(camRight);
+    if (this.keysPressed['w'] || this.keysPressed['arrowup'] || this.keysPressed['keyw']) moveVec.add(camDir);
+    if (this.keysPressed['s'] || this.keysPressed['arrowdown'] || this.keysPressed['keys']) moveVec.sub(camDir);
+    if (this.keysPressed['d'] || this.keysPressed['arrowright'] || this.keysPressed['keyd']) moveVec.add(camRight);
+    if (this.keysPressed['a'] || this.keysPressed['arrowleft'] || this.keysPressed['keya']) moveVec.sub(camRight);
+
+    if (this.viewMode === 'river' && this.fishingState !== 'idle') {
+      moveVec.set(0, 0, 0);
+      this.targetPosition = null;
+      // Lock avatar orientation directly facing the fishing bobber!
+      const dx = this.targetBobberPos.x - this.playerPos.x;
+      const dz = this.targetBobberPos.z - this.playerPos.z;
+      this.playerFacing = Math.atan2(dx, dz);
+    }
 
     let isMoving = false;
-    const speed = 5.8 * delta * analogFactor;
+    const speed = 4.5 * delta * analogFactor;
 
     if (moveVec.lengthSq() > 0.001) {
       this.targetPosition = null;
       moveVec.normalize().multiplyScalar(speed);
 
       const nextPos = this.playerPos.clone().add(moveVec);
-      const dist = Math.hypot(nextPos.x, nextPos.z);
-      if (dist > 23.5) {
-        const angle = Math.atan2(nextPos.z, nextPos.x);
-        nextPos.x = Math.cos(angle) * 23.5;
-        nextPos.z = Math.sin(angle) * 23.5;
-      }
-      if (dist < 4.2) {
-        const angle = Math.atan2(nextPos.z, nextPos.x);
-        nextPos.x = Math.cos(angle) * 4.2;
-        nextPos.z = Math.sin(angle) * 4.2;
-      }
-
-      this.playerPos.copy(nextPos);
-      this.playerFacing = Math.atan2(moveVec.x, moveVec.z);
-      isMoving = true;
-    } else if (this.targetPosition) {
-      const diff = this.targetPosition.clone().sub(this.playerPos);
-      diff.y = 0;
-      if (diff.length() > 0.4) {
-        this.playerFacing = Math.atan2(diff.x, diff.z);
-        diff.normalize().multiplyScalar(speed);
-
-        const nextPos = this.playerPos.clone().add(diff);
+      if (this.viewMode === 'tugu') {
         const dist = Math.hypot(nextPos.x, nextPos.z);
         if (dist > 23.5) {
           const angle = Math.atan2(nextPos.z, nextPos.x);
@@ -2364,6 +3675,62 @@ private setupAirplanes() {
           nextPos.x = Math.cos(angle) * 4.2;
           nextPos.z = Math.sin(angle) * 4.2;
         }
+      } else if (this.viewMode === 'river') {
+        if (nextPos.z < 2.0) {
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
+          nextPos.z = THREE.MathUtils.clamp(nextPos.z, -9.2, 2.0);
+          nextPos.y = 0.35;
+        } else if (nextPos.z <= 3.0) {
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
+          const t = (nextPos.z - 2.0) / (3.0 - 2.0);
+          nextPos.y = THREE.MathUtils.lerp(0.35, 0.0, t);
+        } else {
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -28.0, 28.0);
+          nextPos.z = THREE.MathUtils.clamp(nextPos.z, 3.0, 18.0);
+          nextPos.y = 0.0;
+        }
+      }
+
+      this.playerPos.copy(nextPos);
+      this.playerFacing = Math.atan2(moveVec.x, moveVec.z);
+      isMoving = true;
+    } else if (this.targetPosition) {
+      const diff = this.targetPosition.clone().sub(this.playerPos);
+      diff.y = 0;
+      const remainingDist = diff.length();
+      if (remainingDist > 0.12) {
+        this.playerFacing = Math.atan2(diff.x, diff.z);
+        const moveDist = Math.min(speed, remainingDist);
+        diff.normalize().multiplyScalar(moveDist);
+
+        const nextPos = this.playerPos.clone().add(diff);
+        if (this.viewMode === 'tugu') {
+          const dist = Math.hypot(nextPos.x, nextPos.z);
+          if (dist > 23.5) {
+            const angle = Math.atan2(nextPos.z, nextPos.x);
+            nextPos.x = Math.cos(angle) * 23.5;
+            nextPos.z = Math.sin(angle) * 23.5;
+          }
+          if (dist < 4.2) {
+            const angle = Math.atan2(nextPos.z, nextPos.x);
+            nextPos.x = Math.cos(angle) * 4.2;
+            nextPos.z = Math.sin(angle) * 4.2;
+          }
+        } else if (this.viewMode === 'river') {
+          if (nextPos.z < 2.0) {
+            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
+            nextPos.z = THREE.MathUtils.clamp(nextPos.z, -9.2, 2.0);
+            nextPos.y = 0.35;
+          } else if (nextPos.z <= 3.0) {
+            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -2.2, 2.2);
+            const t = (nextPos.z - 2.0) / (3.0 - 2.0);
+            nextPos.y = THREE.MathUtils.lerp(0.35, 0.0, t);
+          } else {
+            nextPos.x = THREE.MathUtils.clamp(nextPos.x, -28.0, 28.0);
+            nextPos.z = THREE.MathUtils.clamp(nextPos.z, 3.0, 18.0);
+            nextPos.y = 0.0;
+          }
+        }
 
         this.playerPos.copy(nextPos);
         isMoving = true;
@@ -2371,6 +3738,8 @@ private setupAirplanes() {
         this.targetPosition = null;
       }
     }
+
+    this.isPlayerWalking = isMoving;
 
     if (this.isPlayerAdmin && this.mayorPlayer) {
       this.mayorPlayer.root.position.copy(this.playerPos);
@@ -2380,6 +3749,9 @@ private setupAirplanes() {
       this.playerCitizen.root.position.copy(this.playerPos);
       this.playerCitizen.root.rotation.y = this.playerFacing;
       this.playerCitizen.pose(isMoving, elapsed, 4.5);
+      if (this.viewMode === 'river' && isMoving) {
+        this.playerCitizen.rightArm.rotation.x = 0.35 + Math.sin(elapsed * 4.5) * 0.15;
+      }
     }
 
     if (this.cat) {
@@ -2388,7 +3760,7 @@ private setupAirplanes() {
         this.playerFacing
       );
       const catTarget = this.playerPos.clone().add(catOffset);
-      this.cat.root.position.lerp(catTarget, 0.12);
+      this.cat.root.position.lerp(catTarget, 0.25);
       this.cat.root.rotation.y = this.playerFacing;
     }
 
@@ -2397,10 +3769,18 @@ private setupAirplanes() {
       this.updateCameraTransform();
     }
 
-    // Southern exit portal check at (0, 0, 22)
-    if (Math.hypot(this.playerPos.x - 0, this.playerPos.z - 22) <= 2.2) {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('exit-tugu-area'));
+    // Exit portal check
+    if (this.viewMode === 'tugu') {
+      if (Math.hypot(this.playerPos.x - 0, this.playerPos.z - 22) <= 2.2) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('exit-tugu-area'));
+        }
+      }
+    } else if (this.viewMode === 'river') {
+      if (Math.hypot(this.playerPos.x - 0, this.playerPos.z - 13.5) <= 2.0) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('exit-river-area'));
+        }
       }
     }
   }
@@ -2612,12 +3992,15 @@ private setupAirplanes() {
   }
 
   private checkDistrictProximity() {
-    if (this.viewMode !== 'tugu') {
+    if (this.viewMode === 'tugu') {
+      useGameStore.getState().setSelectedBuilding('monument');
+      useGameStore.getState().setCurrentDistrict('Pusat Kota');
+    } else if (this.viewMode === 'river') {
+      useGameStore.getState().setSelectedBuilding('river_spot');
+      useGameStore.getState().setCurrentDistrict('Kawasan Alam');
+    } else {
       useGameStore.getState().setSelectedBuilding(null);
-      return;
     }
-    useGameStore.getState().setSelectedBuilding('monument');
-    useGameStore.getState().setCurrentDistrict('Pusat Kota');
   }
 
   private animate = () => {
@@ -2637,9 +4020,13 @@ private setupAirplanes() {
           j.scale.y = 0.5 + Math.sin(elapsed * 4 + i * 0.4) * 0.4;
         });
       }
+    } else if (this.viewMode === 'river') {
+      this.updateCharacter(delta, elapsed);
+      this.updateRiver(delta, elapsed);
     } else {
       this.updateAirplanes(elapsed);
       this.updateAnimals(elapsed);
+      this.updateCats(delta, elapsed);
       if (this.metro?.mpark?.jets) {
         this.metro.mpark.jets.children.forEach((j: any, i: number) => {
           j.scale.y = 0.5 + Math.sin(elapsed * 4 + i * 0.4) * 0.4;
@@ -2673,6 +4060,251 @@ private setupAirplanes() {
     this.renderer.render(this.scene, this.camera);
   };
 
+  // ============================================================
+  // SCAVENGER HUNT CATS & ANIMAL LOGIC
+  // ============================================================
+  private setupCats() {
+    this.cats = [];
+    this.interactiveCatMeshes = [];
+
+    const CAT_SPECS = [
+      {
+        id: 'cat_oren',
+        name: 'Si Oren Alun-Alun',
+        color: '#E67E22',
+        earColor: '#D35400',
+        hint: 'Suka berjemur di dekat Taman Monumen Alun-Alun',
+        pos: new THREE.Vector3(12, 0, -78),
+      },
+      {
+        id: 'cat_mimi',
+        name: 'Mimi Si Manis',
+        color: '#F5B041',
+        earColor: '#E67E22',
+        hint: 'Sering mengawasi dari teras dekat Balai Kota',
+        pos: new THREE.Vector3(-46, 0.4, -54),
+      },
+      {
+        id: 'cat_kuro',
+        name: 'Kuro Si Penjaga',
+        color: '#2C3E50',
+        earColor: '#1A252F',
+        hint: 'Bersembunyi santai di dekat Perumahan Rusunawa',
+        pos: new THREE.Vector3(56, 0, 46),
+      },
+      {
+        id: 'cat_mochi',
+        name: 'Mochi Si Belanja',
+        color: '#FDFEFE',
+        earColor: '#FADBD8',
+        hint: 'Nongkrong di pelataran Netizen Grand Mall',
+        pos: new THREE.Vector3(-30, 0, 22),
+      },
+      {
+        id: 'cat_cimot',
+        name: 'Cimot Si Petualang',
+        color: '#7F8C8D',
+        earColor: '#5D6D7E',
+        hint: 'Menunggu kereta tiba di dekat Stasiun Netizen Express',
+        pos: new THREE.Vector3(6, 0, 106),
+      },
+    ];
+
+    CAT_SPECS.forEach((spec) => {
+      const model = this.createCatModel(spec.color, spec.earColor);
+      model.root.position.copy(spec.pos);
+      model.root.rotation.y = Math.random() * Math.PI * 2;
+      this.cityWorldGroup.add(model.root);
+
+      const catEntry = {
+        id: spec.id,
+        name: spec.name,
+        locationHint: spec.hint,
+        root: model.root,
+        tail: model.tail,
+        head: model.head,
+        baseY: spec.pos.y,
+        bounceTimer: 0,
+      };
+      this.cats.push(catEntry);
+
+      // Hitbox for easy clicking/tapping
+      const hitGeo = new THREE.CylinderGeometry(2.2, 2.2, 3.5, 8);
+      const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+      const hitBox = new THREE.Mesh(hitGeo, hitMat);
+      hitBox.position.copy(spec.pos).add(new THREE.Vector3(0, 1.7, 0));
+      this.cityWorldGroup.add(hitBox);
+
+      this.interactiveCatMeshes.push({ mesh: hitBox, catId: spec.id });
+    });
+  }
+
+  private createCatModel(furColor: string, earColor: string): { root: THREE.Group; tail: THREE.Mesh; head: THREE.Group } {
+    const root = new THREE.Group();
+
+    const furMat = new THREE.MeshStandardMaterial({ color: furColor, roughness: 0.75 });
+    const earMat = new THREE.MeshStandardMaterial({ color: earColor, roughness: 0.7 });
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+
+    // Body
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.6, 1.25), furMat);
+    body.position.y = 0.55;
+    root.add(body);
+
+    // Belly patch
+    const belly = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.35, 0.85), whiteMat);
+    belly.position.set(0, 0.42, 0);
+    root.add(belly);
+
+    // Head
+    const head = new THREE.Group();
+    head.position.set(0, 0.9, 0.7);
+    const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.58, 0.62), furMat);
+    head.add(headMesh);
+
+    // Muzzle & Nose
+    const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.18), whiteMat);
+    muzzle.position.set(0, -0.1, 0.34);
+    head.add(muzzle);
+
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.08), earMat);
+    nose.position.set(0, -0.04, 0.44);
+    head.add(nose);
+
+    // Eyes
+    const eyeGeo = new THREE.BoxGeometry(0.09, 0.09, 0.05);
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+    eyeL.position.set(-0.18, 0.08, 0.32);
+    const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+    eyeR.position.set(0.18, 0.08, 0.32);
+    head.add(eyeL);
+    head.add(eyeR);
+
+    // Triangular Ears
+    const earGeo = new THREE.ConeGeometry(0.16, 0.3, 4);
+    const earL = new THREE.Mesh(earGeo, earMat);
+    earL.position.set(-0.22, 0.38, 0.05);
+    earL.rotation.z = 0.25;
+    const earR = new THREE.Mesh(earGeo, earMat);
+    earR.position.set(0.22, 0.38, 0.05);
+    earR.rotation.z = -0.25;
+    head.add(earL);
+    head.add(earR);
+
+    root.add(head);
+
+    // 4 Paws
+    const legGeo = new THREE.BoxGeometry(0.2, 0.38, 0.2);
+    const legPositions = [
+      [-0.28, 0.2, 0.4],
+      [0.28, 0.2, 0.4],
+      [-0.28, 0.2, -0.4],
+      [0.28, 0.2, -0.4],
+    ];
+    legPositions.forEach(([lx, ly, lz]) => {
+      const leg = new THREE.Mesh(legGeo, whiteMat);
+      leg.position.set(lx, ly, lz);
+      root.add(leg);
+    });
+
+    // Tail (pivots from back)
+    const tailPivot = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.65, 6), furMat);
+    tailPivot.position.set(0, 0.5, -0.75);
+    tailPivot.rotation.x = -Math.PI / 3;
+    root.add(tailPivot);
+
+    return { root, tail: tailPivot, head };
+  }
+
+  private updateCats(delta: number, elapsed: number) {
+    if (!this.cats || this.cats.length === 0) return;
+
+    this.cats.forEach((cat, idx) => {
+      // Gentle breathing & tail wag
+      const wagSpeed = 3.5 + (idx % 3) * 0.5;
+      cat.tail.rotation.z = Math.sin(elapsed * wagSpeed + idx) * 0.45;
+      cat.head.rotation.y = Math.sin(elapsed * 1.5 + idx * 0.8) * 0.2;
+
+      // Click bounce animation
+      if (cat.bounceTimer > 0) {
+        cat.bounceTimer -= delta * 2.5;
+        const bounce = Math.sin(Math.max(0, cat.bounceTimer) * Math.PI) * 0.6;
+        cat.root.position.y = cat.baseY + bounce;
+      } else {
+        cat.root.position.y = cat.baseY + Math.sin(elapsed * 2.0 + idx) * 0.03;
+      }
+    });
+  }
+
+  // ============================================================
+  // PHOTO STUDIO CAMERA POV
+  // ============================================================
+  public handlePhotoStudioPOV(
+    preset?: 'selfie' | 'normal' | 'drone' | 'wide',
+    yaw?: number,
+    pitch?: number,
+    distance?: number
+  ) {
+    if (preset === 'selfie') {
+      if (this.viewMode === 'tugu') {
+        this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.2, 0));
+        this.spherical.radius = 4.0;
+        this.spherical.phi = Math.PI / 2.25;
+        this.spherical.theta = this.playerFacing + Math.PI;
+      } else {
+        this.target.set(0, 2, -82);
+        this.spherical.radius = 7.5;
+        this.spherical.phi = Math.PI / 2.25;
+        this.spherical.theta = 0;
+      }
+    } else if (preset === 'normal') {
+      if (this.viewMode === 'tugu') {
+        this.target.copy(this.playerPos).add(new THREE.Vector3(0, 0.8, 0));
+        this.spherical.radius = 12.0;
+        this.spherical.phi = Math.PI / 3.2;
+        this.spherical.theta = Math.PI * 0.75;
+      } else {
+        this.target.set(0, 4, -82);
+        this.spherical.radius = 32.0;
+        this.spherical.phi = Math.PI / 3.2;
+        this.spherical.theta = Math.PI * 0.75;
+      }
+    } else if (preset === 'drone') {
+      if (this.viewMode === 'tugu') {
+        this.target.copy(this.playerPos);
+        this.spherical.radius = 26.0;
+        this.spherical.phi = Math.PI / 6.5;
+      } else {
+        this.target.set(0, 0, -82);
+        this.spherical.radius = 60.0;
+        this.spherical.phi = Math.PI / 6.5;
+      }
+    } else if (preset === 'wide') {
+      if (this.viewMode === 'tugu') {
+        this.target.copy(this.playerPos).add(new THREE.Vector3(0, 0.6, 0));
+        this.spherical.radius = 8.0;
+        this.spherical.phi = Math.PI / 2.05;
+      } else {
+        this.target.set(0, 1, -82);
+        this.spherical.radius = 20.0;
+        this.spherical.phi = Math.PI / 2.05;
+      }
+    }
+
+    if (yaw !== undefined) {
+      this.spherical.theta = (yaw * Math.PI) / 180;
+    }
+    if (pitch !== undefined) {
+      this.spherical.phi = (pitch * Math.PI) / 180;
+    }
+    if (distance !== undefined) {
+      this.spherical.radius = distance;
+    }
+
+    this.updateCameraTransform();
+  }
+
   public destroy() {
     this.isDestroyed = true;
     cancelAnimationFrame(this.reqId);
@@ -2690,10 +4322,14 @@ private setupAirplanes() {
     el.removeEventListener('click', this.onClick);
     if (this.handleEnterTuguEvent) window.removeEventListener('enter-tugu-area', this.handleEnterTuguEvent);
     if (this.handleExitTuguEvent) window.removeEventListener('exit-tugu-area', this.handleExitTuguEvent);
+    if (this.handleEnterRiverEvent) window.removeEventListener('enter-river-area', this.handleEnterRiverEvent);
+    if (this.handleExitRiverEvent) window.removeEventListener('exit-river-area', this.handleExitRiverEvent);
     if (this.handleTimeOfDayEvent) window.removeEventListener('time-of-day-changed', this.handleTimeOfDayEvent);
     if (this.handleToggleDayNightEvent) window.removeEventListener('toggle-day-night', this.handleToggleDayNightEvent);
+    if (this.handleAdjustCameraPOV) window.removeEventListener('adjust-camera-pov', this.handleAdjustCameraPOV);
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('blur', this.onWindowBlur);
     window.removeEventListener('resize', this.onResize);
     this.activePointers.clear();
     this.renderer?.domElement?.removeEventListener('webglcontextlost', this.onContextLost);

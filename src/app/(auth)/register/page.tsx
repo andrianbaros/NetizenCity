@@ -3,127 +3,126 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, User, ShieldCheck, ArrowRight } from 'lucide-react'
+import {
+  Lock,
+  User,
+  ShieldCheck,
+  ArrowRight,
+  CheckCircle2,
+  ExternalLink,
+  Loader2,
+  Sparkles,
+} from 'lucide-react'
+import { InstagramIcon } from '@/components/ui/InstagramIcon'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { createClient } from '@/lib/supabase/client'
-import { generateKTNNumber } from '@/lib/utils/ktn'
 
 export default function RegisterPage() {
   const router = useRouter()
 
   const [formData, setFormData] = useState({
-    email: '',
+    instagramHandle: '',
+    displayName: '',
     password: '',
     confirmPassword: '',
-    username: '',
-    displayName: '',
   })
+  const [isFollowVerified, setIsFollowVerified] = useState(false)
+  const [isCheckingFollow, setIsCheckingFollow] = useState(false)
+  const [verifyMsg, setVerifyMsg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    if (e.target.name === 'instagramHandle') {
+      setIsFollowVerified(false)
+      setVerifyMsg(null)
+    }
+  }
+
+  const handleOpenInstagram = () => {
+    window.open('https://instagram.com/netizencity.id', '_blank')
+  }
+
+  const handleVerifyFollow = async () => {
+    const clean = formData.instagramHandle.trim().replace(/^@/, '')
+    if (!clean || clean.length < 3) {
+      setError('Masukkan username Instagram kamu terlebih dahulu')
+      return
+    }
+
+    setError(null)
+    setIsCheckingFollow(true)
+    setVerifyMsg(null)
+
+    try {
+      const res = await fetch('/api/instagram/verify-follower', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instagramHandle: clean }),
+      })
+
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setError(data.error || 'Verifikasi follower gagal')
+        return
+      }
+
+      setIsFollowVerified(true)
+      setVerifyMsg(`Akun @${clean} berhasil terverifikasi sebagai pengikut @netizencity.id!`)
+    } catch {
+      setError('Terjadi kendala saat memeriksa follower Instagram.')
+    } finally {
+      setIsCheckingFollow(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Konfirmasi kata sandi tidak cocok')
+    const cleanHandle = formData.instagramHandle.trim().replace(/^@/, '')
+    if (!cleanHandle) {
+      setError('Username Instagram wajib diisi')
       return
     }
 
-    if (formData.username.length < 3) {
-      setError('Username minimal 3 karakter')
+    if (!isFollowVerified) {
+      setError('Kamu wajib memverifikasi bahwa akunmu mengikuti @netizencity.id terlebih dahulu')
+      return
+    }
+
+    if (formData.password.length < 4) {
+      setError('Kata sandi minimal 4 karakter')
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Konfirmasi kata sandi tidak cocok')
       return
     }
 
     setLoading(true)
 
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const isPlaceholder =
-        !supabaseUrl || supabaseUrl.includes('your_supabase_url_here')
-
-      if (isPlaceholder) {
-        // Authenticate & create citizen in local database
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-            username: formData.username,
-            displayName: formData.displayName,
-          }),
-        })
-
-        const data = await res.json()
-        if (!res.ok || data.error) {
-          setError(data.error || 'Pendaftaran gagal. Coba username atau email lain.')
-          return
-        }
-
-        router.push('/welcome')
-        return
-      }
-
-      const supabase = createClient()
-
-      // 1. Check if username is already taken
-      const { data: existingUser } = await supabase
-        .from('citizens')
-        .select('username')
-        .eq('username', formData.username.toLowerCase())
-        .maybeSingle()
-
-      if (existingUser) {
-        setError('Username sudah digunakan oleh warga lain')
-        setLoading(false)
-        return
-      }
-
-      // 2. Sign up with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            username: formData.username.toLowerCase(),
-            display_name: formData.displayName,
-          },
-        },
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instagramHandle: cleanHandle,
+          username: cleanHandle,
+          displayName: formData.displayName || cleanHandle,
+          password: formData.password,
+        }),
       })
 
-      if (authError) {
-        setError(authError.message)
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setError(data.error || 'Pendaftaran gagal. Coba username lain.')
         return
       }
 
-      if (authData.user) {
-        // 3. Create citizen profile row
-        const ktn = generateKTNNumber()
-        await (supabase.from('citizens').insert as any)({
-          user_id: authData.user.id,
-          username: formData.username.toLowerCase(),
-          display_name: formData.displayName,
-          ktn_number: ktn,
-          avatar_config: {
-            skinTone: 'fair',
-            hairStyle: 'short',
-            hairColor: 'black',
-            eyeColor: 'brown',
-            outfit: { top: 'basic_blue', bottom: 'jeans', shoes: 'sneakers', accessory: null },
-            expression: 'happy',
-          },
-          role: 'citizen',
-          onboarding_completed: false,
-        })
-
-        router.push('/onboarding')
-      }
+      router.push('/welcome')
     } catch {
       setError('Terjadi kesalahan saat pendaftaran. Coba lagi.')
     } finally {
@@ -132,101 +131,191 @@ export default function RegisterPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6 text-center">
-        <h2 className="text-xl font-black text-[#3B3340] tracking-wide">
-          Daftar Menjadi Warga
+    <div className="bg-[#FFFDF9] border-2 border-[#D8CEBE] rounded-3xl p-6 sm:p-8 shadow-xl max-w-md w-full mx-auto font-sans text-[#343B35]">
+      {/* Header */}
+      <div className="text-center mb-6">
+        <div className="w-14 h-14 rounded-2xl bg-[#668B65] text-white flex items-center justify-center mx-auto mb-3 shadow-md">
+          <ShieldCheck className="w-8 h-8" />
+        </div>
+        <h2 className="font-heading font-extrabold text-xl text-[#343B35]">
+          Pendaftaran Warga NETIZENCITY
         </h2>
-        <p className="text-xs text-[#6F6675] mt-1 font-medium">
-          Dapatkan KTN resmi dan mulai hidup virtualmu di Netizen City
+        <p className="text-xs text-[#78634B] mt-1">
+          Warga resmi terhubung dengan Instagram & Kartu Tanda Netizen (KTN)
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-xl bg-[#FFF0F0] border-2 border-[#FFC4C4] text-[#C53030] text-xs font-bold">
+        <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3.5">
-        <Input
-          label="Username Unik"
-          name="username"
-          required
-          placeholder="contoh: budi_netizen"
-          value={formData.username}
-          onChange={handleChange}
-          leftIcon={<User className="w-4 h-4 text-[#A89E92]" />}
-          helperText="Huruf kecil, angka, dan underscore (tanpa spasi)"
-        />
-
-        <Input
-          label="Nama Lengkap / Tampilan"
-          name="displayName"
-          required
-          placeholder="Budi Santoso"
-          value={formData.displayName}
-          onChange={handleChange}
-          leftIcon={<User className="w-4 h-4 text-[#A89E92]" />}
-        />
-
-        <Input
-          label="Email Aktif"
-          name="email"
-          type="email"
-          required
-          placeholder="nama@email.com"
-          value={formData.email}
-          onChange={handleChange}
-          leftIcon={<Mail className="w-4 h-4 text-[#A89E92]" />}
-        />
-
-        <Input
-          label="Kata Sandi"
-          name="password"
-          type="password"
-          required
-          placeholder="Minimal 6 karakter"
-          value={formData.password}
-          onChange={handleChange}
-          leftIcon={<Lock className="w-4 h-4 text-[#A89E92]" />}
-        />
-
-        <Input
-          label="Konfirmasi Kata Sandi"
-          name="confirmPassword"
-          type="password"
-          required
-          placeholder="Ulangi kata sandi"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          leftIcon={<Lock className="w-4 h-4 text-[#A89E92]" />}
-        />
-
-        <div className="pt-2">
-          <Button
-            type="submit"
-            variant="peach"
-            size="lg"
-            isLoading={loading}
-            className="w-full"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Terbitkan KTN &amp; Lanjut</span>
-          </Button>
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Instagram Handle */}
+        <div>
+          <label className="block text-xs font-bold text-[#343B35] mb-1">
+            Username Instagram
+          </label>
+          <div className="relative">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-600">
+              <InstagramIcon className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              name="instagramHandle"
+              placeholder="@nama_akun_kamu"
+              value={formData.instagramHandle}
+              onChange={handleChange}
+              required
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#F7F4E9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
+            />
+          </div>
+          <span className="text-[10px] text-[#78634B] mt-0.5 block">
+            Wajib akun asli yang mengikuti @netizencity.id
+          </span>
         </div>
+
+        {/* Verification Card */}
+        <div className="p-3 bg-[#EFE9D8] border border-[#D8CEBE] rounded-2xl space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span className="flex items-center text-[#343B35]">
+              <InstagramIcon className="w-3.5 h-3.5 mr-1" />
+              Bukti Follow @netizencity.id
+            </span>
+            {isFollowVerified && (
+              <span className="text-[10px] text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full flex items-center font-bold">
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                Terbukti Follow
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenInstagram}
+              className="flex-1 py-1.5 px-2.5 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 text-white font-bold text-[11px] flex items-center justify-center space-x-1 hover:opacity-90 transition-opacity"
+            >
+              <span>1. Follow IG</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleVerifyFollow}
+              disabled={isCheckingFollow}
+              className={`flex-1 py-1.5 px-2.5 rounded-xl font-bold text-[11px] border transition-colors flex items-center justify-center space-x-1 ${
+                isFollowVerified
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                  : 'bg-[#FFFDF9] text-[#343B35] border-[#D8CEBE] hover:bg-[#F7F4E9]'
+              }`}
+            >
+              {isCheckingFollow ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                  <span>Memeriksa...</span>
+                </>
+              ) : isFollowVerified ? (
+                <span>✓ Terverifikasi</span>
+              ) : (
+                <span>2. Cek Follow</span>
+              )}
+            </button>
+          </div>
+
+          {verifyMsg && (
+            <p className="text-[11px] text-emerald-700 font-semibold pt-0.5">
+              {verifyMsg}
+            </p>
+          )}
+        </div>
+
+        {/* Display Name */}
+        <div>
+          <label className="block text-xs font-bold text-[#343B35] mb-1">
+            Nama Panggilan Warga
+          </label>
+          <div className="relative">
+            <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#78634B]" />
+            <input
+              type="text"
+              name="displayName"
+              placeholder="Contoh: Budi Santoso"
+              value={formData.displayName}
+              onChange={handleChange}
+              required
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#F7F4E9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
+            />
+          </div>
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="block text-xs font-bold text-[#343B35] mb-1">
+            Kata Sandi / PIN Akun
+          </label>
+          <div className="relative">
+            <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#78634B]" />
+            <input
+              type="password"
+              name="password"
+              placeholder="Minimal 4 karakter"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#F7F4E9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
+            />
+          </div>
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="block text-xs font-bold text-[#343B35] mb-1">
+            Konfirmasi Kata Sandi
+          </label>
+          <div className="relative">
+            <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#78634B]" />
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Ulangi kata sandi"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#F7F4E9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
+            />
+          </div>
+        </div>
+
+        {/* Submit */}
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={loading || !isFollowVerified}
+          className="w-full py-2.5 font-bold text-xs bg-[#668B65] hover:bg-[#527051]"
+        >
+          {loading ? (
+            <span className="flex items-center justify-center">
+              <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+              Menerbitkan KTN...
+            </span>
+          ) : (
+            <span className="flex items-center justify-center">
+              Daftar & Terbitkan KTN (+600 Koin)
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </span>
+          )}
+        </Button>
       </form>
 
-      <div className="mt-6 pt-5 border-t-2 border-[#EADBCC] text-center">
-        <p className="text-xs text-[#6F6675] font-medium">
-          Sudah punya akun warga?{' '}
-          <Link
-            href="/login"
-            className="text-[#2C6ECB] hover:text-[#1D60A6] font-black inline-flex items-center ml-1"
-          >
-            Masuk <ArrowRight className="w-3 h-3 ml-0.5" />
-          </Link>
-        </p>
+      {/* Login link */}
+      <div className="mt-4 text-center text-xs text-[#78634B] border-t border-[#D8CEBE] pt-3">
+        Sudah pernah mendaftar?{' '}
+        <Link href="/login" className="font-bold text-[#668B65] hover:underline">
+          Masuk di sini
+        </Link>
       </div>
     </div>
   )
