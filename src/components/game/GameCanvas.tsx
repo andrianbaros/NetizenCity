@@ -174,6 +174,9 @@ export default function GameCanvas() {
   const [fishingState, setFishingState] = useState<FishingState>('idle')
   const [reelProgress, setReelProgress] = useState(0)
   const [caughtFish, setCaughtFish] = useState<RiverFishCatch | null>(null)
+  const [isAutoFishing, setIsAutoFishing] = useState(false)
+  const [autoCatchCount, setAutoCatchCount] = useState(0)
+  const autoFishingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [selectedLandmarkInfo, setSelectedLandmarkInfo] = useState<{
     id: string
     name: string
@@ -585,6 +588,8 @@ export default function GameCanvas() {
   }
 
   const handleExitRiver = () => {
+    setIsAutoFishing(false)
+    if (autoFishingTimerRef.current) clearTimeout(autoFishingTimerRef.current)
     setIsTransitioning(true)
     setTransitionMessage('Kembali ke Kota Utama...')
     setTimeout(() => {
@@ -596,8 +601,61 @@ export default function GameCanvas() {
   }
 
   const handleAnalogMove = useCallback((dir: { x: number; y: number } | null) => {
+    if (dir && (Math.abs(dir.x) > 0.15 || Math.abs(dir.y) > 0.15)) {
+      setIsAutoFishing(false)
+    }
     cityManagerRef.current?.setVirtualMovement(dir)
   }, [])
+
+  // Auto-Fishing Lifecycle Automation
+  useEffect(() => {
+    if (!isAutoFishing || viewMode !== 'river') {
+      if (autoFishingTimerRef.current) clearTimeout(autoFishingTimerRef.current)
+      return
+    }
+
+    if (autoFishingTimerRef.current) clearTimeout(autoFishingTimerRef.current)
+
+    if (fishingState === 'idle') {
+      // Auto cast line in the center after a brief delay
+      autoFishingTimerRef.current = setTimeout(() => {
+        cityManagerRef.current?.castFishingLine()
+      }, 700)
+    } else if (fishingState === 'bite') {
+      // Quick reaction strike within 250ms
+      autoFishingTimerRef.current = setTimeout(() => {
+        cityManagerRef.current?.reelFishingTap()
+      }, 250)
+    } else if (fishingState === 'reeling') {
+      // Rapid reel clicks until 100%
+      const interval = setInterval(() => {
+        cityManagerRef.current?.reelFishingTap()
+      }, 100)
+      return () => clearInterval(interval)
+    } else if (fishingState === 'caught') {
+      // Successfully caught fish
+      setAutoCatchCount((prev) => prev + 1)
+      // Celebrate for 2.2 seconds so user sees the catch, then auto reset and recast
+      autoFishingTimerRef.current = setTimeout(() => {
+        cityManagerRef.current?.resetFishing()
+        autoFishingTimerRef.current = setTimeout(() => {
+          cityManagerRef.current?.castFishingLine()
+        }, 500)
+      }, 2200)
+    } else if (fishingState === 'escaped') {
+      // If escaped, retry quickly
+      autoFishingTimerRef.current = setTimeout(() => {
+        cityManagerRef.current?.resetFishing()
+        autoFishingTimerRef.current = setTimeout(() => {
+          cityManagerRef.current?.castFishingLine()
+        }, 500)
+      }, 900)
+    }
+
+    return () => {
+      if (autoFishingTimerRef.current) clearTimeout(autoFishingTimerRef.current)
+    }
+  }, [isAutoFishing, fishingState, viewMode])
 
   return (
     <div className="relative w-full h-full select-none overflow-hidden bg-[#CDE7F0] font-sans">
@@ -960,21 +1018,63 @@ export default function GameCanvas() {
       {/* 3D RIVER FISHING CONTROLS & HUD                              */}
       {/* ============================================================ */}
       {viewMode === 'river' && (
-        <div className="absolute bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-28 z-30 pointer-events-auto font-sans flex flex-col items-center sm:items-end gap-2.5 max-w-sm">
-          {/* 1. IDLE STATE: Cast Button */}
-          {fishingState === 'idle' && (
-            <div className="flex flex-col items-center sm:items-end gap-1.5">
-              <span className="text-[10px] sm:text-[11px] font-semibold text-[#343B35] bg-[#F7F4E9]/90 backdrop-blur-xs px-2.5 py-1 rounded-full border border-[#D8CEBE] shadow-xs">
-                💡 Sentuh air sungai atau klik tombol
+        <div className="absolute bottom-16 sm:bottom-8 left-1/2 -translate-x-1/2 z-30 pointer-events-auto font-sans flex flex-col items-center gap-2.5 w-full max-w-md px-3">
+          {/* Active Auto-Fishing Notification Badge */}
+          {isAutoFishing && (
+            <div className="flex items-center space-x-2.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-xl border border-white/30 animate-pulse font-sans">
+              <span className="text-sm sm:text-base animate-spin">⚡</span>
+              <span className="text-xs sm:text-sm font-black tracking-wide">
+                Auto Mancing Aktif • {autoCatchCount} Ikan Terkumpul
               </span>
               <button
                 type="button"
-                onClick={() => cityManagerRef.current?.castFishingLine()}
-                className="flex items-center space-x-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl bg-gradient-to-r from-[#267385] to-[#1E5D6C] text-white font-bold text-xs sm:text-sm shadow-lg hover:shadow-xl active:scale-95 transition-all cursor-pointer border border-white/20"
+                onClick={() => setIsAutoFishing(false)}
+                className="ml-1 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-black/25 hover:bg-black/40 rounded-xl text-[11px] font-bold text-white transition-all cursor-pointer shadow-xs"
               >
-                <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-[#80DEEA] animate-pulse" />
-                <span>Lempar Kail ke Air 🎣</span>
+                Berhenti ✕
               </button>
+            </div>
+          )}
+
+          {/* 1. IDLE STATE: Centered Action Controls */}
+          {fishingState === 'idle' && (
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-[#343B35] bg-[#F7F4E9]/95 backdrop-blur-xs px-3 py-1 rounded-full border border-[#D8CEBE] shadow-xs">
+                💡 Sentuh air sungai atau klik tombol lempar kail
+              </span>
+
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                {/* Main Centered Throw Button */}
+                <button
+                  type="button"
+                  onClick={() => cityManagerRef.current?.castFishingLine()}
+                  className="flex items-center space-x-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-gradient-to-r from-[#267385] to-[#1E5D6C] text-white font-black text-xs sm:text-sm shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/30"
+                >
+                  <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-[#80DEEA] animate-pulse" />
+                  <span>Lempar Kail ke Air 🎣</span>
+                </button>
+
+                {/* Auto-Fishing Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isAutoFishing
+                    setIsAutoFishing(next)
+                    if (next) {
+                      setAutoCatchCount(0)
+                      setTimeout(() => cityManagerRef.current?.castFishingLine(), 350)
+                    }
+                  }}
+                  className={`flex items-center space-x-1.5 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer border ${
+                    isAutoFishing
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-300 ring-2 ring-amber-300/50'
+                      : 'bg-[#F7F4E9] hover:bg-[#EFE9D8] text-[#343B35] border-[#D8CEBE]'
+                  }`}
+                >
+                  <span className="text-amber-500 font-black">⚡</span>
+                  <span>{isAutoFishing ? 'Auto: ON' : 'Mode Auto'}</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -982,7 +1082,7 @@ export default function GameCanvas() {
           {fishingState === 'casting' && (
             <div className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-[#F7F4E9] border border-[#D8CEBE] shadow-md text-xs font-bold text-[#267385] animate-pulse">
               <Waves className="w-4 h-4 text-[#267385] animate-spin" />
-              <span>Melempar kail ke sungai...</span>
+              <span>Melempar kail ke tengah sungai...</span>
             </div>
           )}
 
@@ -997,7 +1097,10 @@ export default function GameCanvas() {
               </div>
               <button
                 type="button"
-                onClick={() => cityManagerRef.current?.resetFishing()}
+                onClick={() => {
+                  setIsAutoFishing(false)
+                  cityManagerRef.current?.resetFishing()
+                }}
                 className="px-2.5 py-1 text-[11px] font-semibold text-[#78634B] hover:text-[#343B35] hover:bg-[#EFE9D8] rounded-xl transition-colors cursor-pointer"
               >
                 Batal ✕
@@ -1018,7 +1121,7 @@ export default function GameCanvas() {
 
           {/* 5. REELING MINIGAME STATE */}
           {fishingState === 'reeling' && (
-            <div className="w-56 sm:w-64 bg-[#F7F4E9] border-2 border-[#267385] rounded-2xl p-3 shadow-2xl flex flex-col gap-2">
+            <div className="w-60 sm:w-68 bg-[#F7F4E9] border-2 border-[#267385] rounded-2xl p-3 shadow-2xl flex flex-col gap-2">
               <div className="flex items-center justify-between text-xs font-bold text-[#343B35]">
                 <span className="flex items-center gap-1">
                   <Fish className="w-3.5 h-3.5 text-[#267385]" />
@@ -1039,47 +1142,71 @@ export default function GameCanvas() {
                 onClick={() => cityManagerRef.current?.reelFishingTap()}
                 className="w-full py-2.5 rounded-xl bg-[#267385] hover:bg-[#1E5D6C] active:scale-95 text-white font-black text-xs sm:text-sm tracking-wide shadow-md transition-transform cursor-pointer border border-[#1E5D6C]"
               >
-                TARIK! 🎣 (Tap Cepat!)
+                {isAutoFishing ? '⚡ Auto Menarik Kail... ⚡' : 'TARIK! 🎣 (Tap Cepat!)'}
               </button>
             </div>
           )}
 
           {/* 6. CAUGHT CELEBRATION CARD */}
           {fishingState === 'caught' && caughtFish && (
-            <div className="w-64 sm:w-72 bg-[#F7F4E9] border-2 border-[#668B65] rounded-2xl p-3.5 sm:p-4 shadow-2xl animate-in zoom-in-95 font-sans">
+            <div
+              className={`w-72 sm:w-80 rounded-3xl p-4 sm:p-5 shadow-2xl animate-in zoom-in-95 font-sans relative overflow-hidden ${
+                caughtFish.tier === 'immortal'
+                  ? 'bg-gradient-to-br from-[#FFF5F8] via-[#FCE7F3] to-[#F5D0FE] border-3 border-[#EC4899] ring-4 ring-[#EC4899]/30'
+                  : caughtFish.tier === 'mythic'
+                  ? 'bg-gradient-to-br from-[#FFF5F5] via-[#FEE2E2] to-[#FED7AA] border-3 border-[#EF4444] ring-4 ring-[#EF4444]/30'
+                  : caughtFish.tier === 'legendary'
+                  ? 'bg-gradient-to-br from-[#FFFBEB] via-[#FEF3C7] to-[#FDE68A] border-2 border-[#F59E0B] ring-2 ring-[#F59E0B]/30'
+                  : 'bg-[#F7F4E9] border-2 border-[#668B65]'
+              }`}
+            >
               <div className="flex items-start justify-between">
-                <div className="text-2xl sm:text-3xl">{caughtFish.icon}</div>
+                <div className="text-3xl sm:text-4xl animate-bounce">{caughtFish.icon}</div>
                 <span
-                  className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-xs"
-                  style={{ backgroundColor: caughtFish.rarityColor || '#27AE60' }}
+                  className={`text-[11px] font-black px-2.5 py-1 rounded-full text-white shadow-sm tracking-wide ${
+                    caughtFish.tier === 'immortal'
+                      ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-pulse'
+                      : caughtFish.tier === 'mythic'
+                      ? 'bg-gradient-to-r from-red-600 to-rose-600'
+                      : ''
+                  }`}
+                  style={{
+                    backgroundColor:
+                      caughtFish.tier !== 'immortal' && caughtFish.tier !== 'mythic'
+                        ? caughtFish.rarityColor || '#27AE60'
+                        : undefined,
+                  }}
                 >
                   {caughtFish.rarity}
                 </span>
               </div>
 
-              <h4 className="font-black text-sm sm:text-base text-[#343B35] mt-1.5">
+              <h4 className="font-heading font-black text-base sm:text-lg text-[#343B35] mt-2">
                 {caughtFish.name}
               </h4>
-              <p className="text-[11px] text-[#78634B] mt-0.5 line-clamp-2 leading-relaxed">
+              <p className="text-[11px] text-[#78634B] mt-1 leading-relaxed">
                 {caughtFish.desc}
               </p>
 
-              <div className="mt-2.5 p-2 bg-[#EFE9D8] rounded-xl flex items-center justify-between text-xs">
+              <div className="mt-3 p-2.5 bg-white/70 backdrop-blur-xs rounded-xl flex items-center justify-between text-xs border border-[#D8CEBE]">
                 <div>
-                  <span className="text-[10px] text-[#78634B] block">Berat</span>
-                  <span className="font-bold text-[#343B35]">{caughtFish.weight} kg</span>
+                  <span className="text-[10px] text-[#78634B] block font-semibold">Berat</span>
+                  <span className="font-extrabold text-[#343B35]">{caughtFish.weight} kg</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] text-[#78634B] block">Hadiah</span>
+                  <span className="text-[10px] text-[#78634B] block font-semibold">Hadiah Koin</span>
                   <span className="font-black text-[#668B65]">+{caughtFish.rewardCoins} Koin</span>
                 </div>
               </div>
 
-              <div className="mt-3 pt-2 border-t border-[#D8CEBE] flex items-center justify-end space-x-2">
+              <div className="mt-3.5 pt-2.5 border-t border-[#D8CEBE] flex items-center justify-end space-x-2">
                 <button
                   type="button"
-                  onClick={() => cityManagerRef.current?.resetFishing()}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-[#78634B] hover:bg-[#EFE9D8] cursor-pointer"
+                  onClick={() => {
+                    setIsAutoFishing(false)
+                    cityManagerRef.current?.resetFishing()
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#78634B] hover:bg-[#EFE9D8] cursor-pointer"
                 >
                   Selesai
                 </button>
@@ -1089,7 +1216,7 @@ export default function GameCanvas() {
                     cityManagerRef.current?.resetFishing()
                     setTimeout(() => cityManagerRef.current?.castFishingLine(), 150)
                   }}
-                  className="px-3.5 py-1.5 rounded-xl bg-[#267385] hover:bg-[#1E5D6C] text-white text-xs font-bold shadow-sm cursor-pointer"
+                  className="px-4 py-1.5 rounded-xl bg-[#267385] hover:bg-[#1E5D6C] text-white text-xs font-extrabold shadow-sm cursor-pointer"
                 >
                   Mancing Lagi 🎣
                 </button>
@@ -1099,7 +1226,7 @@ export default function GameCanvas() {
 
           {/* 7. ESCAPED STATE */}
           {fishingState === 'escaped' && (
-            <div className="flex items-center space-x-2 px-3.5 py-2 rounded-2xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] text-xs font-bold shadow-md">
+            <div className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] text-xs font-bold shadow-md">
               <span>Ikan terlepas! Jangan menyerah!</span>
               <button
                 type="button"
@@ -1209,10 +1336,10 @@ export default function GameCanvas() {
                 </>
               ) : viewMode === 'river' ? (
                 <>
-                  <div>• <strong className="text-[#343B35]">Analog / WASD:</strong> Jelajahi dermaga &amp; tepian sungai</div>
-                  <div>• <strong className="text-[#343B35]">Tap Air Sungai:</strong> Lempar kail langsung ke air</div>
-                  <div>• <strong className="text-[#343B35]">STRIKE:</strong> Tap secepatnya saat kail disambar ikan!</div>
-                  <div>• <strong className="text-[#343B35]">Tensi Tarikan:</strong> Tap tombol berulang kali sampai 100%</div>
+                  <div>• <strong className="text-[#343B35]">Tombol Tengah:</strong> Lempar kail langsung ke tengah sungai</div>
+                  <div>• <strong className="text-[#343B35]">Mode Auto:</strong> Lempar, strike &amp; tarik kail otomatis tanpa lelah</div>
+                  <div>• <strong className="text-[#343B35]">STRIKE &amp; Tarik:</strong> Tap secepatnya saat kail disambar ikan</div>
+                  <div>• <strong className="text-[#343B35]">Koleksi Rarity:</strong> Common, Rare, Epic, Legendary, Mythic, hingga Immortal 🔱</div>
                 </>
               ) : viewMode === 'stadium' ? (
                 <>

@@ -291,19 +291,32 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {filteredItems.map((item) => {
                 const isFish = item.category === 'fish'
-                const rarityLabel =
-                  item.rarity === 'Legendaris' || item.rarity === 'legendary'
-                    ? 'Legendaris'
-                    : item.rarity === 'Langka' || item.rarity === 'rare' || item.rarity === 'epic'
-                    ? 'Langka'
-                    : 'Biasa'
+                const rawRarity = (item.rarity || '').toLowerCase()
+                let rarityLabel = 'Common'
+                let rarityColor = 'bg-emerald-100 text-emerald-800 border-emerald-300 font-medium'
 
-                const rarityColor =
-                  rarityLabel === 'Legendaris'
-                    ? 'bg-amber-100 text-amber-800 border-amber-300'
-                    : rarityLabel === 'Langka'
-                    ? 'bg-purple-100 text-purple-800 border-purple-300'
-                    : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                if (rawRarity.includes('immortal') || rawRarity.includes('abadi')) {
+                  rarityLabel = 'Immortal 🔱'
+                  rarityColor = 'bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white border-pink-300 shadow-xs animate-pulse font-black'
+                } else if (rawRarity.includes('mythic') || rawRarity.includes('mitos')) {
+                  rarityLabel = 'Mythic 🐉'
+                  rarityColor = 'bg-red-500 text-white border-red-300 font-extrabold shadow-xs'
+                } else if (rawRarity.includes('legend') || rawRarity.includes('legendaris')) {
+                  rarityLabel = 'Legendary ✨'
+                  rarityColor = 'bg-amber-100 text-amber-900 border-amber-400 font-bold'
+                } else if (rawRarity.includes('epic') || rawRarity.includes('epik')) {
+                  rarityLabel = 'Epic 🔮'
+                  rarityColor = 'bg-purple-100 text-purple-900 border-purple-300 font-bold'
+                } else if (rawRarity.includes('rare') || rawRarity.includes('langka')) {
+                  rarityLabel = 'Rare 💎'
+                  rarityColor = 'bg-blue-100 text-blue-900 border-blue-300 font-bold'
+                } else if (rawRarity.includes('uncommon') || rawRarity.includes('menengah')) {
+                  rarityLabel = 'Uncommon 🌊'
+                  rarityColor = 'bg-sky-100 text-sky-900 border-sky-300 font-medium'
+                } else {
+                  rarityLabel = 'Common'
+                  rarityColor = 'bg-emerald-100 text-emerald-800 border-emerald-300 font-medium'
+                }
 
                 const dateStr = item.acquiredAt
                   ? new Date(item.acquiredAt).toLocaleDateString('id-ID', {

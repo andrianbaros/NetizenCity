@@ -1290,6 +1290,40 @@
   ],
   "inventory": [
     {
+      "id": "fish-1794214032564-1t76",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "fish_ikan_lele_sultan",
+      "is_equipped": false,
+      "acquired_at": "2026-11-09T08:47:12.564Z",
+      "metadata": {
+        "name": "Ikan Lele Sultan",
+        "category": "fish",
+        "weight": 4.67,
+        "rarity": "Langka (Rare)",
+        "sellPrice": 167,
+        "color": "#2D7F9D",
+        "icon": "🐟",
+        "description": "Tangkapan segar dari Sungai Kali Netizen dengan bobot 4.67 kg."
+      }
+    },
+    {
+      "id": "fish-1794214022738-a6ep",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "fish_ikan_mas_koki_alun_alun",
+      "is_equipped": false,
+      "acquired_at": "2026-11-09T08:47:02.739Z",
+      "metadata": {
+        "name": "Ikan Mas Koki Alun-Alun",
+        "category": "fish",
+        "weight": 0.99,
+        "rarity": "Biasa (Common)",
+        "sellPrice": 58,
+        "color": "#2D7F9D",
+        "icon": "🐟",
+        "description": "Tangkapan segar dari Sungai Kali Netizen dengan bobot 0.99 kg."
+      }
+    },
+    {
       "id": "inv-01",
       "citizen_id": "c-netizen-01",
       "item_id": "top_basic_blue",

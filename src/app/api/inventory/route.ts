@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       const item = addCaughtFishToInventory(citizen.id, {
         name: fish.name,
         weight: Number(fish.weight) || 1.0,
-        rarity: fish.rarity || 'Biasa',
+        rarity: fish.rarity || 'Common',
         rewardCoins: Number(fish.rewardCoins) || 40,
         color: fish.color || '#2D7F9D',
       })

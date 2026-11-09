@@ -381,6 +381,8 @@ export default function MallModal() {
     rare: 'text-[#1D60A6] border-[#A9C8EC] bg-[#EBF4FD]',
     epic: 'text-[#6A3F98] border-[#C9B8E8] bg-[#F3EEFA]',
     legendary: 'text-[#8C6008] border-[#F7D772] bg-[#FFF8DF] ring-1 ring-[#F7D772]',
+    mythic: 'text-[#991B1B] border-[#FCA5A5] bg-[#FEF2F2] ring-1 ring-[#F87171]',
+    immortal: 'text-[#831843] border-[#F472B6] bg-gradient-to-r from-pink-100 to-purple-100 ring-2 ring-[#EC4899]',
   }
 
   const getCategoryIcon = (cat: string) => {

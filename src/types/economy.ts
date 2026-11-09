@@ -31,7 +31,7 @@ export interface Transaction {
 }
 
 /** Item rarity levels */
-export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'immortal'
 
 /** Item categories */
 export type ItemCategory =
@@ -72,7 +72,18 @@ export interface InventoryItem {
   description?: string
   icon?: string
   weight?: number // for fish (e.g. 3.45 kg)
-  rarity?: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'Biasa' | 'Langka' | 'Legendaris'
+  rarity?:
+    | 'common'
+    | 'uncommon'
+    | 'rare'
+    | 'epic'
+    | 'legendary'
+    | 'mythic'
+    | 'immortal'
+    | 'Biasa'
+    | 'Langka'
+    | 'Legendaris'
+    | string
   sellPrice?: number
   quantity?: number
 }
@@ -99,4 +110,6 @@ export const RARITY_COLORS: Record<ItemRarity, string> = {
   rare: '#2196f3',
   epic: '#9c27b0',
   legendary: '#ff9800',
+  mythic: '#ef4444',
+  immortal: '#ec4899',
 }

@@ -24,10 +24,20 @@ export type TimeOfDay = 'morning' | 'noon' | 'sunset' | 'night';
 export type CameraMode = 'orbit' | 'follow' | 'cinematic';
 export type FishingState = 'idle' | 'casting' | 'waiting' | 'bite' | 'reeling' | 'caught' | 'escaped';
 
+export type FishRarityTier =
+  | 'common'
+  | 'uncommon'
+  | 'rare'
+  | 'epic'
+  | 'legendary'
+  | 'mythic'
+  | 'immortal';
+
 export interface RiverFishCatch {
   id: string;
   name: string;
   rarity: string;
+  tier: FishRarityTier;
   rarityColor: string;
   weight: number;
   rewardCoins: number;
@@ -36,65 +46,227 @@ export interface RiverFishCatch {
 }
 
 export const RIVER_FISH_SPECIES: RiverFishCatch[] = [
-  {
-    id: 'fish_lele_sultan',
-    name: 'Ikan Lele Sultan',
-    rarity: 'Langka (Rare)',
-    rarityColor: '#F39C12',
-    weight: 4.2,
-    rewardCoins: 150,
-    icon: '🐟',
-    desc: 'Lele berkumis emas legendaris penghuni palung terdalam Sungai Kali Netizen.',
-  },
-  {
-    id: 'fish_mas_koki',
-    name: 'Ikan Mas Koki Alun-Alun',
-    rarity: 'Biasa (Common)',
-    rarityColor: '#27AE60',
-    weight: 1.1,
-    rewardCoins: 65,
-    icon: '🐠',
-    desc: 'Ikan mas berenang anggun yang sering terlihat di sekitar dermaga kayu.',
-  },
-  {
-    id: 'fish_arwana_emas',
-    name: 'Arwana Emas Harapan',
-    rarity: 'Legendaris (Super Rare)',
-    rarityColor: '#E74C3C',
-    weight: 5.8,
-    rewardCoins: 250,
-    icon: '✨',
-    desc: 'Ikan pembawa keberuntungan berharga tinggi dengan sisik berkilau keemasan!',
-  },
-  {
-    id: 'fish_patin_deras',
-    name: 'Ikan Patin Sungai Deras',
-    rarity: 'Menengah (Uncommon)',
-    rarityColor: '#2980B9',
-    weight: 2.8,
-    rewardCoins: 95,
-    icon: '🐡',
-    desc: 'Ikan bertenaga besar yang gemar melawan arus air jernih bebatuan.',
-  },
+  // 1. COMMON (Biasa - Hijau Emerald)
   {
     id: 'fish_mujair_kali',
     name: 'Mujair Kali Netizen',
-    rarity: 'Biasa (Common)',
-    rarityColor: '#27AE60',
-    weight: 0.8,
+    rarity: 'Common',
+    tier: 'common',
+    rarityColor: '#22C55E',
+    weight: 0.85,
     rewardCoins: 50,
     icon: '🐟',
     desc: 'Ikan air tawar lincah yang mudah ditemukan warga di sepanjang tepian sungai.',
   },
   {
     id: 'fish_nila_tropis',
-    name: 'Ikan Nila Danau Tropis',
-    rarity: 'Biasa (Common)',
-    rarityColor: '#27AE60',
-    weight: 1.4,
+    name: 'Ikan Nila Tropis',
+    rarity: 'Common',
+    tier: 'common',
+    rarityColor: '#22C55E',
+    weight: 1.25,
     rewardCoins: 55,
     icon: '🐟',
     desc: 'Ikan nila air tawar sehat dan lincah, santapan favorit warga NetizenCity.',
+  },
+  {
+    id: 'fish_mas_koki',
+    name: 'Ikan Mas Koki Alun-Alun',
+    rarity: 'Common',
+    tier: 'common',
+    rarityColor: '#22C55E',
+    weight: 1.1,
+    rewardCoins: 65,
+    icon: '🐠',
+    desc: 'Ikan mas berenang anggun yang sering terlihat di sekitar dermaga kayu.',
+  },
+  {
+    id: 'fish_tawes_perak',
+    name: 'Ikan Tawes Sungai Perak',
+    rarity: 'Common',
+    tier: 'common',
+    rarityColor: '#22C55E',
+    weight: 0.95,
+    rewardCoins: 45,
+    icon: '🐟',
+    desc: 'Ikan perak lincah penghuni arus tenang Sungai Kali Netizen.',
+  },
+
+  // 2. UNCOMMON (Menengah - Biru Langit / Sky Blue)
+  {
+    id: 'fish_patin_deras',
+    name: 'Ikan Patin Sungai Deras',
+    rarity: 'Uncommon',
+    tier: 'uncommon',
+    rarityColor: '#0EA5E9',
+    weight: 2.8,
+    rewardCoins: 110,
+    icon: '🐡',
+    desc: 'Ikan bertenaga besar yang gemar melawan arus air jernih bebatuan.',
+  },
+  {
+    id: 'fish_gurame_kali',
+    name: 'Ikan Gurame Kali Indah',
+    rarity: 'Uncommon',
+    tier: 'uncommon',
+    rarityColor: '#0EA5E9',
+    weight: 3.2,
+    rewardCoins: 135,
+    icon: '🐟',
+    desc: 'Gurame sisik tebal dengan daging bernilai jual tinggi di pasar kota.',
+  },
+  {
+    id: 'fish_baung_muara',
+    name: 'Ikan Baung Muara Kali',
+    rarity: 'Uncommon',
+    tier: 'uncommon',
+    rarityColor: '#0EA5E9',
+    weight: 2.1,
+    rewardCoins: 100,
+    icon: '🐟',
+    desc: 'Ikan pemalu berkumis panjang yang menyukai ceruk bebatuan kali.',
+  },
+
+  // 3. RARE (Langka - Royal Blue)
+  {
+    id: 'fish_lele_sultan',
+    name: 'Ikan Lele Sultan',
+    rarity: 'Rare',
+    tier: 'rare',
+    rarityColor: '#3B82F6',
+    weight: 5.2,
+    rewardCoins: 260,
+    icon: '🐟',
+    desc: 'Lele berkumis panjang dengan bobot gemuk penghuni palung terdalam kali.',
+  },
+  {
+    id: 'fish_gabus_emas',
+    name: 'Ikan Gabus Emas Rawa Kali',
+    rarity: 'Rare',
+    tier: 'rare',
+    rarityColor: '#3B82F6',
+    weight: 4.6,
+    rewardCoins: 290,
+    icon: '🐠',
+    desc: 'Predator air tawar bersisik kuning keemasan yang sangat lincah menyambar mangsa.',
+  },
+  {
+    id: 'fish_bilis_perak',
+    name: 'Ikan Bilis Cahaya Perak',
+    rarity: 'Rare',
+    tier: 'rare',
+    rarityColor: '#3B82F6',
+    weight: 3.8,
+    rewardCoins: 230,
+    icon: '✨',
+    desc: 'Ikan perak berkilau yang memantulkan sinar matahari senja di atas permukaan air.',
+  },
+
+  // 4. EPIC (Sangat Langka - Ungu / Violet)
+  {
+    id: 'fish_sidat_raksasa',
+    name: 'Sidat Raksasa Gua Bawah Air',
+    rarity: 'Epic',
+    tier: 'epic',
+    rarityColor: '#A855F7',
+    weight: 9.8,
+    rewardCoins: 650,
+    icon: '🐍',
+    desc: 'Sidat raksasa bertubuh panjang licin penjelajah gua bawah air Sungai Kali Netizen.',
+  },
+  {
+    id: 'fish_belida_mahakam',
+    name: 'Ikan Belida Purba Mahakam',
+    rarity: 'Epic',
+    tier: 'epic',
+    rarityColor: '#A855F7',
+    weight: 8.5,
+    rewardCoins: 580,
+    icon: '🐟',
+    desc: 'Ikan eksotis berpunggung bungkuk dengan motif totol langka yang dilindungi.',
+  },
+  {
+    id: 'fish_monster_catfish',
+    name: 'Monster Catfish Palung Hitam',
+    rarity: 'Epic',
+    tier: 'epic',
+    rarityColor: '#A855F7',
+    weight: 14.5,
+    rewardCoins: 750,
+    icon: '🦈',
+    desc: 'Monster lele air tawar raksasa berkekuatan dahsyat yang menggetarkan dermaga!',
+  },
+
+  // 5. LEGENDARY (Legendaris - Emas / Amber)
+  {
+    id: 'fish_arwana_emas',
+    name: 'Arwana Emas Super Red Harapan',
+    rarity: 'Legendary',
+    tier: 'legendary',
+    rarityColor: '#F59E0B',
+    weight: 21.0,
+    rewardCoins: 1600,
+    icon: '👑',
+    desc: 'Ikan pusaka bernilai fantastis dengan sisik merah-emas berpendar megah!',
+  },
+  {
+    id: 'fish_raja_patin_albino',
+    name: 'Raja Patin Albino Keramat',
+    rarity: 'Legendary',
+    tier: 'legendary',
+    rarityColor: '#F59E0B',
+    weight: 24.5,
+    rewardCoins: 1850,
+    icon: '✨',
+    desc: 'Raja patin berbadan putih mutiara suci pembawa keberuntungan bagi pemancingnya.',
+  },
+
+  // 6. MYTHIC (Mitos - Ruby Crimson)
+  {
+    id: 'fish_naga_sungai_merah',
+    name: 'Naga Sungai Merah Kali Netizen',
+    rarity: 'Mythic',
+    tier: 'mythic',
+    rarityColor: '#EF4444',
+    weight: 48.0,
+    rewardCoins: 3800,
+    icon: '🐉',
+    desc: 'Makhluk mitos bersisik api penunggu mata air misterius hulu kali NetizenCity!',
+  },
+  {
+    id: 'fish_leviathan_kali',
+    name: 'Leviathan Mini Air Tawar',
+    rarity: 'Mythic',
+    tier: 'mythic',
+    rarityColor: '#EF4444',
+    weight: 55.0,
+    rewardCoins: 4500,
+    icon: '🌊',
+    desc: 'Monster kuno mitologi berkulit zirah baja pencipta ombak pusaran air misterius.',
+  },
+
+  // 7. IMMORTAL (Abadi - Glowing Rainbow / Diamond Fuchsia)
+  {
+    id: 'fish_penguasa_air_abadi',
+    name: 'Sang Penguasa Air Abadi (The Immortal Sovereign)',
+    rarity: 'Immortal',
+    tier: 'immortal',
+    rarityColor: '#EC4899',
+    weight: 95.0,
+    rewardCoins: 9999,
+    icon: '🔱',
+    desc: 'Entitas suci dewa air abadi penjaga berkah kehidupan seluruh Sungai NetizenCity!',
+  },
+  {
+    id: 'fish_naga_kristal_abadi',
+    name: 'Naga Kristal Abadi Mahkota Air',
+    rarity: 'Immortal',
+    tier: 'immortal',
+    rarityColor: '#EC4899',
+    weight: 110.0,
+    rewardCoins: 12500,
+    icon: '💎',
+    desc: 'Naga kristal berlian abadi yang tak lekang oleh waktu, tangkapan paling agung di jagat raya!',
   },
 ];
 
@@ -2854,14 +3026,14 @@ export class City3DManager {
         targetX = THREE.MathUtils.clamp(targetWaterPos.x, -22.0, 22.0);
         targetZ = THREE.MathUtils.clamp(targetWaterPos.z, -25.0, -10.5);
       } else {
-        // Tap fell on pier wood or grass shore! Safely project out into open river water in front of pier
-        targetX = THREE.MathUtils.clamp(this.playerPos.x + (Math.random() - 0.5) * 4.0, -6.5, 6.5);
-        targetZ = -12.0 - Math.random() * 3.5;
+        // Tap fell on pier wood or grass shore! Safely project out into open river water in front of pier center
+        targetX = THREE.MathUtils.clamp((Math.random() - 0.5) * 2.0, -1.8, 1.8);
+        targetZ = -13.2 - Math.random() * 2.8;
       }
     } else {
-      // Cast forward into the open river in front of pier (pier ends at z = -9.55)
-      targetX = THREE.MathUtils.clamp(this.playerPos.x + (Math.random() - 0.5) * 4.0, -6.5, 6.5);
-      targetZ = -12.5 - Math.random() * 3.5;
+      // Cast forward into the center of the river channel in front of pier
+      targetX = THREE.MathUtils.clamp((Math.random() - 0.5) * 2.0, -1.8, 1.8);
+      targetZ = -13.5 - Math.random() * 2.8;
     }
 
     this.targetBobberPos.set(targetX, -0.05, targetZ);
@@ -2963,20 +3135,33 @@ export class City3DManager {
   }
 
   private determineCaughtFish(): RiverFishCatch {
-    const weights = [0.18, 0.32, 0.05, 0.20, 0.25];
+    // 7 RPG Rarity Tiers: Common -> Immortal
     const rand = Math.random();
-    let cumulative = 0;
-    let selected = RIVER_FISH_SPECIES[0];
+    let selectedTier: FishRarityTier = 'common';
 
-    for (let i = 0; i < RIVER_FISH_SPECIES.length; i++) {
-      cumulative += weights[i] || 0.15;
-      if (rand <= cumulative) {
-        selected = RIVER_FISH_SPECIES[i];
-        break;
-      }
+    if (rand < 0.004) {
+      selectedTier = 'immortal'; // 0.4% chance
+    } else if (rand < 0.020) {
+      selectedTier = 'mythic'; // 1.6% chance
+    } else if (rand < 0.070) {
+      selectedTier = 'legendary'; // 5.0% chance
+    } else if (rand < 0.170) {
+      selectedTier = 'epic'; // 10.0% chance
+    } else if (rand < 0.350) {
+      selectedTier = 'rare'; // 18.0% chance
+    } else if (rand < 0.600) {
+      selectedTier = 'uncommon'; // 25.0% chance
+    } else {
+      selectedTier = 'common'; // 40.0% chance
     }
 
-    const weightVariation = 0.85 + Math.random() * 0.35;
+    const tierSpecies = RIVER_FISH_SPECIES.filter((s) => s.tier === selectedTier);
+    const selected =
+      tierSpecies.length > 0
+        ? tierSpecies[Math.floor(Math.random() * tierSpecies.length)]
+        : RIVER_FISH_SPECIES[0];
+
+    const weightVariation = 0.88 + Math.random() * 0.28;
     const finalWeight = Number((selected.weight * weightVariation).toFixed(2));
     const finalReward = Math.round(selected.rewardCoins * weightVariation);
 
@@ -2984,6 +3169,7 @@ export class City3DManager {
       id: selected.id,
       name: selected.name,
       rarity: selected.rarity,
+      tier: selected.tier,
       rarityColor: selected.rarityColor,
       weight: finalWeight,
       rewardCoins: finalReward,
