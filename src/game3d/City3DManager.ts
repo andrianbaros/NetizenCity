@@ -693,12 +693,11 @@ export class City3DManager {
     const W = this.container.clientWidth || window.innerWidth;
     const H = this.container.clientHeight || window.innerHeight;
 
-    // 1. Renderer Setup
+    // 1. Renderer Setup (hardware 24-bit depth buffer for crisp rendering without scanline moire quantization)
     this.renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
       antialias: true,
       preserveDrawingBuffer: true,
-      logarithmicDepthBuffer: true,
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.setSize(W, H);
@@ -726,8 +725,8 @@ export class City3DManager {
     this.scene.add(this.riverWorldGroup);
     this.riverWorldGroup.visible = false; // Initially hidden
 
-    // 3. Camera Setup (near 0.5 and far 1400 combined with logarithmic depth eliminates Z-fighting & flicker)
-    this.camera = new THREE.PerspectiveCamera(40, W / H, 0.5, 1400);
+    // 3. Camera Setup (near 0.8 and far 1200 eliminates clipping and depth precision artifacts)
+    this.camera = new THREE.PerspectiveCamera(40, W / H, 0.8, 1200);
     this.updateCameraTransform();
 
     // 4. Lighting & Sky Setup
@@ -1322,50 +1321,48 @@ export class City3DManager {
     this.riverWorldGroup.add(riverbed);
 
     // 2. Translucent River Water Surface
-    // Extends from z = -62 up to z = 0.0 (Does NOT overlap with grassy shore!)
+    // Extends from z = -62 up to z = 0.0 with pure matte Lambertian reflection (zero blinding specular glare hotspot)
     const waterGeom = new THREE.PlaneGeometry(160, 62, 1, 1).rotateX(-Math.PI / 2);
-    const waterMat = new THREE.MeshStandardMaterial({
-      color: '#1D687A',
-      roughness: 0.45, // Soft matte water sheen, prevents blinding white glare hotspots
-      metalness: 0.04,
+    const waterMat = new THREE.MeshLambertMaterial({
+      color: '#1B6B7C',
       transparent: true,
-      opacity: 0.86,
-      depthWrite: false, // Clean rendering with fish and riverbed underwater
+      opacity: 0.88,
+      depthWrite: false, // Clean underwater rendering with swimming fish
     });
     const riverWater = new THREE.Mesh(waterGeom, waterMat);
-    riverWater.position.set(0, -0.01, -31);
+    riverWater.position.set(0, -0.05, -31);
     riverWater.receiveShadow = false;
     this.riverWorldGroup.add(riverWater);
 
-    // 3. Sandy Riverbank Strip (along z = 0.0 to 1.4)
+    // 3. Sandy Riverbank Strip (along z = 0.0 to 1.4, stepped at y = +0.02)
     const bank = new THREE.Mesh(
-      new THREE.BoxGeometry(160, 0.4, 1.6),
+      new THREE.BoxGeometry(160, 0.35, 1.4),
       new THREE.MeshStandardMaterial({ color: '#C6B599', roughness: 0.95 })
     );
-    bank.position.set(0, -0.15, 0.8);
+    bank.position.set(0, -0.15, 0.7);
     bank.receiveShadow = false;
     this.riverWorldGroup.add(bank);
 
-    // 4. Grassy Shoreline Meadow (South, z = 1.0 to 45.0)
-    // Mutually exclusive Z range from water -> 100% immune to Z-fighting!
+    // 4. Grassy Shoreline Meadow (South, z = 1.4 to 45.0, stepped at y = +0.05)
+    // Completely distinct physical elevation prevents any plane overlap or Z-fighting
     const shore = new THREE.Mesh(
-      new THREE.BoxGeometry(160, 1.4, 44),
-      new THREE.MeshStandardMaterial({ color: '#559A36', roughness: 0.9 })
+      new THREE.BoxGeometry(160, 1.4, 43.6),
+      new THREE.MeshStandardMaterial({ color: '#559A36', roughness: 0.95 })
     );
-    shore.position.set(0, -0.7, 23.0);
+    shore.position.set(0, -0.65, 23.2);
     shore.receiveShadow = false;
     this.riverWorldGroup.add(shore);
 
-    // Stone pathway from city portal to pier
+    // Stone pathway from city portal to pier (raised slightly at y = 0.08)
     const pathMat = new THREE.MeshStandardMaterial({
       color: '#E6D7BE',
-      roughness: 0.85,
+      roughness: 0.95,
       polygonOffset: true,
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -1,
     });
     const stonePath = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.04, 11.5), pathMat);
-    stonePath.position.set(0, 0.02, 8.5);
+    stonePath.position.set(0, 0.08, 8.5);
     stonePath.receiveShadow = false;
     this.riverWorldGroup.add(stonePath);
 
@@ -1737,19 +1734,23 @@ export class City3DManager {
     this.fishingBobber.visible = false;
     this.riverWorldGroup.add(this.fishingBobber);
 
-    // Dynamic 3D Fishing Line with 12 points
+    // Dynamic 3D Fishing Line with 12 points and DynamicDrawUsage
     const LINE_POINT_COUNT = 12;
     const linePositions = new Float32Array(LINE_POINT_COUNT * 3);
     const lineGeom = new THREE.BufferGeometry();
-    lineGeom.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    const linePosAttr = new THREE.BufferAttribute(linePositions, 3);
+    linePosAttr.setUsage(THREE.DynamicDrawUsage);
+    lineGeom.setAttribute('position', linePosAttr);
     const lineMat = new THREE.LineBasicMaterial({
-      color: '#E0F2FE',
+      color: '#FFFFFF',
       transparent: true,
       opacity: 0.95,
       linewidth: 2,
+      depthTest: true,
       depthWrite: false,
     });
     this.fishingLine = new THREE.Line(lineGeom, lineMat);
+    this.fishingLine.frustumCulled = false;
     this.fishingLine.visible = false;
     this.riverWorldGroup.add(this.fishingLine);
 
@@ -2174,13 +2175,13 @@ export class City3DManager {
         this.playerCitizen.rightArm.add(this.fishingRodGroup);
         // Hand sphere center is at y = -0.32 in rightArm
         this.fishingRodGroup.position.set(0, -0.32, 0.05);
-        // Tilt rod forward in a natural ready angling pose (forward and angled upward)
-        this.fishingRodGroup.rotation.set(Math.PI / 3.2, 0, 0);
+        // Tilt rod forward in a natural ready angling pose (forward and angled upward into the water)
+        this.fishingRodGroup.rotation.set(1.2, 0, 0);
         this.fishingRodGroup.visible = true;
       }
-      // Set initial arm pose: angled forward and slightly inward
-      this.playerCitizen.rightArm.rotation.set(0.35, -0.15, 0);
-      this.playerCitizen.leftArm.rotation.set(0.25, 0.15, 0);
+      // Set initial arm pose: reaching forward holding rod with both hands
+      this.playerCitizen.rightArm.rotation.set(-0.55, -0.1, 0);
+      this.playerCitizen.leftArm.rotation.set(-0.45, 0.3, 0);
     }
     if (this.mayorPlayer) {
       if (this.isPlayerAdmin) {
@@ -2432,10 +2433,13 @@ export class City3DManager {
       this.caughtFishMesh.visible = false;
     }
     if (this.playerCitizen) {
-      this.playerCitizen.rightArm.rotation.set(0.35, -0.15, 0);
-      this.playerCitizen.leftArm.rotation.set(0, 0, 0);
+      this.playerCitizen.rightArm.rotation.set(-0.55, -0.1, 0);
+      this.playerCitizen.leftArm.rotation.set(-0.45, 0.3, 0);
       this.playerCitizen.body.rotation.set(0, 0, 0);
       this.playerCitizen.body.position.set(0, 0, 0);
+    }
+    if (this.fishingRodGroup) {
+      this.fishingRodGroup.rotation.set(1.2, 0, 0);
     }
 
     if (typeof window !== 'undefined') {
@@ -2480,15 +2484,18 @@ export class City3DManager {
           const p = this.castAnimTimer / 0.4;
           const ease = p * p * (3 - 2 * p);
           this.playerCitizen.rightArm.rotation.set(
-            THREE.MathUtils.lerp(0.35, -1.35, ease),
-            -0.15,
-            THREE.MathUtils.lerp(0, 0.15, ease)
-          );
-          this.playerCitizen.leftArm.rotation.set(
-            THREE.MathUtils.lerp(0.25, -0.5, ease),
-            0.15,
+            THREE.MathUtils.lerp(-0.55, 0.85, ease),
+            -0.1,
             0
           );
+          this.playerCitizen.leftArm.rotation.set(
+            THREE.MathUtils.lerp(-0.45, 0.2, ease),
+            0.3,
+            0
+          );
+          if (this.fishingRodGroup) {
+            this.fishingRodGroup.rotation.set(THREE.MathUtils.lerp(1.2, 0.35, ease), 0, 0);
+          }
           this.playerCitizen.body.rotation.x = THREE.MathUtils.lerp(0, -0.15, ease);
 
           if (this.rodTip && this.fishingBobber) {
@@ -2504,15 +2511,18 @@ export class City3DManager {
           const p = (this.castAnimTimer - 0.4) / 0.25;
           const whip = Math.sin((p * Math.PI) / 2);
           this.playerCitizen.rightArm.rotation.set(
-            THREE.MathUtils.lerp(-1.35, 0.85, whip),
-            -0.15,
+            THREE.MathUtils.lerp(0.85, -0.95, whip),
+            -0.1,
             0
           );
           this.playerCitizen.leftArm.rotation.set(
-            THREE.MathUtils.lerp(-0.5, 0.35, whip),
-            0.15,
+            THREE.MathUtils.lerp(0.2, -0.5, whip),
+            0.3,
             0
           );
+          if (this.fishingRodGroup) {
+            this.fishingRodGroup.rotation.set(THREE.MathUtils.lerp(0.35, 1.45, whip), 0, 0);
+          }
           this.playerCitizen.body.rotation.x = THREE.MathUtils.lerp(-0.15, 0.12, whip);
 
           if (this.rodTip && this.fishingBobber) {
@@ -2528,15 +2538,18 @@ export class City3DManager {
           const p = (this.castAnimTimer - 0.65) / (totalCastDuration - 0.65);
 
           this.playerCitizen.rightArm.rotation.set(
-            THREE.MathUtils.lerp(0.85, 0.35, p),
-            -0.15,
+            THREE.MathUtils.lerp(-0.95, -0.55, p),
+            -0.1,
             0
           );
           this.playerCitizen.leftArm.rotation.set(
-            THREE.MathUtils.lerp(0.35, 0.25, p),
-            0.15,
+            THREE.MathUtils.lerp(-0.5, -0.45, p),
+            0.3,
             0
           );
+          if (this.fishingRodGroup) {
+            this.fishingRodGroup.rotation.set(THREE.MathUtils.lerp(1.45, 1.2, p), 0, 0);
+          }
           this.playerCitizen.body.rotation.x = THREE.MathUtils.lerp(0.12, 0, p);
 
           if (this.fishingBobber) {
@@ -2564,16 +2577,19 @@ export class City3DManager {
       // Steady Angler Stance
       if (this.playerCitizen && !this.isPlayerWalking) {
         this.playerCitizen.rightArm.rotation.set(
-          0.35 + Math.sin(elapsed * 1.5) * 0.02,
-          -0.15,
+          -0.55 + Math.sin(elapsed * 1.5) * 0.02,
+          -0.1,
           0
         );
         this.playerCitizen.leftArm.rotation.set(
-          0.25 + Math.sin(elapsed * 1.5) * 0.02,
-          0.15,
+          -0.45 + Math.sin(elapsed * 1.5) * 0.02,
+          0.3,
           0
         );
         this.playerCitizen.body.rotation.set(0, 0, 0);
+      }
+      if (this.fishingRodGroup) {
+        this.fishingRodGroup.rotation.set(1.2, 0, 0);
       }
       if (this.fishingBobber) {
         this.fishingBobber.position.y = -0.05 + Math.sin(elapsed * 3.5) * 0.035;
@@ -2591,8 +2607,11 @@ export class City3DManager {
     } else if (this.fishingState === 'bite') {
       // Urgent Strike Twitch!
       if (this.playerCitizen) {
-        this.playerCitizen.rightArm.rotation.set(0.55 + Math.sin(elapsed * 25) * 0.08, -0.15, 0);
-        this.playerCitizen.leftArm.rotation.set(0.35 + Math.sin(elapsed * 25) * 0.08, 0.15, 0);
+        this.playerCitizen.rightArm.rotation.set(-0.65 + Math.sin(elapsed * 25) * 0.06, -0.1, 0);
+        this.playerCitizen.leftArm.rotation.set(-0.45 + Math.sin(elapsed * 25) * 0.06, 0.3, 0);
+      }
+      if (this.fishingRodGroup) {
+        this.fishingRodGroup.rotation.set(1.25 + Math.sin(elapsed * 25) * 0.1, 0, 0);
       }
       if (this.fishingBobber) {
         this.fishingBobber.position.y = -0.25 + Math.sin(elapsed * 16) * 0.06;
@@ -2611,8 +2630,11 @@ export class City3DManager {
     } else if (this.fishingState === 'reeling') {
       // Active Reeling Animation (pumping rod + cranking reel)
       if (this.playerCitizen) {
-        this.playerCitizen.rightArm.rotation.set(0.52 + Math.sin(elapsed * 12) * 0.2, -0.15, 0);
-        this.playerCitizen.leftArm.rotation.set(0.35 + Math.sin(elapsed * 18) * 0.15, 0.2 + Math.cos(elapsed * 18) * 0.15, 0);
+        this.playerCitizen.rightArm.rotation.set(-0.75 + Math.sin(elapsed * 12) * 0.18, -0.1, 0);
+        this.playerCitizen.leftArm.rotation.set(-0.45 + Math.sin(elapsed * 18) * 0.12, 0.3 + Math.cos(elapsed * 18) * 0.15, 0);
+      }
+      if (this.fishingRodGroup) {
+        this.fishingRodGroup.rotation.set(1.1 + Math.sin(elapsed * 12) * 0.15, 0, 0);
       }
       if (this.fishingBobber) {
         this.fishingBobber.position.y = -0.15 + Math.sin(elapsed * 12) * 0.05;
@@ -2637,9 +2659,12 @@ export class City3DManager {
     } else if (this.fishingState === 'caught') {
       // Victory Pose: Arms Raised in Triumph!
       if (this.playerCitizen) {
-        this.playerCitizen.rightArm.rotation.set(-2.4, 0, 0);
-        this.playerCitizen.leftArm.rotation.set(-2.4, 0, 0);
+        this.playerCitizen.rightArm.rotation.set(-2.2, -0.1, 0);
+        this.playerCitizen.leftArm.rotation.set(-2.2, 0.1, 0);
         this.playerCitizen.body.position.y = 0.08 * Math.abs(Math.sin(elapsed * 8));
+      }
+      if (this.fishingRodGroup) {
+        this.fishingRodGroup.rotation.set(0.5, 0, 0);
       }
       if (this.rodTip && this.caughtFishMesh) {
         this.rodTip.updateWorldMatrix(true, false);
@@ -2654,9 +2679,12 @@ export class City3DManager {
     } else if (this.fishingState === 'idle') {
       // Idle rod holding pose
       if (this.playerCitizen && !this.isPlayerWalking) {
-        this.playerCitizen.rightArm.rotation.set(0.35, -0.15, 0);
+        this.playerCitizen.rightArm.rotation.set(-0.55, -0.1, 0);
         this.playerCitizen.leftArm.rotation.set(0, 0, 0);
         this.playerCitizen.body.rotation.set(0, 0, 0);
+      }
+      if (this.fishingRodGroup) {
+        this.fishingRodGroup.rotation.set(1.2, 0, 0);
       }
     }
 
@@ -2680,14 +2708,14 @@ export class City3DManager {
       this.fishingBobber.getWorldPosition(bobberWorld);
       const endPos = bobberWorld.clone();
       this.riverWorldGroup.worldToLocal(endPos);
-      endPos.y += 0.12; // Top pin of bobber float
+      endPos.y += 0.14; // Top pin of bobber float
 
       // Midpoint for catenary sag or tension
       const midPos = startPos.clone().lerp(endPos, 0.5);
       const dist = startPos.distanceTo(endPos);
 
       if (this.fishingState === 'waiting') {
-        midPos.y -= Math.min(0.45, dist * 0.05);
+        midPos.y -= Math.min(0.35, dist * 0.04);
       } else if (this.fishingState === 'bite' || this.fishingState === 'reeling') {
         midPos.y += Math.sin(elapsed * 50) * 0.02;
         midPos.x += Math.cos(elapsed * 50) * 0.02;
@@ -2706,6 +2734,7 @@ export class City3DManager {
         posAttr.setXYZ(i, points[i].x, points[i].y, points[i].z);
       }
       posAttr.needsUpdate = true;
+      this.fishingLine.geometry.computeBoundingSphere();
     }
   }
 
@@ -3749,8 +3778,14 @@ private setupAirplanes() {
       this.playerCitizen.root.position.copy(this.playerPos);
       this.playerCitizen.root.rotation.y = this.playerFacing;
       this.playerCitizen.pose(isMoving, elapsed, 4.5);
-      if (this.viewMode === 'river' && isMoving) {
-        this.playerCitizen.rightArm.rotation.x = 0.35 + Math.sin(elapsed * 4.5) * 0.15;
+      if (this.viewMode === 'river') {
+        if (isMoving) {
+          this.playerCitizen.rightArm.rotation.set(-0.45 + Math.sin(elapsed * 4.5) * 0.08, -0.1, 0);
+        } else if (this.fishingState !== 'idle') {
+          // Do not allow idle breathing pose to overwrite steady angler arm stance
+          this.playerCitizen.rightArm.rotation.set(-0.55, -0.1, 0);
+          this.playerCitizen.leftArm.rotation.set(-0.45, 0.3, 0);
+        }
       }
     }
 
