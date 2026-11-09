@@ -10,7 +10,7 @@ import { makeMountain, makeRiver, makeBeach, makeMistBelt } from './nature.js';
 import { MT, SHORE } from './land.js';
 import { makeForest, makeFireflies } from './forest.js';
 import { makeMall, MALL } from './mall.js';
-import { makeLibrary, makeAirport, makePort, makeSports, makePrasasti, makePlane, LIB, AIR, SPORT } from './day7.js';
+import { makeLibrary, makeAirport, makePort, makeSports, makePrasasti, makePlane, LIB, AIR, SPORT, seatAt } from './day7.js';
 import { makeLab, LAB } from './day8.js';
 import { makeTower, TOWER } from './menara.js';
 import { makeCat, makePet, makeZoo, makeVet, makeUni, ZOO, VET, UNI } from './day9.js';
@@ -834,6 +834,22 @@ export class City3DManager {
   public goalkeeper: THREE.Group | null = null;
   public goalkeeperState: 'idle' | 'dive_left' | 'dive_right' | 'jump' = 'idle';
   public goalkeeperAnimTimer = 0;
+  public stadiumDefenders: THREE.Group[] = [];
+  public stadiumCrowd: Array<{
+    root: THREE.Group;
+    body: THREE.Mesh;
+    armL?: THREE.Mesh;
+    armR?: THREE.Mesh;
+    flag?: THREE.Mesh;
+    baseY: number;
+    phase: number;
+    speed: number;
+    waveAngle: number;
+    jumpHeight: number;
+  }> = [];
+  public stadiumGoalCheerTimer = 0;
+  public defenderJumpTimer = 0;
+  public stadiumCornerFlags: THREE.Mesh[] = [];
   public stadiumLamps: Array<{
     root: THREE.Group;
     light: THREE.SpotLight | THREE.PointLight;
@@ -2248,75 +2264,42 @@ export class City3DManager {
     createBench(16, 28, -Math.PI / 2);
     createBench(-12, 40, Math.PI / 2);
 
-    // 5. 3D Soccer Goal at North Pitch End (Z = -12.3)
-    // Pitch is 16m wide x 25m long (Z from -12.5 to +12.5)
-    const goalGroup = new THREE.Group();
-    const postMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.3 });
-    const postRadius = 0.06;
-    const goalWidth = 4.2;
-    const goalHeight = 1.9;
-    const goalDepth = 1.3;
+    // 5. Realistic Modern 3D Soccer Goals (North Shootout Goal & South Stadium Goal)
+    // Professional white enamel posts with rounded corner joints, back depth frame, and woven net panels
+    const northGoal = this.createRealisticSoccerGoal(-12.3, true);
+    this.stadiumWorldGroup.add(northGoal);
 
-    // Posts & Crossbar
-    const postL = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 10), postMat);
-    postL.position.set(-goalWidth / 2, goalHeight / 2, -12.3);
-    const postR = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 10), postMat);
-    postR.position.set(goalWidth / 2, goalHeight / 2, -12.3);
-    const crossbar = new THREE.Mesh(
-      new THREE.CylinderGeometry(postRadius, postRadius, goalWidth + postRadius * 2, 10).rotateZ(Math.PI / 2),
-      postMat
-    );
-    crossbar.position.set(0, goalHeight, -12.3);
+    const southGoal = this.createRealisticSoccerGoal(12.3, false);
+    this.stadiumWorldGroup.add(southGoal);
 
-    // Depth supports
-    const depthTopL = new THREE.Mesh(
-      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalDepth, 8).rotateX(Math.PI / 2),
-      postMat
-    );
-    depthTopL.position.set(-goalWidth / 2, goalHeight, -12.3 - goalDepth / 2);
-    const depthTopR = new THREE.Mesh(
-      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalDepth, 8).rotateX(Math.PI / 2),
-      postMat
-    );
-    depthTopR.position.set(goalWidth / 2, goalHeight, -12.3 - goalDepth / 2);
-    const depthBack = new THREE.Mesh(
-      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalWidth, 8).rotateZ(Math.PI / 2),
-      postMat
-    );
-    depthBack.position.set(0, goalHeight, -12.3 - goalDepth);
-
-    goalGroup.add(postL, postR, crossbar, depthTopL, depthTopR, depthBack);
-
-    // Translucent net wireframe
-    const netMat = new THREE.MeshBasicMaterial({
-      color: '#FFFFFF',
-      wireframe: true,
-      transparent: true,
-      opacity: 0.45,
-    });
-    const netBox = new THREE.Mesh(new THREE.BoxGeometry(goalWidth, goalHeight, goalDepth), netMat);
-    netBox.position.set(0, goalHeight / 2, -12.3 - goalDepth / 2);
-    goalGroup.add(netBox);
-    this.stadiumWorldGroup.add(goalGroup);
-
-    // Matching South Goal for full stadium realism
-    const southGoalGroup = new THREE.Group();
-    const sPostL = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 10), postMat);
-    sPostL.position.set(-goalWidth / 2, goalHeight / 2, 12.3);
-    const sPostR = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 10), postMat);
-    sPostR.position.set(goalWidth / 2, goalHeight / 2, 12.3);
-    const sCrossbar = new THREE.Mesh(
-      new THREE.CylinderGeometry(postRadius, postRadius, goalWidth + postRadius * 2, 10).rotateZ(Math.PI / 2),
-      postMat
-    );
-    sCrossbar.position.set(0, goalHeight, 12.3);
-    const sNetBox = new THREE.Mesh(new THREE.BoxGeometry(goalWidth, goalHeight, goalDepth), netMat);
-    sNetBox.position.set(0, goalHeight / 2, 12.3 + goalDepth / 2);
-    southGoalGroup.add(sPostL, sPostR, sCrossbar, sNetBox);
-    this.stadiumWorldGroup.add(southGoalGroup);
-
-    // 6. 3D Soccer Ball at Penalty Spot (Z = -4.5)
-    const ballMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.35 });
+    // 6. 3D Soccer Ball at Penalty Spot (Z = -4.5) with Classic Black/White Pentagon Pattern
+    const ballCanvas = document.createElement('canvas');
+    ballCanvas.width = 256;
+    ballCanvas.height = 128;
+    const ballCtx = ballCanvas.getContext('2d');
+    if (ballCtx) {
+      ballCtx.fillStyle = '#FFFFFF';
+      ballCtx.fillRect(0, 0, 256, 128);
+      ballCtx.fillStyle = '#111827';
+      const spots = [
+        [40, 40], [100, 30], [170, 45], [230, 35],
+        [30, 95], [90, 85], [150, 95], [210, 90],
+      ];
+      spots.forEach(([sx, sy]) => {
+        ballCtx.beginPath();
+        for (let a = 0; a < 5; a++) {
+          const ang = (a * Math.PI * 2) / 5 - Math.PI / 2;
+          const px = sx + Math.cos(ang) * 14;
+          const py = sy + Math.sin(ang) * 14;
+          if (a === 0) ballCtx.moveTo(px, py);
+          else ballCtx.lineTo(px, py);
+        }
+        ballCtx.closePath();
+        ballCtx.fill();
+      });
+    }
+    const ballTex = new THREE.CanvasTexture(ballCanvas);
+    const ballMat = new THREE.MeshStandardMaterial({ map: ballTex, roughness: 0.35 });
     this.soccerBall = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), ballMat);
     this.soccerBall.position.set(0, 0.2, -4.5);
     this.soccerBall.castShadow = true;
@@ -2328,51 +2311,20 @@ export class City3DManager {
     ballShadow.position.set(0, 0.09, -4.5);
     this.stadiumWorldGroup.add(ballShadow);
 
-    // 7. 3D Goalkeeper NPC at North Goal Line (Z = -11.9)
-    const keeper = new THREE.Group();
-    const jerseyMat = new THREE.MeshStandardMaterial({ color: '#00E5FF', roughness: 0.6 });
-    const skinMat = new THREE.MeshStandardMaterial({ color: '#F5C6A5', roughness: 0.7 });
-    const shortsMat = new THREE.MeshStandardMaterial({ color: '#1A237E', roughness: 0.7 });
-    const gloveMat = new THREE.MeshStandardMaterial({ color: '#FF3D00', roughness: 0.4 });
+    // 7. Realistic 3D Goalkeeper Athlete NPC at North Goal Line (Z = -11.9)
+    this.goalkeeper = this.createRealisticGoalkeeper();
+    this.stadiumWorldGroup.add(this.goalkeeper);
 
-    const keeperBody = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.6, 0.26), jerseyMat);
-    keeperBody.position.y = 0.95;
-    const keeperHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), skinMat);
-    keeperHead.position.y = 1.45;
-    const keeperShorts = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.28), shortsMat);
-    keeperShorts.position.y = 0.52;
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.48, 0.14), jerseyMat);
-    armL.position.set(-0.34, 0.9, 0);
-    armL.rotation.z = 0.45;
-    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.48, 0.14), jerseyMat);
-    armR.position.set(0.34, 0.9, 0);
-    armR.rotation.z = -0.45;
-    const gloveL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.16), gloveMat);
-    gloveL.position.set(-0.48, 0.68, 0);
-    const gloveR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.16), gloveMat);
-    gloveR.position.set(0.48, 0.68, 0);
+    // 8. Freekick Defender Wall (4 players in team jerseys standing shoulder-to-shoulder at Z = -7.5)
+    this.stadiumDefenders = [];
+    const defenderWall = this.createDefenderWall();
+    this.stadiumWorldGroup.add(defenderWall);
 
-    keeper.add(keeperBody, keeperHead, keeperShorts, armL, armR, gloveL, gloveR);
-    keeper.position.set(0, 0.08, -11.9);
-    this.goalkeeper = keeper;
-    this.stadiumWorldGroup.add(keeper);
+    // 9. Moving Stadium Spectators across Oval Stands (Penonton Bergerak-gerak & Ombak Suporter)
+    this.buildStadiumCrowd();
 
-    // 8. Freekick Defender Wall Dummies (3 mannequins at Z = -7.5)
-    const wallGroup = new THREE.Group();
-    const wallJerseyMat = new THREE.MeshStandardMaterial({ color: '#E53935', roughness: 0.7 });
-    [-0.6, 0, 0.6].forEach((wx) => {
-      const dummy = new THREE.Group();
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.65, 0.24), wallJerseyMat);
-      b.position.y = 0.88;
-      const h = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), skinMat);
-      h.position.y = 1.35;
-      const l = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.55, 0.22), shortsMat);
-      l.position.y = 0.3;
-      dummy.add(b, h, l);
-      dummy.position.set(wx, 0.08, -7.5);
-      wallGroup.add(dummy);
-    });
-    this.stadiumWorldGroup.add(wallGroup);
+    // 10. Corner Flags at the 4 Pitch Corners
+    this.createCornerFlags();
 
     // 9. South Entrance Archway / Portal to City (Z = 54)
     const archPortal = new THREE.Group();
@@ -2425,6 +2377,682 @@ export class City3DManager {
       this.stadiumWorldGroup.add(light.target);
       this.stadiumWorldGroup.add(light);
       this.stadiumLamps.push({ root: new THREE.Group(), light });
+    });
+  }
+
+  private createRealisticSoccerGoal(zPos: number, isNorth: boolean): THREE.Group {
+    const goalGroup = new THREE.Group();
+    const postRadius = 0.065;
+    const goalWidth = 4.8;
+    const goalHeight = 2.15;
+    const goalDepth = 1.6;
+    const postMat = new THREE.MeshStandardMaterial({
+      color: '#FFFFFF',
+      metalness: 0.15,
+      roughness: 0.25,
+    });
+
+    // 1. Procedural woven square soccer net texture on canvas
+    const netCanvas = document.createElement('canvas');
+    netCanvas.width = 128;
+    netCanvas.height = 128;
+    const nCtx = netCanvas.getContext('2d');
+    if (nCtx) {
+      nCtx.fillStyle = 'rgba(255, 255, 255, 0)';
+      nCtx.fillRect(0, 0, 128, 128);
+      nCtx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+      nCtx.lineWidth = 3.5;
+      nCtx.strokeRect(1, 1, 126, 126);
+      nCtx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      nCtx.fillRect(0, 0, 5, 5);
+      nCtx.fillRect(123, 0, 5, 5);
+      nCtx.fillRect(0, 123, 5, 5);
+      nCtx.fillRect(123, 123, 5, 5);
+    }
+    const netTexture = new THREE.CanvasTexture(netCanvas);
+    netTexture.wrapS = THREE.RepeatWrapping;
+    netTexture.wrapT = THREE.RepeatWrapping;
+
+    const netMat = new THREE.MeshStandardMaterial({
+      map: netTexture,
+      transparent: true,
+      opacity: 0.88,
+      roughness: 0.65,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    // 2. White Goal Line on pitch grass
+    const lineGeom = new THREE.PlaneGeometry(goalWidth, 0.12).rotateX(-Math.PI / 2);
+    const lineMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.9 });
+    const goalLine = new THREE.Mesh(lineGeom, lineMat);
+    goalLine.position.set(0, 0.082, zPos);
+    goalGroup.add(goalLine);
+
+    // 3. Vertical Posts & Crossbar
+    const postL = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 14), postMat);
+    postL.position.set(-goalWidth / 2, goalHeight / 2 + 0.08, zPos);
+    postL.castShadow = true;
+
+    const postR = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 14), postMat);
+    postR.position.set(goalWidth / 2, goalHeight / 2 + 0.08, zPos);
+    postR.castShadow = true;
+
+    const crossbar = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius, postRadius, goalWidth + postRadius * 2, 14).rotateZ(Math.PI / 2),
+      postMat
+    );
+    crossbar.position.set(0, goalHeight + 0.08, zPos);
+    crossbar.castShadow = true;
+
+    // Rounded elbow joints at front corners
+    const elbowL = new THREE.Mesh(new THREE.SphereGeometry(postRadius * 1.05, 12, 12), postMat);
+    elbowL.position.set(-goalWidth / 2, goalHeight + 0.08, zPos);
+    const elbowR = new THREE.Mesh(new THREE.SphereGeometry(postRadius * 1.05, 12, 12), postMat);
+    elbowR.position.set(goalWidth / 2, goalHeight + 0.08, zPos);
+
+    goalGroup.add(postL, postR, crossbar, elbowL, elbowR);
+
+    // 4. Rear Depth Frame
+    const zDir = isNorth ? -1 : 1;
+    const rearZ = zPos + zDir * goalDepth;
+
+    // Top depth horizontal bars
+    const topDepthL = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.85, postRadius * 0.85, goalDepth, 10).rotateX(Math.PI / 2),
+      postMat
+    );
+    topDepthL.position.set(-goalWidth / 2, goalHeight + 0.08, zPos + (zDir * goalDepth) / 2);
+
+    const topDepthR = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.85, postRadius * 0.85, goalDepth, 10).rotateX(Math.PI / 2),
+      postMat
+    );
+    topDepthR.position.set(goalWidth / 2, goalHeight + 0.08, zPos + (zDir * goalDepth) / 2);
+
+    // Top rear horizontal bar
+    const topRearBar = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.85, postRadius * 0.85, goalWidth, 10).rotateZ(Math.PI / 2),
+      postMat
+    );
+    topRearBar.position.set(0, goalHeight + 0.08, rearZ);
+
+    // Rear drop vertical posts
+    const rearDropL = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalHeight, 10),
+      postMat
+    );
+    rearDropL.position.set(-goalWidth / 2, goalHeight / 2 + 0.08, rearZ);
+
+    const rearDropR = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalHeight, 10),
+      postMat
+    );
+    rearDropR.position.set(goalWidth / 2, goalHeight / 2 + 0.08, rearZ);
+
+    // Base ground side bars and rear ground bar
+    const baseSideL = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalDepth, 8).rotateX(Math.PI / 2),
+      postMat
+    );
+    baseSideL.position.set(-goalWidth / 2, 0.08 + postRadius, zPos + (zDir * goalDepth) / 2);
+
+    const baseSideR = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalDepth, 8).rotateX(Math.PI / 2),
+      postMat
+    );
+    baseSideR.position.set(goalWidth / 2, 0.08 + postRadius, zPos + (zDir * goalDepth) / 2);
+
+    const baseRear = new THREE.Mesh(
+      new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalWidth, 8).rotateZ(Math.PI / 2),
+      postMat
+    );
+    baseRear.position.set(0, 0.08 + postRadius, rearZ);
+
+    goalGroup.add(topDepthL, topDepthR, topRearBar, rearDropL, rearDropR, baseSideL, baseSideR, baseRear);
+
+    // 5. Four Woven Net Panels (Back, Top, Left Side, Right Side)
+    const backMat = netMat.clone();
+    if (backMat.map) {
+      backMat.map = netTexture.clone();
+      backMat.map.repeat.set(22, 10);
+      backMat.map.needsUpdate = true;
+    }
+    const backNet = new THREE.Mesh(new THREE.PlaneGeometry(goalWidth, goalHeight), backMat);
+    backNet.position.set(0, goalHeight / 2 + 0.08, rearZ);
+    if (!isNorth) backNet.rotation.y = Math.PI;
+
+    const topMat = netMat.clone();
+    if (topMat.map) {
+      topMat.map = netTexture.clone();
+      topMat.map.repeat.set(22, 8);
+      topMat.map.needsUpdate = true;
+    }
+    const topNet = new THREE.Mesh(new THREE.PlaneGeometry(goalWidth, goalDepth).rotateX(-Math.PI / 2), topMat);
+    topNet.position.set(0, goalHeight + 0.08, zPos + (zDir * goalDepth) / 2);
+
+    const sideLMat = netMat.clone();
+    if (sideLMat.map) {
+      sideLMat.map = netTexture.clone();
+      sideLMat.map.repeat.set(8, 10);
+      sideLMat.map.needsUpdate = true;
+    }
+    const leftNet = new THREE.Mesh(new THREE.PlaneGeometry(goalDepth, goalHeight).rotateY(Math.PI / 2), sideLMat);
+    leftNet.position.set(-goalWidth / 2, goalHeight / 2 + 0.08, zPos + (zDir * goalDepth) / 2);
+
+    const sideRMat = netMat.clone();
+    if (sideRMat.map) {
+      sideRMat.map = netTexture.clone();
+      sideRMat.map.repeat.set(8, 10);
+      sideRMat.map.needsUpdate = true;
+    }
+    const rightNet = new THREE.Mesh(new THREE.PlaneGeometry(goalDepth, goalHeight).rotateY(-Math.PI / 2), sideRMat);
+    rightNet.position.set(goalWidth / 2, goalHeight / 2 + 0.08, zPos + (zDir * goalDepth) / 2);
+
+    goalGroup.add(backNet, topNet, leftNet, rightNet);
+
+    return goalGroup;
+  }
+
+  private createRealisticGoalkeeper(): THREE.Group {
+    const keeper = new THREE.Group();
+
+    const cyanJerseyMat = new THREE.MeshStandardMaterial({ color: '#00E5FF', roughness: 0.5 });
+    const navyMat = new THREE.MeshStandardMaterial({ color: '#0F172A', roughness: 0.7 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: '#F6D8B8', roughness: 0.6 });
+    const gloveMat = new THREE.MeshStandardMaterial({ color: '#FF3D00', roughness: 0.35, metalness: 0.1 });
+    const glovePalmMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.4 });
+    const hairMat = new THREE.MeshStandardMaterial({ color: '#1E293B', roughness: 0.8 });
+    const cleatMat = new THREE.MeshStandardMaterial({ color: '#111827', roughness: 0.4 });
+
+    // Torso: Athletic goalie jersey with number "1"
+    const jerseyCanvas = document.createElement('canvas');
+    jerseyCanvas.width = 128;
+    jerseyCanvas.height = 128;
+    const jCtx = jerseyCanvas.getContext('2d');
+    if (jCtx) {
+      jCtx.fillStyle = '#00E5FF';
+      jCtx.fillRect(0, 0, 128, 128);
+      jCtx.fillStyle = '#0F172A';
+      jCtx.fillRect(0, 0, 128, 20); // collar
+      jCtx.fillRect(0, 0, 16, 128); // side stripes
+      jCtx.fillRect(112, 0, 16, 128);
+      // Number 1 on back
+      jCtx.fillStyle = '#FFFFFF';
+      jCtx.font = 'bold 64px "Lilita One", sans-serif';
+      jCtx.textAlign = 'center';
+      jCtx.textBaseline = 'middle';
+      jCtx.fillText('1', 64, 74);
+    }
+    const jerseyTex = new THREE.CanvasTexture(jerseyCanvas);
+    const keeperJerseyMat = new THREE.MeshStandardMaterial({ map: jerseyTex, roughness: 0.5 });
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.62, 0.28), [
+      cyanJerseyMat,
+      cyanJerseyMat,
+      cyanJerseyMat,
+      cyanJerseyMat,
+      cyanJerseyMat,
+      keeperJerseyMat, // back has number 1
+    ]);
+    torso.position.y = 0.98;
+    torso.castShadow = true;
+
+    // Head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), skinMat);
+    head.position.y = 1.48;
+    head.castShadow = true;
+
+    // Athletic dark swept hair
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.21, 10, 10), hairMat);
+    hair.position.set(0, 1.54, -0.04);
+    hair.scale.set(1.02, 0.75, 1.05);
+
+    // Headband
+    const headband = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.21, 0.21, 0.05, 12).rotateX(Math.PI / 2),
+      navyMat
+    );
+    headband.position.set(0, 1.51, 0.02);
+
+    // Eyes
+    const eyeMat = new THREE.MeshBasicMaterial({ color: '#0F172A' });
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), eyeMat);
+    eyeL.position.set(-0.07, 1.48, 0.18);
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), eyeMat);
+    eyeR.position.set(0.07, 1.48, 0.18);
+
+    // Goalkeeper Shorts
+    const shorts = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.32, 0.3), navyMat);
+    shorts.position.y = 0.58;
+
+    // Legs & Cleats
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.45, 0.16), skinMat);
+    legL.position.set(-0.16, 0.26, 0);
+    const sockL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.24, 0.18), cyanJerseyMat);
+    sockL.position.set(-0.16, 0.15, 0);
+    const cleatL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.26), cleatMat);
+    cleatL.position.set(-0.16, 0.05, 0.04);
+
+    const legR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.45, 0.16), skinMat);
+    legR.position.set(0.16, 0.26, 0);
+    const sockR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.24, 0.18), cyanJerseyMat);
+    sockR.position.set(0.16, 0.15, 0);
+    const cleatR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.26), cleatMat);
+    cleatR.position.set(0.16, 0.05, 0.04);
+
+    // Arms in athletic ready stance (bent forward ready to catch)
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.42, 0.14), cyanJerseyMat);
+    armL.position.set(-0.35, 0.95, 0.06);
+    armL.rotation.set(0.3, 0, 0.35);
+
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.42, 0.14), cyanJerseyMat);
+    armR.position.set(0.35, 0.95, 0.06);
+    armR.rotation.set(0.3, 0, -0.35);
+
+    // Padded Goalkeeper Gloves (Large, stylized orange volt gloves with grip)
+    const gloveL = new THREE.Group();
+    const gBackL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.12), gloveMat);
+    const gPalmL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.04), glovePalmMat);
+    gPalmL.position.z = 0.06;
+    gloveL.add(gBackL, gPalmL);
+    gloveL.position.set(-0.46, 0.78, 0.22);
+    gloveL.rotation.set(-0.2, 0.3, 0.4);
+
+    const gloveR = new THREE.Group();
+    const gBackR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.12), gloveMat);
+    const gPalmR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.04), glovePalmMat);
+    gPalmR.position.z = 0.06;
+    gloveR.add(gBackR, gPalmR);
+    gloveR.position.set(0.46, 0.78, 0.22);
+    gloveR.rotation.set(-0.2, -0.3, -0.4);
+
+    keeper.add(
+      torso,
+      head,
+      hair,
+      headband,
+      eyeL,
+      eyeR,
+      shorts,
+      legL,
+      sockL,
+      cleatL,
+      legR,
+      sockR,
+      cleatR,
+      armL,
+      armR,
+      gloveL,
+      gloveR
+    );
+    keeper.position.set(0, 0.08, -11.9);
+    return keeper;
+  }
+
+  private createDefenderWall(): THREE.Group {
+    const wallGroup = new THREE.Group();
+    const hairColors = ['#1E293B', '#3E2723', '#78350F', '#0F172A'];
+    const skinTones = ['#F6D8B8', '#ECC49E', '#DFB085', '#F8DEC4'];
+    const jerseyMat = new THREE.MeshStandardMaterial({ color: '#DC2626', roughness: 0.6 });
+    const shortsMat = new THREE.MeshStandardMaterial({ color: '#F8FAFC', roughness: 0.6 });
+    const socksMat = new THREE.MeshStandardMaterial({ color: '#DC2626', roughness: 0.6 });
+    const cleatsMat = new THREE.MeshStandardMaterial({ color: '#1E293B', roughness: 0.4 });
+    const numbers = ['3', '4', '5', '6'];
+
+    const wallXCoords = [-0.88, -0.29, 0.29, 0.88];
+    wallXCoords.forEach((wx, idx) => {
+      const defender = new THREE.Group();
+      const skinMat = new THREE.MeshStandardMaterial({
+        color: skinTones[idx % skinTones.length],
+        roughness: 0.65,
+      });
+      const hairMat = new THREE.MeshStandardMaterial({
+        color: hairColors[idx % hairColors.length],
+        roughness: 0.8,
+      });
+
+      // Jersey with player squad number on back
+      const numCanvas = document.createElement('canvas');
+      numCanvas.width = 128;
+      numCanvas.height = 128;
+      const nCtx = numCanvas.getContext('2d');
+      if (nCtx) {
+        nCtx.fillStyle = '#DC2626';
+        nCtx.fillRect(0, 0, 128, 128);
+        nCtx.fillStyle = '#FFFFFF';
+        nCtx.font = 'bold 64px "Lilita One", sans-serif';
+        nCtx.textAlign = 'center';
+        nCtx.textBaseline = 'middle';
+        nCtx.fillText(numbers[idx], 64, 70);
+      }
+      const numTex = new THREE.CanvasTexture(numCanvas);
+      const backMat = new THREE.MeshStandardMaterial({ map: numTex, roughness: 0.6 });
+
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.6, 0.26), [
+        jerseyMat,
+        jerseyMat,
+        jerseyMat,
+        jerseyMat,
+        jerseyMat,
+        backMat,
+      ]);
+      torso.position.y = 0.95;
+      torso.castShadow = true;
+
+      // Head
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), skinMat);
+      head.position.y = 1.42;
+
+      // Hair
+      const hair = new THREE.Mesh(new THREE.SphereGeometry(0.19, 8, 8), hairMat);
+      hair.position.set(0, 1.47, -0.03);
+      hair.scale.set(1.02, 0.8, 1.05);
+
+      // Shorts
+      const shorts = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.3, 0.28), shortsMat);
+      shorts.position.y = 0.54;
+
+      // Legs & Boots
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.15), skinMat);
+      legL.position.set(-0.13, 0.24, 0);
+      const sockL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.16), socksMat);
+      sockL.position.set(-0.13, 0.14, 0);
+      const bootL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.24), cleatsMat);
+      bootL.position.set(-0.13, 0.04, 0.03);
+
+      const legR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.15), skinMat);
+      legR.position.set(0.13, 0.24, 0);
+      const sockR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.16), socksMat);
+      sockR.position.set(0.13, 0.14, 0);
+      const bootR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.24), cleatsMat);
+      bootR.position.set(0.13, 0.04, 0.03);
+
+      // Arms crossed across chest/waist (standard free-kick wall posture)
+      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.38, 0.12), jerseyMat);
+      armL.position.set(-0.16, 0.82, 0.16);
+      armL.rotation.set(0.8, 0, -0.9);
+
+      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.38, 0.12), jerseyMat);
+      armR.position.set(0.16, 0.82, 0.16);
+      armR.rotation.set(0.8, 0, 0.9);
+
+      defender.add(torso, head, hair, shorts, legL, sockL, bootL, legR, sockR, bootR, armL, armR);
+      defender.position.set(wx, 0.08, -7.5);
+
+      this.stadiumDefenders.push(defender);
+      wallGroup.add(defender);
+    });
+
+    return wallGroup;
+  }
+
+  private buildStadiumCrowd(): void {
+    this.stadiumCrowd = [];
+
+    // Supporter shirt colors (vibrant stadium crowd)
+    const shirtColors = [
+      '#0284C7', // Ocean blue
+      '#EF4444', // Red
+      '#F59E0B', // Amber gold
+      '#10B981', // Emerald green
+      '#8B5CF6', // Purple
+      '#EC4899', // Pink
+      '#06B6D4', // Cyan
+      '#F97316', // Orange
+      '#FFFFFF', // White
+    ];
+    const skinColors = ['#F6D8B8', '#ECC49E', '#DFB085', '#F8DEC4'];
+    const hairColors = ['#1E293B', '#3E2723', '#78350F', '#0F172A', '#D97706'];
+
+    // Flag pole & cloth materials
+    const poleMat = new THREE.MeshStandardMaterial({ color: '#E2E8F0', roughness: 0.3 });
+    const flagBlueMat = new THREE.MeshStandardMaterial({ color: '#0284C7', roughness: 0.5, side: THREE.DoubleSide });
+    const flagRedMat = new THREE.MeshStandardMaterial({ color: '#EF4444', roughness: 0.5, side: THREE.DoubleSide });
+    const flagYellowMat = new THREE.MeshStandardMaterial({ color: '#F59E0B', roughness: 0.5, side: THREE.DoubleSide });
+    const flagMats = [flagBlueMat, flagRedMat, flagYellowMat];
+
+    // Shared spectator geometry
+    const torsoGeom = new THREE.BoxGeometry(0.36, 0.42, 0.22);
+    const headGeom = new THREE.SphereGeometry(0.14, 8, 8);
+    const hairGeom = new THREE.SphereGeometry(0.15, 8, 8);
+    const armGeom = new THREE.BoxGeometry(0.1, 0.32, 0.1);
+    const sittingLegsGeom = new THREE.BoxGeometry(0.34, 0.2, 0.28);
+    const flagGeom = new THREE.PlaneGeometry(0.55, 0.35);
+
+    // 5 tiers (k = 0 to 4)
+    for (let k = 0; k < 5; k++) {
+      // 1. North stands behind goal (primary camera view - heavy concentration)
+      const northCount = 14 + k * 2;
+      for (let i = 0; i < northCount; i++) {
+        const th = -2.9 + (i / (northCount - 1)) * 2.66;
+        this.createSingleSpectator(
+          k,
+          th,
+          shirtColors,
+          skinColors,
+          hairColors,
+          torsoGeom,
+          headGeom,
+          hairGeom,
+          armGeom,
+          sittingLegsGeom,
+          poleMat,
+          flagMats,
+          flagGeom,
+          (k * 15 + i) % 4 === 0
+        );
+      }
+
+      // 2. West stands (side view)
+      const westCount = 5 + k;
+      for (let i = 0; i < westCount; i++) {
+        const th = 0.2 + (i / (westCount - 1)) * 1.15;
+        this.createSingleSpectator(
+          k,
+          th,
+          shirtColors,
+          skinColors,
+          hairColors,
+          torsoGeom,
+          headGeom,
+          hairGeom,
+          armGeom,
+          sittingLegsGeom,
+          poleMat,
+          flagMats,
+          flagGeom,
+          (k * 15 + i) % 5 === 0
+        );
+      }
+
+      // 3. East stands (side view)
+      const eastCount = 5 + k;
+      for (let i = 0; i < eastCount; i++) {
+        const th = 1.85 + (i / (eastCount - 1)) * 1.15;
+        this.createSingleSpectator(
+          k,
+          th,
+          shirtColors,
+          skinColors,
+          hairColors,
+          torsoGeom,
+          headGeom,
+          hairGeom,
+          armGeom,
+          sittingLegsGeom,
+          poleMat,
+          flagMats,
+          flagGeom,
+          (k * 15 + i) % 5 === 0
+        );
+      }
+    }
+  }
+
+  private createSingleSpectator(
+    k: number,
+    th: number,
+    shirtColors: string[],
+    skinColors: string[],
+    hairColors: string[],
+    torsoGeom: THREE.BufferGeometry,
+    headGeom: THREE.BufferGeometry,
+    hairGeom: THREE.BufferGeometry,
+    armGeom: THREE.BufferGeometry,
+    sittingLegsGeom: THREE.BufferGeometry,
+    poleMat: THREE.Material,
+    flagMats: THREE.Material[],
+    flagGeom: THREE.BufferGeometry,
+    hasFlag: boolean
+  ) {
+    const pos = seatAt(k, th, 0, 0);
+    const specGroup = new THREE.Group();
+
+    const shirtMat = new THREE.MeshStandardMaterial({
+      color: shirtColors[Math.floor(Math.random() * shirtColors.length)],
+      roughness: 0.7,
+    });
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: skinColors[Math.floor(Math.random() * skinColors.length)],
+      roughness: 0.65,
+    });
+    const hairMat = new THREE.MeshStandardMaterial({
+      color: hairColors[Math.floor(Math.random() * hairColors.length)],
+      roughness: 0.8,
+    });
+    const pantsMat = new THREE.MeshStandardMaterial({
+      color: Math.random() > 0.5 ? '#1E293B' : '#334155',
+      roughness: 0.8,
+    });
+
+    // Sitting legs on bench
+    const legs = new THREE.Mesh(sittingLegsGeom, pantsMat);
+    legs.position.y = 0.1;
+    specGroup.add(legs);
+
+    // Torso
+    const torso = new THREE.Mesh(torsoGeom, shirtMat);
+    torso.position.y = 0.38;
+    specGroup.add(torso);
+
+    // Head
+    const head = new THREE.Mesh(headGeom, skinMat);
+    head.position.y = 0.66;
+    specGroup.add(head);
+
+    // Hair or Supporter Cap
+    const hair = new THREE.Mesh(hairGeom, hairMat);
+    hair.position.set(0, 0.7, -0.02);
+    hair.scale.set(1.02, 0.7, 1.05);
+    specGroup.add(hair);
+
+    // Left Arm (with shoulder pivot)
+    const armL = new THREE.Mesh(armGeom, shirtMat);
+    armL.position.set(-0.24, 0.36, 0.05);
+    armL.rotation.set(-0.2, 0, 0.2);
+    specGroup.add(armL);
+
+    // Right Arm
+    const armR = new THREE.Mesh(armGeom, shirtMat);
+    armR.position.set(0.24, 0.36, 0.05);
+    armR.rotation.set(-0.2, 0, -0.2);
+    specGroup.add(armR);
+
+    // Supporter Flag
+    let flagMesh: THREE.Mesh | undefined;
+    if (hasFlag) {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.9, 6), poleMat);
+      pole.position.set(0.28, 0.5, 0.15);
+      pole.rotation.set(-0.3, 0, -0.2);
+
+      const fMat = flagMats[Math.floor(Math.random() * flagMats.length)];
+      flagMesh = new THREE.Mesh(flagGeom, fMat);
+      flagMesh.position.set(0.28 + 0.28, 0.75, 0.15);
+      flagMesh.rotation.set(-0.3, 0, 0);
+
+      specGroup.add(pole, flagMesh);
+    }
+
+    // Orient spectator to face the center of the pitch
+    const lookAngle = Math.atan2(-pos.x, -pos.z);
+    specGroup.rotation.y = lookAngle;
+
+    specGroup.position.set(pos.x, pos.y, pos.z);
+    this.stadiumWorldGroup.add(specGroup);
+
+    this.stadiumCrowd.push({
+      root: specGroup,
+      body: torso,
+      armL,
+      armR,
+      flag: flagMesh,
+      baseY: pos.y,
+      phase: Math.random() * Math.PI * 2,
+      speed: 2.2 + Math.random() * 0.8,
+      waveAngle: th,
+      jumpHeight: 0.32 + Math.random() * 0.1,
+    });
+  }
+
+  private createCornerFlags(): void {
+    this.stadiumCornerFlags = [];
+    const corners = [
+      { x: -8.0, z: -12.5 },
+      { x: 8.0, z: -12.5 },
+      { x: -8.0, z: 12.5 },
+      { x: 8.0, z: 12.5 },
+    ];
+
+    const poleMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.3 });
+    const arcMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.9 });
+
+    // Checkerboard flag texture
+    const flagCanvas = document.createElement('canvas');
+    flagCanvas.width = 64;
+    flagCanvas.height = 64;
+    const fCtx = flagCanvas.getContext('2d');
+    if (fCtx) {
+      fCtx.fillStyle = '#EF4444'; // Red
+      fCtx.fillRect(0, 0, 64, 64);
+      fCtx.fillStyle = '#FACC15'; // Yellow
+      fCtx.fillRect(0, 0, 32, 32);
+      fCtx.fillRect(32, 32, 32, 32);
+    }
+    const flagTex = new THREE.CanvasTexture(flagCanvas);
+    const flagMat = new THREE.MeshStandardMaterial({
+      map: flagTex,
+      roughness: 0.5,
+      side: THREE.DoubleSide,
+    });
+
+    corners.forEach((c) => {
+      const cornerGroup = new THREE.Group();
+
+      // Quarter-circle corner arc on turf
+      const arc = new THREE.Mesh(
+        new THREE.RingGeometry(0.7, 0.78, 16, 1, 0, Math.PI / 2).rotateX(-Math.PI / 2),
+        arcMat
+      );
+      arc.position.set(0, 0.082, 0);
+      if (c.x > 0 && c.z < 0) arc.rotation.y = Math.PI / 2;
+      else if (c.x > 0 && c.z > 0) arc.rotation.y = Math.PI;
+      else if (c.x < 0 && c.z > 0) arc.rotation.y = -Math.PI / 2;
+      cornerGroup.add(arc);
+
+      // Flag pole (1.5m tall flexible white tube)
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.5, 8), poleMat);
+      pole.position.y = 0.75 + 0.08;
+      cornerGroup.add(pole);
+
+      // Checkered flag banner
+      const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.3), flagMat);
+      flag.position.set(0.21, 1.4 + 0.08, 0);
+      cornerGroup.add(flag);
+      this.stadiumCornerFlags.push(flag);
+
+      cornerGroup.position.set(c.x, 0, c.z);
+      this.stadiumWorldGroup.add(cornerGroup);
     });
   }
 
@@ -5099,6 +5727,9 @@ export class City3DManager {
     const vy = (targetY - 0.2) / t + 0.5 * 9.8 * t;
     this.ballVelocity.set(vx, vy, vz);
 
+    // Defender wall jumps in unison to block the penalty shot!
+    this.defenderJumpTimer = 0.55;
+
     // Kicking avatar arm & leg swing animation
     if (this.playerCitizen) {
       this.playerCitizen.rightLeg.rotation.x = -1.2;
@@ -5126,6 +5757,11 @@ export class City3DManager {
         (dir.includes('left') && this.goalkeeperState === 'dive_left') ||
         (dir.includes('right') && this.goalkeeperState === 'dive_right');
       const isGoal = !isSaved;
+
+      if (isGoal) {
+        // Trigger wild stadium crowd celebration!
+        this.stadiumGoalCheerTimer = 4.5;
+      }
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
@@ -5155,6 +5791,10 @@ export class City3DManager {
     }
     this.goalkeeperState = 'idle';
     this.goalkeeperAnimTimer = 0;
+    this.defenderJumpTimer = 0;
+    for (const def of this.stadiumDefenders) {
+      def.position.y = 0.08;
+    }
   }
 
   private updateStadium(delta: number, elapsed: number) {
@@ -5183,22 +5823,92 @@ export class City3DManager {
       this.soccerBall.rotation.z -= this.ballVelocity.x * delta * 2;
     }
 
-    // 2. Goalkeeper dive animation
-    if (this.goalkeeper && this.goalkeeperState !== 'idle') {
-      this.goalkeeperAnimTimer += delta;
-      const t = Math.min(this.goalkeeperAnimTimer / 0.45, 1.0);
+    // 2. Goalkeeper dive & idle animation
+    if (this.goalkeeper) {
+      if (this.goalkeeperState !== 'idle') {
+        this.goalkeeperAnimTimer += delta;
+        const t = Math.min(this.goalkeeperAnimTimer / 0.45, 1.0);
 
-      if (this.goalkeeperState === 'dive_left') {
-        this.goalkeeper.position.x = THREE.MathUtils.lerp(0, -1.3, t);
-        this.goalkeeper.position.y = THREE.MathUtils.lerp(0.08, 0.45, Math.sin(t * Math.PI));
-        this.goalkeeper.rotation.z = THREE.MathUtils.lerp(0, -0.65, t);
-      } else if (this.goalkeeperState === 'dive_right') {
-        this.goalkeeper.position.x = THREE.MathUtils.lerp(0, 1.3, t);
-        this.goalkeeper.position.y = THREE.MathUtils.lerp(0.08, 0.45, Math.sin(t * Math.PI));
-        this.goalkeeper.rotation.z = THREE.MathUtils.lerp(0, 0.65, t);
-      } else if (this.goalkeeperState === 'jump') {
-        this.goalkeeper.position.y = THREE.MathUtils.lerp(0.08, 0.85, Math.sin(t * Math.PI));
+        if (this.goalkeeperState === 'dive_left') {
+          this.goalkeeper.position.x = THREE.MathUtils.lerp(0, -1.3, t);
+          this.goalkeeper.position.y = THREE.MathUtils.lerp(0.08, 0.45, Math.sin(t * Math.PI));
+          this.goalkeeper.rotation.z = THREE.MathUtils.lerp(0, -0.65, t);
+        } else if (this.goalkeeperState === 'dive_right') {
+          this.goalkeeper.position.x = THREE.MathUtils.lerp(0, 1.3, t);
+          this.goalkeeper.position.y = THREE.MathUtils.lerp(0.08, 0.45, Math.sin(t * Math.PI));
+          this.goalkeeper.rotation.z = THREE.MathUtils.lerp(0, 0.65, t);
+        } else if (this.goalkeeperState === 'jump') {
+          this.goalkeeper.position.y = THREE.MathUtils.lerp(0.08, 0.85, Math.sin(t * Math.PI));
+        }
+      } else {
+        // Idle goalkeeper ready bounce on toes
+        const toeBounce = Math.abs(Math.sin(elapsed * 4.5)) * 0.03;
+        this.goalkeeper.position.y = 0.08 + toeBounce;
       }
+    }
+
+    // 3. Defender Wall jumping during free-kick
+    if (this.defenderJumpTimer > 0) {
+      this.defenderJumpTimer -= delta;
+      const jumpNorm = Math.max(0, this.defenderJumpTimer / 0.55);
+      const wallHop = Math.sin((1 - jumpNorm) * Math.PI) * 0.38;
+      for (const def of this.stadiumDefenders) {
+        def.position.y = 0.08 + wallHop;
+      }
+    } else {
+      for (const def of this.stadiumDefenders) {
+        def.position.y = 0.08;
+      }
+    }
+
+    // 4. Moving Stadium Spectators across Oval Stands (Ombak Suporter / Mexican Wave & Goal Cheer)
+    const isGoalCheering = this.stadiumGoalCheerTimer > 0;
+    if (isGoalCheering) {
+      this.stadiumGoalCheerTimer -= delta;
+    }
+
+    const waveCycle = (elapsed * 2.2) % (Math.PI * 2) - Math.PI;
+
+    for (let i = 0; i < this.stadiumCrowd.length; i++) {
+      const spec = this.stadiumCrowd[i];
+
+      if (isGoalCheering) {
+        // Goal scored: entire crowd erupts in wild jumping, fist-pumping, and flag waving!
+        const cheerJump = Math.abs(Math.sin(elapsed * 7.5 + spec.phase)) * (spec.jumpHeight * 1.3);
+        spec.root.position.y = spec.baseY + cheerJump;
+
+        if (spec.armL) spec.armL.rotation.x = -2.7 + Math.sin(elapsed * 8 + spec.phase) * 0.4;
+        if (spec.armR) spec.armR.rotation.x = -2.7 + Math.cos(elapsed * 8 + spec.phase) * 0.4;
+        if (spec.flag) {
+          spec.flag.rotation.z = Math.sin(elapsed * 9 + spec.phase) * 0.6;
+          spec.flag.rotation.x = Math.cos(elapsed * 8) * 0.4;
+        }
+      } else {
+        // Continuous Mexican Wave rolling smoothly around the stadium stands
+        let angDiff = Math.abs(spec.waveAngle - waveCycle);
+        if (angDiff > Math.PI) angDiff = 2 * Math.PI - angDiff;
+
+        if (angDiff < 0.48) {
+          // In the wave: stand up and raise both arms into the air!
+          const waveHeight = 1 - angDiff / 0.48;
+          spec.root.position.y = spec.baseY + waveHeight * spec.jumpHeight;
+          if (spec.armL) spec.armL.rotation.x = THREE.MathUtils.lerp(-0.2, -2.8, waveHeight);
+          if (spec.armR) spec.armR.rotation.x = THREE.MathUtils.lerp(-0.2, -2.8, waveHeight);
+          if (spec.flag) spec.flag.rotation.z = Math.sin(elapsed * 7 + i) * 0.45;
+        } else {
+          // Seated: rhythmic supporter swaying & clapping
+          const gentleBop = Math.sin(elapsed * spec.speed + spec.phase) * 0.03;
+          spec.root.position.y = spec.baseY + Math.max(0, gentleBop);
+          if (spec.armL) spec.armL.rotation.x = -0.2 + Math.sin(elapsed * 3 + spec.phase) * 0.2;
+          if (spec.armR) spec.armR.rotation.x = -0.2 + Math.sin(elapsed * 3 + spec.phase + 1) * 0.2;
+          if (spec.flag) spec.flag.rotation.z = Math.sin(elapsed * 4 + i) * 0.2;
+        }
+      }
+    }
+
+    // 5. Corner flags flutter in the breeze
+    for (let f = 0; f < this.stadiumCornerFlags.length; f++) {
+      this.stadiumCornerFlags[f].rotation.y = Math.sin(elapsed * 4.5 + f * 1.5) * 0.25;
     }
   }
 
