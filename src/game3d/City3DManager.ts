@@ -7089,6 +7089,64 @@ private setupAirplanes() {
     this.updateCameraTransform();
   }
 
+  public rotateCamera(deltaTheta: number, deltaPhi: number) {
+    this.spherical.theta += deltaTheta;
+    this.spherical.phi = THREE.MathUtils.clamp(
+      this.spherical.phi + deltaPhi,
+      0.15,
+      Math.PI / 2 - 0.05
+    );
+    this.updateCameraTransform();
+  }
+
+  public rotateLeft(step = Math.PI / 14) {
+    this.rotateCamera(step, 0);
+  }
+
+  public rotateRight(step = Math.PI / 14) {
+    this.rotateCamera(-step, 0);
+  }
+
+  public tiltUp(step = 0.08) {
+    this.rotateCamera(0, -step);
+  }
+
+  public tiltDown(step = 0.08) {
+    this.rotateCamera(0, step);
+  }
+
+  public resetCamera() {
+    if (this.viewMode === 'city') {
+      if (this.cameraMode === 'follow') {
+        this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.4, 0));
+        this.spherical.radius = 22;
+        this.spherical.phi = Math.PI / 3.4;
+        this.spherical.theta = this.playerFacing + Math.PI;
+      } else {
+        this.target.set(0, 0, 0);
+        this.spherical.radius = 120;
+        this.spherical.phi = Math.PI / 3.5;
+        this.spherical.theta = Math.PI * 0.75;
+      }
+    } else if (this.viewMode === 'tugu') {
+      this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.4, 0));
+      this.spherical.radius = 18;
+      this.spherical.phi = Math.PI / 3.4;
+      this.spherical.theta = this.playerFacing + Math.PI;
+    } else if (this.viewMode === 'stadium') {
+      this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.2, 0));
+      this.spherical.radius = 12;
+      this.spherical.phi = Math.PI / 3.4;
+      this.spherical.theta = this.playerFacing + Math.PI;
+    } else if (this.viewMode === 'river' || this.viewMode === 'beach') {
+      this.target.copy(this.playerPos).add(new THREE.Vector3(0, 1.2, 0));
+      this.spherical.radius = 16;
+      this.spherical.phi = Math.PI / 3.4;
+      this.spherical.theta = this.playerFacing + Math.PI;
+    }
+    this.updateCameraTransform();
+  }
+
   public setVirtualMovement(move: { x: number; y: number } | null) {
     this.virtualMove = move;
   }

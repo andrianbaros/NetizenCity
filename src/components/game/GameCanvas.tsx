@@ -18,6 +18,9 @@ import {
   Navigation,
   Info,
   ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Building2,
   ShoppingBag,
   Landmark,
@@ -845,13 +848,78 @@ export default function GameCanvas() {
     cityManagerRef.current?.setCameraMode(mode)
   }
 
-  const handleZoomIn = () => {
-    cityManagerRef.current?.zoomIn()
-  }
+  // Continuous tactile camera actions (tap once or hold to smoothly rotate/zoom)
+  const cameraActionTimerRef = useRef<{
+    timerId: NodeJS.Timeout | null
+    intervalId: NodeJS.Timeout | null
+  }>({ timerId: null, intervalId: null })
 
-  const handleZoomOut = () => {
-    cityManagerRef.current?.zoomOut()
-  }
+  const stopCameraAction = useCallback(() => {
+    if (cameraActionTimerRef.current.timerId) {
+      clearTimeout(cameraActionTimerRef.current.timerId)
+      cameraActionTimerRef.current.timerId = null
+    }
+    if (cameraActionTimerRef.current.intervalId) {
+      clearInterval(cameraActionTimerRef.current.intervalId)
+      cameraActionTimerRef.current.intervalId = null
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pointerup', stopCameraAction)
+      window.removeEventListener('pointercancel', stopCameraAction)
+    }
+  }, [])
+
+  const startCameraAction = useCallback(
+    (actionFn: (isContinuous?: boolean) => void) => {
+      stopCameraAction()
+      actionFn(false) // First step triggers immediately on tap/click
+      if (typeof window !== 'undefined') {
+        window.addEventListener('pointerup', stopCameraAction)
+        window.addEventListener('pointercancel', stopCameraAction)
+      }
+      // Start rapid continuous repeat if held for > 200ms
+      cameraActionTimerRef.current.timerId = setTimeout(() => {
+        cameraActionTimerRef.current.intervalId = setInterval(() => {
+          actionFn(true)
+        }, 50)
+      }, 200)
+    },
+    [stopCameraAction]
+  )
+
+  useEffect(() => {
+    return () => {
+      stopCameraAction()
+    }
+  }, [stopCameraAction])
+
+  const handleRotateLeft = useCallback((isContinuous = false) => {
+    cityManagerRef.current?.rotateLeft(isContinuous ? Math.PI / 36 : Math.PI / 14)
+  }, [])
+
+  const handleRotateRight = useCallback((isContinuous = false) => {
+    cityManagerRef.current?.rotateRight(isContinuous ? Math.PI / 36 : Math.PI / 14)
+  }, [])
+
+  const handleTiltUp = useCallback((isContinuous = false) => {
+    cityManagerRef.current?.tiltUp(isContinuous ? 0.03 : 0.08)
+  }, [])
+
+  const handleTiltDown = useCallback((isContinuous = false) => {
+    cityManagerRef.current?.tiltDown(isContinuous ? 0.03 : 0.08)
+  }, [])
+
+  const handleResetCamera = useCallback(() => {
+    cityManagerRef.current?.resetCamera()
+  }, [])
+
+  const handleZoomIn = useCallback((isContinuous = false) => {
+    cityManagerRef.current?.zoomIn(isContinuous ? 0.95 : 0.82)
+  }, [])
+
+  const handleZoomOut = useCallback((isContinuous = false) => {
+    cityManagerRef.current?.zoomOut(isContinuous ? 1.05 : 1.22)
+  }, [])
 
   const handleFlyTo = (landmarkId: string) => {
     if (landmarkId === 'monument') {
@@ -1127,25 +1195,128 @@ export default function GameCanvas() {
       )}
 
       {/* ============================================================ */}
-      {/* TACTILE ON-SCREEN ZOOM BUTTONS                               */}
+      {/* TACTILE ON-SCREEN CAMERA ROTATE & ZOOM BUTTONS               */}
+      {/* Positioned right edge above/around zoom, thumb-friendly      */}
       {/* ============================================================ */}
-      <div className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col space-y-1.5 pointer-events-auto">
-        <button
-          type="button"
-          onClick={handleZoomIn}
-          title="Zoom In"
-          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] shadow-sm flex items-center justify-center text-[#343B35] cursor-pointer transition-transform"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={handleZoomOut}
-          title="Zoom Out"
-          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#F7F4E9] hover:bg-[#EFE9D8] active:translate-y-0.5 border border-[#D8CEBE] shadow-sm flex items-center justify-center text-[#343B35] cursor-pointer transition-transform"
-        >
-          <Minus className="w-4 h-4" />
-        </button>
+      <div className="absolute right-2 sm:right-3.5 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center select-none pointer-events-auto gap-1.5">
+        {/* 1. CAMERA ROTATE D-PAD (Atas, Bawah, Kiri, Kanan, Reset) */}
+        <div className="bg-[#F7F4E9]/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-[#D8CEBE] shadow-md flex flex-col items-center">
+          {/* Top: Tilt Up / Sudut Atas (Aerial View) */}
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              startCameraAction(handleTiltUp)
+            }}
+            onPointerUp={stopCameraAction}
+            onPointerLeave={stopCameraAction}
+            onPointerCancel={stopCameraAction}
+            title="Sudut Atas (Tunduk / Pandangan Aerial)"
+            aria-label="Sudut Atas"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+          >
+            <ChevronUp className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+          </button>
+
+          {/* Middle Row: Rotate Left, Reset Compass, Rotate Right */}
+          <div className="flex items-center gap-1 my-1">
+            {/* Left: Rotate Left / Putar Kiri */}
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                startCameraAction(handleRotateLeft)
+              }}
+              onPointerUp={stopCameraAction}
+              onPointerLeave={stopCameraAction}
+              onPointerCancel={stopCameraAction}
+              title="Putar Kiri"
+              aria-label="Putar Kiri"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+            >
+              <ChevronLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+            </button>
+
+            {/* Center: Reset Default Angle */}
+            <button
+              type="button"
+              onClick={handleResetCamera}
+              title="Reset Sudut Kamera Default"
+              aria-label="Reset Sudut Kamera Default"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#EFE9D8]/90 hover:bg-[#E4D5BE] active:bg-[#D8CEBE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#78634B] cursor-pointer transition-all touch-manipulation"
+            >
+              <Compass className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-[#8C7A6B]" />
+            </button>
+
+            {/* Right: Rotate Right / Putar Kanan */}
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                startCameraAction(handleRotateRight)
+              }}
+              onPointerUp={stopCameraAction}
+              onPointerLeave={stopCameraAction}
+              onPointerCancel={stopCameraAction}
+              title="Putar Kanan"
+              aria-label="Putar Kanan"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+            >
+              <ChevronRight className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+            </button>
+          </div>
+
+          {/* Bottom: Tilt Down / Sudut Bawah (Ground Level View) */}
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              startCameraAction(handleTiltDown)
+            }}
+            onPointerUp={stopCameraAction}
+            onPointerLeave={stopCameraAction}
+            onPointerCancel={stopCameraAction}
+            title="Sudut Bawah (Tegak / Pandangan Tanah)"
+            aria-label="Sudut Bawah"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+          >
+            <ChevronDown className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+          </button>
+        </div>
+
+        {/* 2. ZOOM IN / OUT BUTTONS */}
+        <div className="bg-[#F7F4E9]/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-[#D8CEBE] shadow-md flex flex-col items-center gap-1">
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              startCameraAction(handleZoomIn)
+            }}
+            onPointerUp={stopCameraAction}
+            onPointerLeave={stopCameraAction}
+            onPointerCancel={stopCameraAction}
+            title="Zoom In (Perbesar Tampilan)"
+            aria-label="Zoom In"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+          >
+            <Plus className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+          </button>
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              startCameraAction(handleZoomOut)
+            }}
+            onPointerUp={stopCameraAction}
+            onPointerLeave={stopCameraAction}
+            onPointerCancel={stopCameraAction}
+            title="Zoom Out (Perkecil Tampilan)"
+            aria-label="Zoom Out"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+          >
+            <Minus className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+          </button>
+        </div>
       </div>
 
       {/* ============================================================ */}
@@ -1623,6 +1794,7 @@ export default function GameCanvas() {
             <div className="space-y-1 text-[#78634B]">
               {viewMode === 'city' ? (
                 <>
+                  <div>• <strong className="text-[#343B35]">Tombol Kamera Kanan:</strong> D-Pad putar atas, bawah, kiri, kanan, reset &amp; zoom</div>
                   <div>• <strong className="text-[#343B35]">Geser 1 Jari:</strong> Geser map (Pan)</div>
                   <div>• <strong className="text-[#343B35]">2 Jari (Putar/Cubit):</strong> Muter-muter orbit kamera &amp; zoom</div>
                   <div>• <strong className="text-[#343B35]">Mouse:</strong> Klik kiri drag orbit, klik kanan geser</div>
