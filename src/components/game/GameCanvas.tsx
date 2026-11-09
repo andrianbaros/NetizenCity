@@ -832,7 +832,12 @@ export default function GameCanvas() {
               </button>
 
               {showLandmarkMenu && (
-                <div className="absolute top-full mt-1.5 left-0 w-56 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1.5 shadow-lg z-50 flex flex-col space-y-1">
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowLandmarkMenu(false)}
+                  />
+                  <div className="absolute top-full mt-1.5 left-0 w-56 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1.5 shadow-lg z-50 flex flex-col space-y-1">
                   <button
                     type="button"
                     onClick={() => handleFlyTo('monument')}
@@ -905,6 +910,7 @@ export default function GameCanvas() {
                     </div>
                   </button>
                 </div>
+                </>
               )}
             </div>
           </div>
@@ -936,7 +942,12 @@ export default function GameCanvas() {
             </button>
 
             {showRoomSwitcher && (
-              <div className="absolute top-full mt-1.5 left-0 sm:left-1/2 sm:-translate-x-1/2 w-60 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2 shadow-xl z-50 text-xs">
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowRoomSwitcher(false)}
+                />
+                <div className="absolute top-full mt-1.5 left-0 sm:left-1/2 sm:-translate-x-1/2 w-60 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2 shadow-xl z-50 text-xs">
                 <div className="font-bold text-[10px] text-[#78634B] px-2 py-1 uppercase tracking-wide border-b border-[#D8CEBE] mb-1">
                   Pilih Server Ruangan (Maks 10)
                 </div>
@@ -972,6 +983,7 @@ export default function GameCanvas() {
                   })}
                 </div>
               </div>
+              </>
             )}
           </div>
 
@@ -994,7 +1006,12 @@ export default function GameCanvas() {
             </button>
 
             {showRoster && (
-              <div className="absolute top-full mt-1.5 right-0 sm:left-1/2 sm:-translate-x-1/2 w-64 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2.5 shadow-xl z-50 text-xs">
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowRoster(false)}
+                />
+                <div className="absolute top-full mt-1.5 right-0 sm:left-1/2 sm:-translate-x-1/2 w-64 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-2.5 shadow-xl z-50 text-xs">
                 <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-[#D8CEBE]">
                   <span className="font-bold text-[11px] text-[#78634B] uppercase tracking-wide flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-[#668B65]" /> Warga di Ruang #{currentRoomId}
@@ -1039,6 +1056,7 @@ export default function GameCanvas() {
                   )}
                 </div>
               </div>
+              </>
             )}
           </div>
         </div>

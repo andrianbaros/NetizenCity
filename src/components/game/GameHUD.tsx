@@ -23,6 +23,7 @@ import {
   Award,
   Vote,
   MoreHorizontal,
+  Menu,
   X,
   User,
   Camera,
@@ -364,16 +365,18 @@ export default function GameHUD() {
             </span>
           </div>
 
-          {/* Primary Quick Actions always visible */}
+          {/* Primary Quick Actions */}
+          {/* On phones (< sm), Camera, Mall, Cat Hunt, Missions are hidden on the top bar and accessible via the Mobile Action Menu */}
           <button
             type="button"
             onClick={() => openModal('photo_studio')}
             title="Mode Foto Bersama (POV & Polaroid)"
-            className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition-all active:translate-y-0.5 cursor-pointer shrink-0"
+            className="hidden sm:flex p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition-all active:translate-y-0.5 cursor-pointer shrink-0"
           >
             <Camera className="w-3.5 h-3.5" />
           </button>
 
+          {/* Tas Warga (Backpack) is ALWAYS visible on both mobile and desktop! */}
           <button
             type="button"
             onClick={() => openModal('inventory')}
@@ -392,7 +395,7 @@ export default function GameHUD() {
             type="button"
             onClick={() => openModal('mall')}
             title="Mall Busana"
-            className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0"
+            className="hidden sm:flex p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
           </button>
@@ -401,7 +404,7 @@ export default function GameHUD() {
             type="button"
             onClick={() => openModal('cat_hunt')}
             title="Misi Cari Kucing Kota (5/5)"
-            className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0 text-xs flex items-center justify-center"
+            className="hidden sm:flex p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer shrink-0 text-xs items-center justify-center"
           >
             🐱
           </button>
@@ -506,172 +509,395 @@ export default function GameHUD() {
             )}
           </div>
 
-          {/* Mobile Action Menu Toggle (opens cohesive game sheet) */}
-          <div className="lg:hidden relative">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              title="Menu Aksi Lainnya"
-              className={`p-1.5 rounded-lg transition-all active:translate-y-0.5 cursor-pointer border ${
-                mobileMenuOpen
-                  ? 'bg-[#668B65] text-white border-[#547553]'
-                  : 'bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border-[#D8CEBE]'
-              }`}
-            >
-              {mobileMenuOpen ? <X className="w-3.5 h-3.5" /> : <MoreHorizontal className="w-3.5 h-3.5" />}
-            </button>
+          {/* Mobile Action Menu Toggle Button (lg:hidden) */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            title="Menu Aksi Netizen City"
+            className={`lg:hidden flex items-center space-x-1 px-2 py-1 rounded-lg transition-all active:translate-y-0.5 cursor-pointer border text-xs font-heading font-bold shrink-0 ${
+              mobileMenuOpen
+                ? 'bg-[#668B65] text-white border-[#547553] shadow-inner'
+                : 'bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border-[#D8CEBE]'
+            }`}
+          >
+            {mobileMenuOpen ? (
+              <X className="w-3.5 h-3.5 text-white" />
+            ) : (
+              <Menu className="w-3.5 h-3.5 text-[#668B65]" />
+            )}
+            <span className="text-[11px] leading-none">Menu</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+          </button>
+        </div>
+      </header>
 
-            {/* Dropdown sheet for mobile */}
-            {mobileMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-52 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl shadow-xl p-1.5 z-50 flex flex-col space-y-1 animate-in fade-in zoom-in-95 text-xs font-heading font-bold text-[#343B35]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    openModal('photo_studio')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
-                >
-                  <Camera className="w-4 h-4 text-amber-600" />
-                  <span>Mode Foto Polaroid</span>
-                </button>
+      {/* ============================================================ */}
+      {/* MOBILE ACTION DRAWER (Full Cozy Netizen City Experience)     */}
+      {/* ============================================================ */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-[9990] flex flex-col justify-end sm:justify-center items-center p-2 sm:p-4 pointer-events-auto">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in cursor-pointer"
+            onClick={() => setMobileMenuOpen(false)}
+          />
 
+          {/* Drawer Content */}
+          <div
+            className="relative z-10 w-full max-w-md bg-[#F7F4E9] border-2 border-[#D8CEBE] rounded-3xl shadow-2xl p-4 sm:p-5 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200 flex flex-col gap-3 font-sans"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Handle (Mobile) */}
+            <div className="w-12 h-1.5 bg-[#D8CEBE] rounded-full mx-auto sm:hidden -mt-1 mb-1" />
+
+            {/* Header: Citizen Profile & Close Button */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#D8CEBE]">
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-[#668B65] text-white flex items-center justify-center font-heading font-black text-sm shadow-md shrink-0">
+                  NC
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="font-heading font-black text-sm text-[#343B35] truncate">
+                      {profile?.displayName || 'Warga Netizen'}
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-[#EFE9D8] text-[#78634B] text-[10px] font-heading font-bold border border-[#D8CEBE]">
+                      Lv.{profile?.level || 1}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-[#78634B] truncate">
+                    @{profile?.username || 'tamu'} • {districtNames[currentDistrict] || 'Netizen City'}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-9 h-9 rounded-xl bg-[#EFE9D8] hover:bg-[#E2DAC7] border border-[#D8CEBE] flex items-center justify-center text-[#78634B] hover:text-[#343B35] transition-colors cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Wallet & City Stats Pill */}
+            <div className="flex items-center justify-between p-2.5 bg-[#EFE9D8] rounded-2xl border border-[#D8CEBE] text-xs">
+              <div className="flex items-center space-x-1.5">
+                <Coins className="w-4 h-4 text-[#E6C66F]" />
+                <span className="font-heading font-extrabold text-[#343B35]">
+                  {formatCoins(currentCoins)} Netizen Coins
+                </span>
+              </div>
+              <div className="flex items-center space-x-1 text-[11px] text-[#668B65] font-bold">
+                <span className="w-2 h-2 rounded-full bg-[#668B65]" />
+                <span>{cityStats.onlineNow} Warga Online</span>
+              </div>
+            </div>
+
+            {/* SECTION 1: Aktivitas Utama & Game (Grid 2 Kolom) */}
+            <div>
+              <h4 className="text-[10px] font-heading font-extrabold text-[#78634B] uppercase tracking-wider mb-2">
+                Aktivitas &amp; Petualangan Warga
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {/* 1. Tas Warga */}
                 <button
                   type="button"
                   onClick={() => {
                     openModal('inventory')
                     setMobileMenuOpen(false)
                   }}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
                 >
-                  <Backpack className="w-4 h-4 text-[#668B65]" />
-                  <span>Tas Barang Warga ({inventory.length})</span>
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800 shrink-0">
+                    <Backpack className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate flex items-center gap-1">
+                      <span>Tas Warga</span>
+                      {inventory.length > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-[#668B65] text-white text-[9px] font-bold">
+                          {inventory.length}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">Roblox Backpack</div>
+                  </div>
                 </button>
 
+                {/* 2. Foto Polaroid */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('photo_studio')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 shrink-0">
+                    <Camera className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Foto Bersama
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">POV &amp; Polaroid</div>
+                  </div>
+                </button>
+
+                {/* 3. Mall Busana */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('mall')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-rose-100 border border-rose-300 flex items-center justify-center text-rose-800 shrink-0">
+                    <ShoppingBag className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Mall Busana
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">Baju &amp; Aksesoris</div>
+                  </div>
+                </button>
+
+                {/* 4. Cari Kucing Kota */}
                 <button
                   type="button"
                   onClick={() => {
                     openModal('cat_hunt')
                     setMobileMenuOpen(false)
                   }}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
                 >
-                  <span className="text-sm">🐱</span>
-                  <span>Cari Kucing Kota</span>
+                  <div className="w-9 h-9 rounded-xl bg-orange-100 border border-orange-300 flex items-center justify-center text-orange-800 shrink-0 text-sm">
+                    🐱
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Cari Kucing
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">Misi 5 Kucing</div>
+                  </div>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    openModal('garden')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
-                >
-                  <Sprout className="w-4 h-4 text-emerald-600" />
-                  <span>Kebun Netizen (Tanam)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    openModal('investor')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
-                >
-                  <Building2 className="w-4 h-4 text-purple-700" />
-                  <span>Menara Investor Kota</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleOpenCityHall}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
-                >
-                  <Vote className="w-4 h-4 text-[#78634B]" />
-                  <span>Balai Kota & Poling</span>
-                </button>
-
+                {/* 5. Misi & Prestasi */}
                 <button
                   type="button"
                   onClick={() => {
                     openModal('missions')
                     setMobileMenuOpen(false)
                   }}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
                 >
-                  <Award className="w-4 h-4 text-[#78634B]" />
-                  <span>Misi & Prestasi</span>
+                  <div className="w-9 h-9 rounded-xl bg-indigo-100 border border-indigo-300 flex items-center justify-center text-indigo-800 shrink-0">
+                    <Award className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Misi &amp; Prestasi
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">Klaim Hadiah Koin</div>
+                  </div>
                 </button>
 
+                {/* 6. Kurir Paket */}
                 <button
                   type="button"
-                  onClick={handleStartCourier}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                  onClick={() => {
+                    handleStartCourier()
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
                 >
-                  <Package className="w-4 h-4 text-[#78634B]" />
-                  <span>Misi Kurir (+100)</span>
+                  <div className="w-9 h-9 rounded-xl bg-yellow-100 border border-yellow-300 flex items-center justify-center text-yellow-800 shrink-0">
+                    <Package className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Kurir Paket
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">+100 Koin per Antar</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* SECTION 2: Fasilitas & Pemerintahan (Grid 2 Kolom) */}
+            <div>
+              <h4 className="text-[10px] font-heading font-extrabold text-[#78634B] uppercase tracking-wider mb-2">
+                Fasilitas &amp; Pemerintahan
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {/* 1. Kebun Netizen */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('garden')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shrink-0">
+                    <Sprout className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Kebun Netizen
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">Tanam &amp; Panen</div>
+                  </div>
                 </button>
 
+                {/* 2. Menara Investor */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('investor')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-purple-100 border border-purple-300 flex items-center justify-center text-purple-800 shrink-0">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Menara Investor
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">103 Pendukung Kota</div>
+                  </div>
+                </button>
+
+                {/* 3. Balai Kota */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleOpenCityHall()
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-[#78634B] shrink-0">
+                    <Vote className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Balai Kota
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">Poling Kebijakan</div>
+                  </div>
+                </button>
+
+                {/* 4. Hadiah Harian */}
                 <button
                   type="button"
                   onClick={() => {
                     openModal('daily_rewards')
                     setMobileMenuOpen(false)
                   }}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
                 >
-                  <Gift className="w-4 h-4 text-[#78634B]" />
-                  <span>Hadiah Harian</span>
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 border border-pink-300 flex items-center justify-center text-pink-700 shrink-0">
+                    <Gift className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Hadiah Harian
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">Klaim Tiap Hari</div>
+                  </div>
                 </button>
 
+                {/* 5. Kartu Tanda Netizen */}
                 <button
                   type="button"
                   onClick={() => {
                     openModal('ktn_card')
                     setMobileMenuOpen(false)
                   }}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
                 >
-                  <ShieldCheck className="w-4 h-4 text-[#78634B]" />
-                  <span>Kartu Tanda Netizen</span>
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800 shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Kartu KTN
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">Identitas Digital</div>
+                  </div>
                 </button>
 
+                {/* 6. Ubah Waktu Siang / Malam */}
                 <button
                   type="button"
-                  onClick={handleToggleDayNight}
-                  className="flex items-center space-x-2 w-full p-2 rounded-lg hover:bg-[#EFE9D8] transition-colors text-left cursor-pointer"
+                  onClick={() => {
+                    handleToggleDayNight()
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
                 >
-                  <Moon className="w-4 h-4 text-[#78634B]" />
-                  <span>Ubah Siang / Malam</span>
+                  <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-800 shrink-0">
+                    <Moon className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Waktu Kota
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">Siang / Malam</div>
+                  </div>
                 </button>
-
-                <div className="w-full h-px bg-[#D8CEBE] my-1" />
-
-                {profile ? (
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="flex items-center space-x-2 w-full p-2 rounded-lg text-[#A23F32] hover:bg-[#FBEBE8] transition-colors text-left cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Keluar Akun Warga</span>
-                  </button>
-                ) : (
-                  <Link
-                    href="/"
-                    className="flex items-center space-x-2 w-full p-2 rounded-lg text-[#78634B] hover:bg-[#EFE9D8] transition-colors text-left"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Kembali ke Beranda</span>
-                  </Link>
-                )}
               </div>
-            )}
+            </div>
+
+            {/* SECTION 3: Audio & Akun */}
+            <div className="pt-2 border-t border-[#D8CEBE] flex items-center justify-between gap-2">
+              {/* Musik BGM Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('toggle-nc-bgm'))
+                  }
+                }}
+                className="flex-1 flex items-center justify-center space-x-2 py-2.5 px-3 rounded-2xl bg-[#EFE9D8] hover:bg-[#E2DAC7] border border-[#D8CEBE] text-[#343B35] font-heading font-bold text-xs transition-colors cursor-pointer shadow-2xs"
+              >
+                <span>🎵</span>
+                <span>Musik Kota BGM</span>
+              </button>
+
+              {/* Keluar / Beranda */}
+              {profile ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false)
+                    handleLogout()
+                  }}
+                  className="flex items-center justify-center space-x-1.5 py-2.5 px-4 rounded-2xl bg-[#FBEBE8] hover:bg-[#F5D8D3] border border-[#EAC2BA] text-[#A23F32] font-heading font-bold text-xs transition-colors cursor-pointer shadow-2xs shrink-0"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Keluar</span>
+                </button>
+              ) : (
+                <Link
+                  href="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center space-x-1.5 py-2.5 px-4 rounded-2xl bg-[#EFE9D8] hover:bg-[#E2DAC7] border border-[#D8CEBE] text-[#78634B] font-heading font-bold text-xs transition-colors shadow-2xs shrink-0"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Beranda</span>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
-      </header>
+      )}
 
       {/* ============================================================ */}
       {/* NOTIFICATIONS CONTAINER (Otomatis Hilang Fadeout 10 Detik)   */}

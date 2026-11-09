@@ -35,12 +35,18 @@ export default function BGMPlayer() {
       })
       .catch(() => {})
 
+    const handleRemoteToggle = () => {
+      togglePlay()
+    }
+    window.addEventListener('toggle-nc-bgm', handleRemoteToggle)
+
     return () => {
+      window.removeEventListener('toggle-nc-bgm', handleRemoteToggle)
       audio.pause()
       if (synthIntervalRef.current) clearInterval(synthIntervalRef.current)
       if (audioCtxRef.current) audioCtxRef.current.close().catch(() => {})
     }
-  }, [])
+  }, [isPlaying, hasCustomTrack, volume])
 
   // Procedural cozy ambient chime fallback
   const startProceduralAmbient = () => {
