@@ -202,7 +202,28 @@ export default function FreekickModal({ isOpen, onClose }: FreekickModalProps) {
         playCheerSound()
         setGoalsScored((prev) => prev + 1)
         setHistory((prev) => [...prev, 'goal'])
-        updateBalance(25)
+
+        // Add 20 coins per goal and persist to database
+        const curWallet = useCitizenStore.getState().wallet
+        const curBal = curWallet?.balance ?? 500
+        updateBalance(curBal + 20)
+
+        fetch('/api/economy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'earn',
+            amount: 20,
+            description: 'Hadiah cetak gol penalti di Stadion Netizen City',
+          }),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.wallet?.balance !== undefined) {
+              updateBalance(data.wallet.balance)
+            }
+          })
+          .catch(() => {})
       } else {
         setHistory((prev) => [...prev, 'miss'])
       }
@@ -222,10 +243,29 @@ export default function FreekickModal({ isOpen, onClose }: FreekickModalProps) {
           playWhistleSound()
           // Grand bonus if scored 3+ goals
           if (goalsScored + (isGoal ? 1 : 0) >= 3) {
-            updateBalance(50)
+            const currentB = useCitizenStore.getState().wallet?.balance ?? 500
+            updateBalance(currentB + 50)
+
+            fetch('/api/economy', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'earn',
+                amount: 50,
+                description: 'Bonus Top Scorer 3+ Gol Stadion Netizen City',
+              }),
+            })
+              .then((res) => (res.ok ? res.json() : null))
+              .then((data) => {
+                if (data?.wallet?.balance !== undefined) {
+                  updateBalance(data.wallet.balance)
+                }
+              })
+              .catch(() => {})
+
             addNotification({
               title: 'Top Scorer Netizen! ⚽🏆',
-              message: `Mencetak ${goalsScored + (isGoal ? 1 : 0)} gol! Bonus +50 Koin!`,
+              message: `Mencetak ${goalsScored + (isGoal ? 1 : 0)} gol! Bonus +50 Koin tersimpan ke akun!`,
               type: 'success',
             })
           }

@@ -584,10 +584,33 @@ export default function GameCanvas() {
 
       if (isGoal) {
         playStadiumSynthAudio('goal')
-        useCitizenStore.getState().updateBalance(50)
+
+        // Optimistically update wallet balance (+20 Netizen Coins per goal)
+        const curWallet = useCitizenStore.getState().wallet
+        const currentBalance = curWallet?.balance ?? 500
+        useCitizenStore.getState().updateBalance(currentBalance + 20)
+
+        // Persist reward to database via /api/economy
+        fetch('/api/economy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'earn',
+            amount: 20,
+            description: 'Hadiah cetak gol penalti di Stadion Netizen City',
+          }),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.wallet?.balance !== undefined) {
+              useCitizenStore.getState().updateBalance(data.wallet.balance)
+            }
+          })
+          .catch(() => {})
+
         useUIStore.getState().addNotification({
           title: 'GOOOLLL!! ⚽🔥',
-          message: '+50 Koin Hadiah Gol Spektakuler!',
+          message: '+20 Koin Hadiah Gol masuk ke dompetmu!',
           type: 'success',
         })
         setStadiumScore((prev) => {
@@ -606,7 +629,7 @@ export default function GameCanvas() {
           isGoal: true,
           title: 'GOOOLLL!! ⚽🔥',
           subtitle: 'Tendangan Spektakuler Membobol Gawang!',
-          coinsAwarded: 50,
+          coinsAwarded: 20,
         })
       } else {
         playStadiumSynthAudio('save')

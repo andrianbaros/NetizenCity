@@ -870,6 +870,7 @@ export class City3DManager {
   public fishingState: FishingState = 'idle';
   public reelProgress = 0;
   public activeCaughtFish: RiverFishCatch | null = null;
+  public pendingHookedFish: RiverFishCatch | null = null;
   private riverFishList: Array<{
     mesh: THREE.Group;
     tail: THREE.Mesh;
@@ -3127,7 +3128,7 @@ export class City3DManager {
     const acc = shots > 0 ? Math.round((goals / shots) * 100) : 0;
     ctx.fillStyle = '#F59E0B';
     ctx.font = 'bold 20px "Lilita One", sans-serif';
-    ctx.fillText(`AKURASI: ${acc}%  •  HADIAH +50 KOIN / GOL`, 256, 222);
+    ctx.fillText(`AKURASI: ${acc}%  •  HADIAH +20 KOIN / GOL`, 256, 222);
 
     this.stadiumScoreboardTex.needsUpdate = true;
   }
@@ -6249,12 +6250,26 @@ export class City3DManager {
     }
 
     if (this.fishingState === 'reeling') {
-      this.reelProgress = Math.min(100, this.reelProgress + 8.5);
+      // Tap power scales with rod speed and decreases for heavier/rarer fish
+      const tier = this.pendingHookedFish?.tier || 'common';
+      let tapGain = 8.5;
+      if (tier === 'uncommon') tapGain = 8.0;
+      else if (tier === 'rare') tapGain = 7.2;
+      else if (tier === 'epic') tapGain = 6.4;
+      else if (tier === 'legendary') tapGain = 5.6;
+      else if (tier === 'mythic') tapGain = 4.8;
+      else if (tier === 'immortal') tapGain = 4.2;
+
+      const rodSpeed = this.currentEquippedRod?.fishingSpeed ?? 1.0;
+      tapGain *= Math.min(2.0, Math.max(0.8, rodSpeed * 0.95));
+
+      this.reelProgress = Math.min(100, this.reelProgress + tapGain);
       this.spawnRiverRipple(this.targetBobberPos);
 
       if (this.reelProgress >= 100) {
         this.fishingState = 'caught';
-        this.activeCaughtFish = this.determineCaughtFish();
+        this.activeCaughtFish = this.pendingHookedFish || this.determineCaughtFish();
+        this.pendingHookedFish = null;
 
         if (this.fishingBobber) {
           this.fishingBobber.visible = false;
@@ -6292,14 +6307,22 @@ export class City3DManager {
     const luck = this.currentEquippedRod ? this.currentEquippedRod.luck : 0;
     const maxRodWeight = this.currentEquippedRod ? this.currentEquippedRod.maxWeight : 5.0;
 
-    // 7 RPG Rarity Tiers dynamically scaled by rod Luck
-    // Base chances: Immortal 0.4%, Mythic 1.6%, Legendary 5%, Epic 10%, Rare 18%, Uncommon 25%
-    const pImmortal = 0.004 * (1 + luck * 1.5);
-    const pMythic = pImmortal + 0.016 * (1 + luck * 1.2);
-    const pLegendary = pMythic + 0.050 * (1 + luck * 1.0);
-    const pEpic = pLegendary + 0.100 * (1 + luck * 0.7);
-    const pRare = pEpic + 0.180 * (1 + luck * 0.5);
-    const pUncommon = pRare + 0.250 * (1 + luck * 0.2);
+    // Exponential RPG Rarity Curve:
+    // Higher rarity is genuinely challenging and prestigious to catch!
+    // Base Rates:
+    // Immortal:  0.08% (1 in 1,250)
+    // Mythic:    0.35% (1 in 285)
+    // Legendary: 1.20% (1 in 83)
+    // Epic:      4.50% (1 in 22)
+    // Rare:      12.00% (1 in 8)
+    // Uncommon:  25.00% (1 in 4)
+    // Common:    56.87% (Bulk of catches)
+    const pImmortal = 0.0008 * (1 + luck * 0.8);
+    const pMythic = pImmortal + 0.0035 * (1 + luck * 0.7);
+    const pLegendary = pMythic + 0.0120 * (1 + luck * 0.6);
+    const pEpic = pLegendary + 0.0450 * (1 + luck * 0.5);
+    const pRare = pEpic + 0.1200 * (1 + luck * 0.4);
+    const pUncommon = pRare + 0.2500 * (1 + luck * 0.2);
 
     const rand = Math.random();
     let selectedTier: FishRarityTier = 'common';
@@ -6322,19 +6345,34 @@ export class City3DManager {
 
     const isBeach = this.viewMode === 'beach';
     const speciesPool = isBeach ? BEACH_FISH_SPECIES : RIVER_FISH_SPECIES;
-    const tierSpecies = speciesPool.filter((s) => s.tier === selectedTier);
+    let tierSpecies = speciesPool.filter((s) => s.tier === selectedTier);
+
+    // Rod Capacity Requirement:
+    // Colossal legendary & mythical monsters require strong upgraded rods!
+    if (selectedTier === 'immortal' || selectedTier === 'mythic' || selectedTier === 'legendary') {
+      const minWeightInTier = tierSpecies.length > 0 ? Math.min(...tierSpecies.map((s) => s.weight)) : 0;
+      if (minWeightInTier > maxRodWeight * 1.5) {
+        // Fallback to highest tier species the rod can physically handle
+        const compatibleSpecies = speciesPool.filter((s) => s.weight <= maxRodWeight * 1.5);
+        if (compatibleSpecies.length > 0) {
+          tierSpecies = [compatibleSpecies[compatibleSpecies.length - 1]];
+          selectedTier = tierSpecies[0].tier;
+        }
+      }
+    }
+
     const selected =
       tierSpecies.length > 0
         ? tierSpecies[Math.floor(Math.random() * tierSpecies.length)]
         : speciesPool[0];
 
-    // High luck rods give bonus weight potential
-    const weightBonus = 1.0 + Math.min(0.5, luck * 0.12);
-    const weightVariation = (0.88 + Math.random() * 0.28) * weightBonus;
+    // Weight calculation
+    const weightBonus = 1.0 + Math.min(0.35, luck * 0.08);
+    const weightVariation = (0.9 + Math.random() * 0.22) * weightBonus;
     const calculatedWeight = selected.weight * weightVariation;
     // Bounded by rod max weight tolerance with margin
     const finalWeight = Number(
-      Math.min(maxRodWeight * 1.35, Math.max(0.4, calculatedWeight)).toFixed(2)
+      Math.min(maxRodWeight * 1.5, Math.max(0.4, calculatedWeight)).toFixed(2)
     );
     const finalReward = Math.round(selected.rewardCoins * (finalWeight / selected.weight));
 
@@ -6410,6 +6448,7 @@ export class City3DManager {
     this.fishingState = 'idle';
     this.reelProgress = 0;
     this.activeCaughtFish = null;
+    this.pendingHookedFish = null;
     this.fishBiteTimer = 0;
     this.biteReactTimer = 0;
     this.castAnimTimer = 0;
@@ -6621,6 +6660,7 @@ export class City3DManager {
       this.fishBiteTimer -= delta;
       if (this.fishBiteTimer <= 0) {
         this.fishingState = 'bite';
+        this.pendingHookedFish = this.determineCaughtFish();
         this.biteReactTimer = 2.8;
         this.spawnRiverRipple(this.targetBobberPos);
         if (typeof window !== 'undefined') {
@@ -6663,7 +6703,17 @@ export class City3DManager {
         this.fishingBobber.position.y = -0.15 + Math.sin(elapsed * 12) * 0.05;
       }
 
-      this.reelProgress = Math.max(0, this.reelProgress - 15.0 * delta);
+      // Dynamic line tension decay based on hooked fish rarity tier
+      let decayRate = 13.0;
+      const tier = this.pendingHookedFish?.tier || 'common';
+      if (tier === 'uncommon') decayRate = 16.0;
+      else if (tier === 'rare') decayRate = 20.0;
+      else if (tier === 'epic') decayRate = 24.0;
+      else if (tier === 'legendary') decayRate = 28.0;
+      else if (tier === 'mythic') decayRate = 32.0;
+      else if (tier === 'immortal') decayRate = 36.0;
+
+      this.reelProgress = Math.max(0, this.reelProgress - decayRate * delta);
 
       if (this.reelProgress <= 0) {
         this.resetFishing();

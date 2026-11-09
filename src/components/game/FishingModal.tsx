@@ -261,8 +261,27 @@ export default function FishingModal({ isOpen, onClose }: FishingModalProps) {
     setGameState('caught')
     setTotalFishCaught((prev) => prev + 1)
 
-    // Add Coins to wallet
-    updateBalance(chosen.price)
+    // Add Coins to wallet & persist to database
+    const curWallet = useCitizenStore.getState().wallet
+    const curBalance = curWallet?.balance ?? 500
+    updateBalance(curBalance + chosen.price)
+
+    fetch('/api/economy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'earn',
+        amount: chosen.price,
+        description: `Menangkap ikan ${chosen.name} di Dermaga Pancing`,
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.wallet?.balance !== undefined) {
+          updateBalance(data.wallet.balance)
+        }
+      })
+      .catch(() => {})
 
     addNotification({
       title: 'Ikan Berhasil Ditangkap! 🎣✨',
