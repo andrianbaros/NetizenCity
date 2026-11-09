@@ -526,7 +526,8 @@ export class City3DManager {
 
   // Animation and state
   private reqId: number = 0;
-  private clock = new THREE.Clock();
+  private startTime: number = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  private lastTime: number = typeof performance !== 'undefined' ? performance.now() : Date.now();
   private timeOfDay: TimeOfDay = 'noon';
   private cameraMode: CameraMode = 'orbit'; // Main city starts in free Orbit overview
   public viewMode: 'city' | 'tugu' | 'river' | 'stadium' = 'city';
@@ -5008,8 +5009,10 @@ private setupAirplanes() {
     if (this.isDestroyed) return;
     this.reqId = requestAnimationFrame(this.animate);
 
-    const delta = Math.min(this.clock.getDelta(), 0.1);
-    const elapsed = this.clock.getElapsedTime();
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const delta = Math.min((now - this.lastTime) / 1000, 0.1);
+    this.lastTime = now;
+    const elapsed = (now - this.startTime) / 1000;
 
     if (this.viewMode === 'tugu') {
       this.updateCharacter(delta, elapsed);

@@ -252,11 +252,12 @@ export default function MayorMascot3D({ onMayorClick, currentQuote }: MayorMasco
 
     // Animation Loop
     let reqId = 0
-    let clock = new THREE.Clock()
+    const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
     const animate = () => {
       reqId = requestAnimationFrame(animate)
-      const elapsed = clock.getElapsedTime()
+      const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+      const elapsed = (now - startTime) / 1000
 
       // Handle Hop on Click
       if (hopAnimRef.current > 0) {
