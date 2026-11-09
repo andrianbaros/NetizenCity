@@ -30,7 +30,7 @@ export const ROADS = [
   { ax: 'x', c: -59, a0: -126, a1: 104, w: 4.2 },
   { ax: 'z', c: 49, a0: 55, a1: 135, w: 3.8 },
   { ax: 'x', c: 135, a0: 10, a1: 96, w: 3.8 },
-  { ax: 'x', c: -42, a0: 140, a1: 195, w: 4.2 },
+  { ax: 'x', c: -42, a0: 150, a1: 195, w: 4.2 },
   { ax: 'z', c: 150, a0: -42, a1: 33, w: 3.4 },
 ];
 const XS = [];                                                        // intersections
@@ -300,10 +300,24 @@ export function buildMetro(scene, C) {
   const stripe = canvasTex(64, 16, (x, w, h) => { for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#FFFFFF' : '#F0E6E0'; x.fillRect(i * 8, 0, 8, h); } }, true);
   const awn = instanced(new THREE.BoxGeometry(1, .06, .9), new THREE.MeshStandardMaterial({ map: stripe, roughness: .8 }), shops.length, shops.map((s, i) => ['#F2A88A', '#A8DCC8', '#C4B3E3', '#F7D772'][i % 4]));
   scene.add(awn); shopSet.awn = awn;
-  // rumah tapak: 300 small houses at the north-east edge
+  // rumah tapak: residential small houses at the north-east edge (cleanly aligned, never overlapping roads or sidewalks)
+  const hsCollidesRoad = (x, z, w = 1.6, d = 1.3) => {
+    for (const r of ROADS) {
+      const lat = r.ax === 'x' ? z : x;
+      const al = r.ax === 'x' ? x : z;
+      const latSpan = r.w / 2 + SW + 0.6;
+      const minAl = Math.min(r.a0, r.a1) - 0.5;
+      const maxAl = Math.max(r.a0, r.a1) + 0.5;
+      if (Math.abs(lat - r.c) < latSpan && al > minAl && al < maxAl) return true;
+    }
+    return false;
+  };
   const hs = [];
-  for (let i = 0; i < 20; i++) for (let j = 0; j < 15; j++) { const x = 101 + i * 2.5 + (j % 2) * .3, z = -8 - j * 2.8;
-    hs.push({ x, z, w: 1.6, d: 1.3, h: 1.05, c: ['#F7ECD6', '#FFF3E2', '#F6E3D0', '#EEF2F8'][(i + j) % 4], t0: C.rusun + .5 + d0(x, z) / 150 * .8 + hash(i * 3 + j) * .25, dur: .2, floors: 1 }); }
+  for (let i = 0; i < 18; i++) for (let j = 0; j < 15; j++) {
+    const x = 101.5 + i * 2.45 + (j % 2) * .25, z = -8.5 - j * 2.65;
+    if (hsCollidesRoad(x, z)) continue;
+    hs.push({ x, z, w: 1.6, d: 1.3, h: 1.05, c: ['#F7ECD6', '#FFF3E2', '#F6E3D0', '#EEF2F8'][(i + j) % 4], t0: C.rusun + .5 + d0(x, z) / 150 * .8 + hash(i * 3 + j) * .25, dur: .2, floors: 1 });
+  }
   const hsSet = bset(hs, cityMat('#ffffff', { fh: 1.0, base: .3, sx: .8, box: [.3, .7, .2, .62], lit: .5 }), { kind: 'pop', roof: { geo: prism(1.8, .7, 1.5), cols: ['#F2A88A', '#F2B8C6', '#A9C8EC', '#E58F72'] } });
   // Day 4: twelve more apartment towers and thirteen rusun south of the railway, stacked floor by floor under the cranes
   const apt4 = [], rus4 = [];
