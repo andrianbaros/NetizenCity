@@ -507,6 +507,58 @@ interface BuildingCollider {
   radius: number;
 }
 
+interface CityLandmarkNPCSpec {
+  id: string;
+  name: string;
+  role: string;
+  location: 'alun_alun' | 'rumah_ibadah' | 'universitas' | 'bandara' | 'pantai';
+  colors: CitizenAvatarColors;
+  activity: 'walk_patrol' | 'idle_look' | 'sit' | 'wave_greet' | 'photo';
+  basePos: [number, number, number];
+  targetPos?: [number, number, number];
+  facing: number;
+  speed?: number;
+  phase?: number;
+}
+
+const CITY_LANDMARK_DIALOGUES: Record<string, string[]> = {
+  alun_alun: [
+    'Segar banget angin di Alun-Alun!',
+    'Air mancur Monumen megah sekali!',
+    'Foto dulu di Monumen Netizen City!',
+    'Yuk jalan santai keliling taman.',
+    'Bunga-bunga di sini terawat rapi!',
+  ],
+  rumah_ibadah: [
+    'Damai selalu di Kawasan Kerukunan.',
+    'Menyejukkan hati dan jiwa di sini.',
+    'Toleransi adalah keindahan Netizen City.',
+    'Selamat beribadah, saudaraku!',
+    'Suasana taman ini sungguh syahdu.',
+  ],
+  universitas: [
+    'Ayo kumpul di quad kampus!',
+    'Perpustakaan UNC bukunya super lengkap.',
+    'Semangat riset untuk masa depan!',
+    'Ada seminar menarik di Gedung Rektorat.',
+    'Kopi dulu sebelum kuliah berikutnya!',
+  ],
+  bandara: [
+    'Selamat datang di Bandara Internasional Netizen!',
+    'Penerbangan on-time, siap liburan!',
+    'Terminalnya bersih dan modern banget!',
+    'Jangan lupa boarding pass & paspor.',
+    'Pesawat baru mendarat di runway!',
+  ],
+  pantai: [
+    'Angin pantainya sejuk dan menenangkan!',
+    'Sunset di Pantai Netizen paling juara!',
+    'Ayo cari kerang mutiara di tepi ombak!',
+    'Segarnya es kelapa muda di pantai.',
+    'Hati-hati dan perhatikan ombak ya!',
+  ],
+};
+
 
 function makeSpeechBubbleSprite(text: string, bgColor = '#FFFDF9', textColor = '#3B3340'): THREE.Sprite {
   if (typeof document === 'undefined') return new THREE.Sprite();
@@ -839,6 +891,25 @@ export class City3DManager {
   private handlePlayerChat?: (e: any) => void;
   private isDestroyed = false;
 
+  // Ambient City Landmark NPCs (Alun-Alun, Rumah Ibadah, Universitas, Bandara, Pantai)
+  private cityLandmarkNPCs: Array<{
+    id: string;
+    name: string;
+    role: string;
+    location: 'alun_alun' | 'rumah_ibadah' | 'universitas' | 'bandara' | 'pantai';
+    instance: Citizen3DInstance;
+    nameTag: THREE.Sprite;
+    bubble?: THREE.Sprite | null;
+    bubbleTimer?: number;
+    activity: 'walk_patrol' | 'idle_look' | 'sit' | 'wave_greet' | 'photo';
+    basePos: THREE.Vector3;
+    targetPos?: THREE.Vector3;
+    facing: number;
+    speed: number;
+    phase: number;
+  }> = [];
+  private cityNPCBubbleTimer = 5.0;
+
   // Multiplayer Remote Players in Tugu (Max 10 per room)
   public currentTuguRoomId = '1';
   public remotePlayers = new Map<
@@ -944,9 +1015,9 @@ export class City3DManager {
       name: 'Monumen Netizen City & Taman Air Mancur',
       district: 'Pusat Kota',
       type: 'monument',
-      position: new THREE.Vector3(-44, 0, -82),
-      cameraTarget: new THREE.Vector3(-44, 6, -82),
-      cameraPos: new THREE.Vector3(-44, 16, -50),
+      position: new THREE.Vector3(-44, 0, -94),
+      cameraTarget: new THREE.Vector3(-44, 6, -94),
+      cameraPos: new THREE.Vector3(-44, 18, -62),
       radius: 16,
     },
     {
@@ -1445,6 +1516,9 @@ export class City3DManager {
     this.uni = makeUni();
     this.cityWorldGroup.add(this.uni.root);
     this.uni.build(1);
+
+    // Setup ambient animated NPCs in key city landmarks
+    this.setupCityLandmarkNPCs();
 
     this.applyTimeOfDay('noon');
   }
@@ -3115,6 +3189,447 @@ export class City3DManager {
     });
   }
 
+  private setupCityLandmarkNPCs() {
+    this.cityLandmarkNPCs = [];
+
+    const specs: CityLandmarkNPCSpec[] = [
+      // 1. Alun-Alun (Pusat Kota & Monumen)
+      {
+        id: 'alun_rian',
+        name: 'Rian (Fotografer Alun-Alun)',
+        role: 'Fotografer Wisata',
+        location: 'alun_alun',
+        colors: { skin: '#f5d0b0', hair: '#1e293b', hairStyle: 'short', shirt: '#2563eb', pants: '#1e293b', shoes: '#f1f5f9', accessory: 'glasses' },
+        activity: 'photo',
+        basePos: [-41, 0, -82],
+        facing: -Math.PI * 0.85,
+        phase: 0.2,
+      },
+      {
+        id: 'alun_siti',
+        name: 'Siti (Piknik Taman)',
+        role: 'Warga Santai',
+        location: 'alun_alun',
+        colors: { skin: '#fcd5b5', hair: '#9333ea', hairStyle: 'long', shirt: '#ec4899', pants: '#fbcfe8', shoes: '#ffffff' },
+        activity: 'sit',
+        basePos: [-35.5, 0, -90],
+        facing: -Math.PI * 0.4,
+        phase: 1.5,
+      },
+      {
+        id: 'alun_budi',
+        name: 'Budi (Jalan Sore Alun-Alun)',
+        role: 'Warga Pejalan Kaki',
+        location: 'alun_alun',
+        colors: { skin: '#e0ac69', hair: '#475569', hairStyle: 'spiky', shirt: '#10b981', pants: '#1e3a8a', shoes: '#334155' },
+        activity: 'walk_patrol',
+        basePos: [-46, 0, -84],
+        targetPos: [-46, 0, -68],
+        facing: 0,
+        speed: 1.1,
+        phase: 0.5,
+      },
+      {
+        id: 'alun_nadia',
+        name: 'Nadia (Pemandu Alun-Alun)',
+        role: 'Pemandu Wisata',
+        location: 'alun_alun',
+        colors: { skin: '#f5d0b0', hair: '#b45309', hairStyle: 'bob', shirt: '#f97316', pants: '#f5d0b0', shoes: '#7c2d12', backpack: 'backpack' },
+        activity: 'wave_greet',
+        basePos: [-52, 0, -94],
+        facing: Math.PI * 0.35,
+        phase: 2.1,
+      },
+      {
+        id: 'alun_dimas',
+        name: 'Dimas (Jogging Sore)',
+        role: 'Pelari Santai',
+        location: 'alun_alun',
+        colors: { skin: '#c68642', hair: '#1e293b', hairStyle: 'short', shirt: '#06b6d4', pants: '#0f172a', shoes: '#ef4444' },
+        activity: 'walk_patrol',
+        basePos: [-34, 0, -98],
+        targetPos: [-34, 0, -88],
+        facing: 0,
+        speed: 1.7,
+        phase: 3.2,
+      },
+
+      // 2. Rumah Ibadah (Kawasan Kerukunan: KERUK = -75, 0, -35)
+      {
+        id: 'ibadah_mansur',
+        name: 'Ustadz Mansur (Imam Masjid)',
+        role: 'Tokoh Agama',
+        location: 'rumah_ibadah',
+        colors: { skin: '#e0ac69', hair: '#1e293b', hairStyle: 'short', shirt: '#ffffff', pants: '#065f46', shoes: '#78350f' },
+        activity: 'wave_greet',
+        basePos: [-75, 0, -45],
+        facing: 0,
+        phase: 0.8,
+      },
+      {
+        id: 'ibadah_anton',
+        name: 'Pastor Anton (Gereja Damai)',
+        role: 'Pemuka Agama',
+        location: 'rumah_ibadah',
+        colors: { skin: '#f5d0b0', hair: '#475569', hairStyle: 'short', shirt: '#334155', pants: '#1e293b', shoes: '#0f172a' },
+        activity: 'idle_look',
+        basePos: [-69.5, 0, -40],
+        facing: -Math.PI * 0.6,
+        phase: 1.2,
+      },
+      {
+        id: 'ibadah_maria',
+        name: 'Ibu Maria (Warga Kerukunan)',
+        role: 'Jemaat Kerukunan',
+        location: 'rumah_ibadah',
+        colors: { skin: '#fcd5b5', hair: '#b45309', hairStyle: 'curly', shirt: '#c084fc', pants: '#f8fafc', shoes: '#e2e8f0' },
+        activity: 'sit',
+        basePos: [-78, 0, -33],
+        facing: Math.PI * 0.5,
+        phase: 2.7,
+      },
+      {
+        id: 'ibadah_made',
+        name: 'Bli Made (Pengurus Pura)',
+        role: 'Tokoh Budaya',
+        location: 'rumah_ibadah',
+        colors: { skin: '#c68642', hair: '#1e293b', hairStyle: 'short', shirt: '#fde047', pants: '#ffffff', shoes: '#78350f' },
+        activity: 'walk_patrol',
+        basePos: [-79, 0, -28],
+        targetPos: [-74, 0, -25],
+        facing: Math.PI * 0.4,
+        speed: 1.0,
+        phase: 0.3,
+      },
+      {
+        id: 'ibadah_aisyah',
+        name: 'Aisyah (Relawan Kerukunan)',
+        role: 'Relawan Pemuda',
+        location: 'rumah_ibadah',
+        colors: { skin: '#f5d0b0', hair: '#1e293b', hairStyle: 'long', shirt: '#a7f3d0', pants: '#fef3c7', shoes: '#f1f5f9', backpack: 'backpack' },
+        activity: 'walk_patrol',
+        basePos: [-71, 0, -33],
+        targetPos: [-73, 0, -37],
+        facing: -Math.PI * 0.5,
+        speed: 0.9,
+        phase: 1.9,
+      },
+
+      // 3. Universitas Netizen City (UNI = 58, 0, -80)
+      {
+        id: 'uni_hendra',
+        name: 'Prof. Hendra (Rektorat UNC)',
+        role: 'Dosen & Peneliti',
+        location: 'universitas',
+        colors: { skin: '#e0ac69', hair: '#475569', hairStyle: 'short', shirt: '#1e3a8a', pants: '#d97706', shoes: '#0f172a', accessory: 'glasses' },
+        activity: 'idle_look',
+        basePos: [58, 0, -86],
+        facing: 0,
+        phase: 0.4,
+      },
+      {
+        id: 'uni_tiara',
+        name: 'Tiara (Mahasiswi UNC)',
+        role: 'Mahasiswi Berprestasi',
+        location: 'universitas',
+        colors: { skin: '#fcd5b5', hair: '#9333ea', hairStyle: 'long', shirt: '#fbbf24', pants: '#3b82f6', shoes: '#ffffff', backpack: 'backpack' },
+        activity: 'sit',
+        basePos: [55, 0, -78],
+        facing: Math.PI * 0.3,
+        phase: 1.6,
+      },
+      {
+        id: 'uni_aldi',
+        name: 'Aldi (Mahasiswa Teknik)',
+        role: 'Mahasiswa UNC',
+        location: 'universitas',
+        colors: { skin: '#c68642', hair: '#1e293b', hairStyle: 'spiky', shirt: '#ef4444', pants: '#18181b', shoes: '#e4e4e7' },
+        activity: 'walk_patrol',
+        basePos: [62, 0, -84],
+        targetPos: [62, 0, -72],
+        facing: 0,
+        speed: 1.2,
+        phase: 2.5,
+      },
+      {
+        id: 'uni_farhan',
+        name: 'Farhan (Ketua BEM UNC)',
+        role: 'Aktivis Kampus',
+        location: 'universitas',
+        colors: { skin: '#f5d0b0', hair: '#b45309', hairStyle: 'short', shirt: '#1e40af', pants: '#e2e8f0', shoes: '#713f12' },
+        activity: 'wave_greet',
+        basePos: [53, 0, -74],
+        facing: -Math.PI * 0.4,
+        phase: 3.1,
+      },
+      {
+        id: 'uni_dina',
+        name: 'Dina (Peneliti Muda)',
+        role: 'Asisten Lab',
+        location: 'universitas',
+        colors: { skin: '#fcd5b5', hair: '#1e293b', hairStyle: 'bob', shirt: '#f8fafc', pants: '#0d9488', shoes: '#334155', accessory: 'glasses' },
+        activity: 'walk_patrol',
+        basePos: [65, 0, -80],
+        targetPos: [72, 0, -80],
+        facing: Math.PI / 2,
+        speed: 1.1,
+        phase: 0.7,
+      },
+
+      // 4. Bandara Internasional Netizen (AIR.term = 189, 0, -42)
+      {
+        id: 'air_arya',
+        name: 'Kapten Arya (Pilot Netizen Air)',
+        role: 'Pilot Komersial',
+        location: 'bandara',
+        colors: { skin: '#e0ac69', hair: '#1e293b', hairStyle: 'short', shirt: '#0f172a', pants: '#0f172a', shoes: '#020617', accessory: 'glasses' },
+        activity: 'idle_look',
+        basePos: [184, 0, -40],
+        facing: Math.PI * 0.5,
+        phase: 1.1,
+      },
+      {
+        id: 'air_sari',
+        name: 'Sari (Awak Kabin)',
+        role: 'Pramugari Ramah',
+        location: 'bandara',
+        colors: { skin: '#fcd5b5', hair: '#b45309', hairStyle: 'long', shirt: '#be185d', pants: '#831843', shoes: '#0f172a' },
+        activity: 'wave_greet',
+        basePos: [186, 0, -38],
+        facing: Math.PI * 0.2,
+        phase: 2.3,
+      },
+      {
+        id: 'air_joko',
+        name: 'Pak Joko (Wisatawan Mancanegara)',
+        role: 'Turis Kedatangan',
+        location: 'bandara',
+        colors: { skin: '#c68642', hair: '#475569', hairStyle: 'short', shirt: '#c2410c', pants: '#334155', shoes: '#78350f', backpack: 'backpack' },
+        activity: 'walk_patrol',
+        basePos: [178, 0, -44],
+        targetPos: [187, 0, -44],
+        facing: Math.PI / 2,
+        speed: 1.0,
+        phase: 0.9,
+      },
+      {
+        id: 'air_kevin',
+        name: 'Kevin (Backpacker)',
+        role: 'Petualang Wisata',
+        location: 'bandara',
+        colors: { skin: '#f5d0b0', hair: '#9333ea', hairStyle: 'spiky', shirt: '#0284c7', pants: '#64748b', shoes: '#f8fafc', backpack: 'backpack' },
+        activity: 'photo',
+        basePos: [180, 0, -36],
+        facing: -Math.PI * 0.25,
+        phase: 1.8,
+      },
+      {
+        id: 'air_budi',
+        name: 'Budi (Ground Handling)',
+        role: 'Staf Bandara',
+        location: 'bandara',
+        colors: { skin: '#8d5524', hair: '#1e293b', hairStyle: 'short', shirt: '#facc15', pants: '#1f2937', shoes: '#111827' },
+        activity: 'idle_look',
+        basePos: [195, 0, -45],
+        facing: -Math.PI * 0.5,
+        phase: 3.0,
+      },
+
+      // 5. Pantai Netizen Beach (Pesisir & Menara Pantai)
+      {
+        id: 'beach_bayu',
+        name: 'Bayu (Lifeguard Pantai)',
+        role: 'Penjaga Pantai',
+        location: 'pantai',
+        colors: { skin: '#c68642', hair: '#1e293b', hairStyle: 'short', shirt: '#ef4444', pants: '#ef4444', shoes: '#f59e0b', accessory: 'glasses' },
+        activity: 'idle_look',
+        basePos: [-209, 0, 177],
+        facing: -Math.PI * 0.75,
+        phase: 0.5,
+      },
+      {
+        id: 'beach_cindy',
+        name: 'Cindy (Wisatawan Pantai)',
+        role: 'Wisatawan Santai',
+        location: 'pantai',
+        colors: { skin: '#fcd5b5', hair: '#b45309', hairStyle: 'long', shirt: '#fde047', pants: '#2dd4bf', shoes: '#ffffff' },
+        activity: 'sit',
+        basePos: [-213, 0, 172],
+        facing: -Math.PI * 0.6,
+        phase: 1.4,
+      },
+      {
+        id: 'beach_rangga',
+        name: 'Rangga (Pencari Kerang)',
+        role: 'Pecinta Alam Pesisir',
+        location: 'pantai',
+        colors: { skin: '#e0ac69', hair: '#1e293b', hairStyle: 'spiky', shirt: '#38bdf8', pants: '#f8fafc', shoes: '#78350f' },
+        activity: 'walk_patrol',
+        basePos: [-221, 0, 170],
+        targetPos: [-217, 0, 180],
+        facing: Math.PI * 0.3,
+        speed: 1.1,
+        phase: 2.2,
+      },
+      {
+        id: 'beach_maya',
+        name: 'Maya (Piknik Pantai)',
+        role: 'Wisatawan Kuliner',
+        location: 'pantai',
+        colors: { skin: '#f5d0b0', hair: '#9333ea', hairStyle: 'bob', shirt: '#fb7185', pants: '#d97706', shoes: '#78350f' },
+        activity: 'sit',
+        basePos: [-214, 0, 166],
+        facing: -Math.PI * 0.4,
+        phase: 0.1,
+      },
+      {
+        id: 'beach_geri',
+        name: 'Geri (Sunset Chaser)',
+        role: 'Fotografer Alam',
+        location: 'pantai',
+        colors: { skin: '#f5d0b0', hair: '#475569', hairStyle: 'short', shirt: '#fef3c7', pants: '#d97706', shoes: '#78350f', accessory: 'glasses' },
+        activity: 'photo',
+        basePos: [-217, 0, 164],
+        facing: -Math.PI * 0.8,
+        phase: 2.9,
+      },
+    ];
+
+    specs.forEach((spec) => {
+      const instance = makeCitizen3D(spec.colors);
+      const basePos = new THREE.Vector3(...spec.basePos);
+      const targetPos = spec.targetPos ? new THREE.Vector3(...spec.targetPos) : undefined;
+
+      instance.root.position.copy(basePos);
+      instance.root.rotation.y = spec.facing;
+
+      // Disable frustum culling on child meshes so they don't vanish on screen edges
+      instance.root.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          obj.frustumCulled = false;
+        }
+      });
+
+      // Pose adjustments for sitting or holding camera
+      if (spec.activity === 'sit') {
+        instance.leftLeg.rotation.x = -Math.PI / 2.2;
+        instance.rightLeg.rotation.x = -Math.PI / 2.2;
+        instance.body.position.y = -0.16;
+        instance.leftArm.rotation.x = -0.3;
+        instance.rightArm.rotation.x = -0.3;
+      } else if (spec.activity === 'photo') {
+        instance.leftArm.rotation.x = -1.2;
+        instance.rightArm.rotation.x = -1.2;
+        instance.leftArm.rotation.z = 0.35;
+        instance.rightArm.rotation.z = -0.35;
+      }
+
+      // Add hovering nametag
+      const nameTag = makeNameTagSprite(spec.name, false, false);
+      nameTag.position.set(0, 1.5, 0);
+      nameTag.scale.set(3.4, 0.78, 1);
+      instance.root.add(nameTag);
+
+      this.cityWorldGroup.add(instance.root);
+
+      this.cityLandmarkNPCs.push({
+        id: spec.id,
+        name: spec.name,
+        role: spec.role,
+        location: spec.location,
+        instance,
+        nameTag,
+        activity: spec.activity,
+        basePos,
+        targetPos,
+        facing: spec.facing,
+        speed: spec.speed || 1.0,
+        phase: spec.phase || 0,
+      });
+    });
+  }
+
+  private updateCityLandmarkNPCs(delta: number, elapsed: number) {
+    if (this.viewMode !== 'city' || this.cityLandmarkNPCs.length === 0) return;
+
+    for (let i = 0; i < this.cityLandmarkNPCs.length; i++) {
+      const npc = this.cityLandmarkNPCs[i];
+      const { instance, activity, basePos, targetPos, speed, phase, facing } = npc;
+
+      // Handle speech bubble lifespan
+      if (npc.bubble) {
+        npc.bubbleTimer = (npc.bubbleTimer || 0) - delta;
+        if (npc.bubbleTimer <= 0) {
+          instance.root.remove(npc.bubble);
+          npc.bubble = null;
+        }
+      }
+
+      if (activity === 'walk_patrol' && targetPos) {
+        const t = (Math.sin(elapsed * speed + phase) + 1) * 0.5;
+        instance.root.position.lerpVectors(basePos, targetPos, t);
+
+        const movingTowardsTarget = Math.cos(elapsed * speed + phase) > 0;
+        const targetYaw = movingTowardsTarget
+          ? Math.atan2(targetPos.x - basePos.x, targetPos.z - basePos.z)
+          : Math.atan2(basePos.x - targetPos.x, basePos.z - targetPos.z);
+        instance.root.rotation.y = targetYaw;
+
+        instance.pose(true, elapsed, 4.0);
+      } else if (activity === 'sit') {
+        const breath = Math.sin(elapsed * 1.8 + phase) * 0.015;
+        instance.body.position.y = -0.16 + breath;
+        instance.head.rotation.y = Math.sin(elapsed * 0.7 + phase) * 0.28;
+      } else if (activity === 'wave_greet') {
+        instance.pose(false, elapsed);
+        const wave = Math.sin(elapsed * 1.8 + phase);
+        if (wave > 0.2) {
+          instance.rightArm.rotation.x = -0.2;
+          instance.rightArm.rotation.z = Math.PI - 0.5 + Math.sin(elapsed * 8) * 0.35;
+        } else {
+          instance.rightArm.rotation.z = THREE.MathUtils.lerp(instance.rightArm.rotation.z, 0, 0.1);
+        }
+        instance.head.rotation.y = Math.sin(elapsed * 0.8 + phase) * 0.2;
+      } else if (activity === 'photo') {
+        instance.leftArm.rotation.x = -1.2 + Math.sin(elapsed * 1.2 + phase) * 0.05;
+        instance.rightArm.rotation.x = -1.2 + Math.sin(elapsed * 1.2 + phase) * 0.05;
+        instance.head.rotation.x = -0.15 + Math.sin(elapsed * 0.9 + phase) * 0.08;
+        instance.head.rotation.y = Math.sin(elapsed * 0.5 + phase) * 0.15;
+        instance.body.position.y = Math.sin(elapsed * 1.5 + phase) * 0.01;
+      } else {
+        instance.pose(false, elapsed);
+        instance.root.rotation.y = facing + Math.sin(elapsed * 0.6 + phase) * 0.3;
+        instance.head.rotation.y = Math.sin(elapsed * 0.9 + phase) * 0.25;
+      }
+    }
+
+    // Occasional ambient dialog bubbles from city NPCs
+    this.cityNPCBubbleTimer -= delta;
+    if (this.cityNPCBubbleTimer <= 0) {
+      this.cityNPCBubbleTimer = 5.0 + Math.random() * 4.0;
+      this.triggerRandomCityNPCBubble();
+    }
+  }
+
+  private triggerRandomCityNPCBubble() {
+    if (this.cityLandmarkNPCs.length === 0) return;
+    const available = this.cityLandmarkNPCs.filter((c) => !c.bubble);
+    if (available.length === 0) return;
+
+    const npc = available[Math.floor(Math.random() * available.length)];
+    const dialogues = CITY_LANDMARK_DIALOGUES[npc.location] || [
+      'Netizen City kotaku tercinta!',
+      'Suasananya menyenangkan sekali hari ini!',
+    ];
+    const text = dialogues[Math.floor(Math.random() * dialogues.length)];
+
+    const bubble = makeSpeechBubbleSprite(text, '#FFFDF9', '#343B35');
+    bubble.position.set(0, 2.3, 0);
+    npc.instance.root.add(bubble);
+    npc.bubble = bubble;
+    npc.bubbleTimer = 5.0;
+  }
+
   public updateGatePopulation(count: number) {
     if (this.gateBoard) {
       this.gateBoard.set(count.toLocaleString('id-ID'));
@@ -4740,7 +5255,7 @@ private setupAirplanes() {
     this.colliders.push({ x: 0, z: 27.6, radius: 2.2 });
 
     // 3. Monumen Netizen City (center plinth and fountain)
-    this.colliders.push({ x: -44, z: -82, radius: 4.8 });
+    this.colliders.push({ x: -44, z: -94, radius: 4.8 });
 
     // 4. Mall Perbelanjaan Netizen
     this.colliders.push({ x: MALL.x, z: MALL.z, radius: 9.2 });
@@ -6203,6 +6718,7 @@ private setupAirplanes() {
       if (this.fireflies && (this.timeOfDay === 'night' || this.timeOfDay === 'sunset')) {
         this.fireflies.update(elapsed, 1.0);
       }
+      this.updateCityLandmarkNPCs(delta, elapsed);
     }
 
     // Render 3D Scene
@@ -6223,7 +6739,7 @@ private setupAirplanes() {
         color: '#E67E22',
         earColor: '#D35400',
         hint: 'Suka berjemur di dekat Taman Monumen Alun-Alun',
-        pos: new THREE.Vector3(12, 0, -78),
+        pos: new THREE.Vector3(-40, 0, -90),
       },
       {
         id: 'cat_mimi',
@@ -6402,7 +6918,7 @@ private setupAirplanes() {
         this.spherical.phi = Math.PI / 2.25;
         this.spherical.theta = this.playerFacing + Math.PI;
       } else {
-        this.target.set(-44, 2, -82);
+        this.target.set(-44, 2, -94);
         this.spherical.radius = 7.5;
         this.spherical.phi = Math.PI / 2.25;
         this.spherical.theta = 0;
@@ -6414,7 +6930,7 @@ private setupAirplanes() {
         this.spherical.phi = Math.PI / 3.2;
         this.spherical.theta = Math.PI * 0.75;
       } else {
-        this.target.set(-44, 4, -82);
+        this.target.set(-44, 4, -94);
         this.spherical.radius = 32.0;
         this.spherical.phi = Math.PI / 3.2;
         this.spherical.theta = Math.PI * 0.75;
@@ -6425,7 +6941,7 @@ private setupAirplanes() {
         this.spherical.radius = 26.0;
         this.spherical.phi = Math.PI / 6.5;
       } else {
-        this.target.set(-44, 0, -82);
+        this.target.set(-44, 0, -94);
         this.spherical.radius = 60.0;
         this.spherical.phi = Math.PI / 6.5;
       }
@@ -6435,7 +6951,7 @@ private setupAirplanes() {
         this.spherical.radius = 8.0;
         this.spherical.phi = Math.PI / 2.05;
       } else {
-        this.target.set(-44, 1, -82);
+        this.target.set(-44, 1, -94);
         this.spherical.radius = 20.0;
         this.spherical.phi = Math.PI / 2.05;
       }
@@ -6463,6 +6979,7 @@ private setupAirplanes() {
 
     this.unsubscribeCitizen?.();
     this.unsubscribeGameStore?.();
+    this.cityLandmarkNPCs = [];
 
     const el = this.container;
     el.removeEventListener('contextmenu', this.onContextMenu);

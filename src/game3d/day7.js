@@ -368,7 +368,7 @@ function ribbon(curve, w, n) {
 export function makeStamp() { const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.CylinderGeometry(.05, .06, .2, 10).translate(0, .14, 0), mat(PAL.woodDark)), new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8).translate(0, .26, 0), mat(PAL.wood)), new THREE.Mesh(new THREE.BoxGeometry(.2, .05, .14).translate(0, .025, 0), mat('#7FCFB2'))); return sh(g); }
 
 // ---------- the Prasasti Investor Kota at the entrance of the Monument garden (the Monument behind it never changes) ----------
-export const PRAS = new THREE.Vector3(-39.4, 0, -66.5);
+export const PRAS = new THREE.Vector3(-39.4, 0, -78.5);
 export function makePrasasti() {
   const root = new THREE.Group(), stone = mat('#EFE3CC', { roughness: .9 });
   const face = signTex((x, v, w, h) => { x.fillStyle = '#EFE3CC'; x.fillRect(0, 0, w, h); x.strokeStyle = '#CDBB98'; x.lineWidth = 10; x.strokeRect(14, 14, w - 28, h - 28);
