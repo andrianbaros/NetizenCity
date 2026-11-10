@@ -5709,7 +5709,9 @@ export class City3DManager {
       const existing = this.remotePlayers.get(p.id);
       if (existing) {
         existing.missingSince = 0; // Reset missing timer
-        const targetY = isFishingMode && p.z < 2.5 ? 0.35 : 0;
+        const targetY = isBeach
+          ? (p.x <= 1.5 && p.z >= 26.0 && p.z <= 30.0 ? 0.35 : 0)
+          : (isRiver && p.z < 2.5 ? 0.35 : 0);
         const targetV = new THREE.Vector3(p.x, targetY, p.z);
         const dist = existing.root.position.distanceTo(targetV);
         existing.lastServerTime = now;
@@ -5773,7 +5775,9 @@ export class City3DManager {
           }
         });
 
-        const targetY = isFishingMode && p.z < 2.5 ? 0.35 : 0;
+        const targetY = isBeach
+          ? (p.x <= 1.5 && p.z >= 26.0 && p.z <= 30.0 ? 0.35 : 0)
+          : (isRiver && p.z < 2.5 ? 0.35 : 0);
         citizen.root.position.set(p.x, targetY, p.z);
         citizen.root.rotation.y = typeof p.facing === 'number' && Number.isFinite(p.facing) ? p.facing : 0;
 
@@ -5963,9 +5967,15 @@ export class City3DManager {
         if (isRiver) {
           remote.targetPos.x = Math.max(-3.5, Math.min(3.5, remote.targetPos.x));
           remote.targetPos.z = Math.max(-18.0, Math.min(4.0, remote.targetPos.z));
+          remote.targetPos.y = remote.targetPos.z < 2.5 ? 0.35 : 0.0;
+        } else if (this.viewMode === 'beach') {
+          remote.targetPos.x = Math.max(-17.0, Math.min(18.0, remote.targetPos.x));
+          remote.targetPos.z = Math.max(-30.0, Math.min(46.0, remote.targetPos.z));
+          remote.targetPos.y = (remote.targetPos.x <= 1.5 && remote.targetPos.z >= 26.0 && remote.targetPos.z <= 30.0) ? 0.35 : 0.0;
         } else {
           remote.targetPos.x = Math.max(-35.0, Math.min(35.0, remote.targetPos.x));
           remote.targetPos.z = Math.max(-35.0, Math.min(35.0, remote.targetPos.z));
+          remote.targetPos.y = 0.0;
         }
       }
 
