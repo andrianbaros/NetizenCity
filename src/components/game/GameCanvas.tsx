@@ -35,6 +35,7 @@ import {
   Eye,
   Plus,
   Minus,
+  Gamepad2,
   Users,
   Check,
   Fish,
@@ -233,6 +234,45 @@ export default function GameCanvas() {
       type: 'info',
     })
   }
+
+  // Virtual Analog Joystick visibility: ALWAYS visible on Mobile, Tablets (iPads, Android tablets),
+  // and Touchscreens, while allowing desktop users to also toggle it anytime.
+  const [showJoystick, setShowJoystick] = useState(true)
+
+  useEffect(() => {
+    const checkNeedJoystick = () => {
+      if (typeof window === 'undefined') return
+
+      const hasTouch =
+        'ontouchstart' in window ||
+        Boolean(navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+        Boolean(window.matchMedia?.('(pointer: coarse)').matches)
+
+      // Tablets (iPad / Android Tab), phones, and all touch devices ALWAYS show the joystick
+      if (hasTouch) {
+        setShowJoystick(true)
+        return
+      }
+
+      // Check if user saved manual preference
+      const savedPref = localStorage.getItem('nc_show_joystick')
+      if (savedPref !== null) {
+        setShowJoystick(savedPref === 'true')
+        return
+      }
+
+      // On non-touch desktop screens with mouse & physical keyboard, hide on large monitors
+      const isDesktopNoTouch =
+        Boolean(window.matchMedia?.('(pointer: fine)').matches) &&
+        window.innerWidth >= 1024
+
+      setShowJoystick(!isDesktopNoTouch)
+    }
+
+    checkNeedJoystick()
+    window.addEventListener('resize', checkNeedJoystick)
+    return () => window.removeEventListener('resize', checkNeedJoystick)
+  }, [])
 
   // Multiplayer Room State from Zustand Store (Alun-Alun Tugu & Sungai Dermaga Pancing)
   const currentRoomId = useGameStore((s) => s.currentRoomId)
@@ -1335,17 +1375,39 @@ export default function GameCanvas() {
           >
             <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 stroke-[2.2]" />
           </button>
+
+          {/* Toggle Virtual Analog Joystick (Visible on Tablet, Mobile, and Desktops) */}
+          <button
+            type="button"
+            onClick={() => {
+              const next = !showJoystick
+              setShowJoystick(next)
+              if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('nc_show_joystick', String(next))
+              }
+            }}
+            title={showJoystick ? 'Sembunyikan Analog Joystick' : 'Tampilkan Analog Joystick'}
+            aria-label="Toggle Analog Joystick"
+            className={`w-5.5 h-5.5 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-md sm:rounded-lg border shadow-xs flex items-center justify-center cursor-pointer transition-all touch-manipulation active:translate-y-0.5 ${
+              showJoystick
+                ? 'bg-[#668B65] text-white border-[#3D5A3C]'
+                : 'bg-white/90 hover:bg-[#EFE9D8] text-[#343B35] border-[#D8CEBE]'
+            }`}
+          >
+            <Gamepad2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 stroke-[2.2]" />
+          </button>
         </div>
       </div>
       )}
 
       {/* ============================================================ */}
-      {/* VIRTUAL ANALOG JOYSTICK (Tugu, River, Stadium & Beach on Touch) */}
+      {/* VIRTUAL ANALOG JOYSTICK (Tugu, River, Stadium & Beach)       */}
+      {/* ALWAYS ACTIVE on Tablets (iPads, Android Tabs) & Mobile      */}
       {/* Elevated thumb-friendly ergonomic sweet spot (Roblox mobile style) */}
       {/* Positioned comfortably above bottom bars & away from screen edge */}
       {/* ============================================================ */}
-      {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium' || viewMode === 'beach') && (
-        <div className="md:hidden absolute bottom-[calc(env(safe-area-inset-bottom,0px)+9.5rem)] left-[calc(env(safe-area-inset-left,0px)+1.5rem)] z-30 pointer-events-auto">
+      {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium' || viewMode === 'beach') && showJoystick && (
+        <div className="absolute bottom-[calc(env(safe-area-inset-bottom,0px)+9.5rem)] left-[calc(env(safe-area-inset-left,0px)+1.5rem)] z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}
