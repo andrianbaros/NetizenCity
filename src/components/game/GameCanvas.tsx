@@ -263,14 +263,10 @@ export default function GameCanvas() {
         Boolean(item.isEquipped || (item as any).is_equipped) &&
         ((item.itemId || (item as any).item_id || '').startsWith('rod_') || item.category === 'tools')
     )
-    if (equipped) {
-      const rodId = equipped.itemId || (equipped as any).item_id
-      const rodDef = getFishingRodById(rodId)
-      cityManagerRef.current.updateEquippedRod(rodDef)
-    } else {
-      cityManagerRef.current.updateEquippedRod(null)
-    }
-  }, [inventory])
+    const rodId = equipped?.itemId || (equipped as any)?.item_id || 'rod_wooden'
+    const rodDef = getFishingRodById(rodId)
+    cityManagerRef.current.updateEquippedRod(rodDef)
+  }, [inventory, viewMode])
 
   useEffect(() => {
     setMounted(true)
@@ -983,9 +979,10 @@ export default function GameCanvas() {
     cityManagerRef.current?.setVirtualMovement(dir)
   }, [])
 
-  // Auto-Fishing Lifecycle Automation
+  // Auto-Fishing Lifecycle Automation (Supports both River and Beach on all 7 rod tiers)
   useEffect(() => {
-    if (!isAutoFishing || viewMode !== 'river') {
+    const isFishingMode = viewMode === 'river' || viewMode === 'beach'
+    if (!isAutoFishing || !isFishingMode) {
       if (autoFishingTimerRef.current) clearTimeout(autoFishingTimerRef.current)
       return
     }
@@ -996,36 +993,36 @@ export default function GameCanvas() {
       // Auto cast line in the center after a brief delay
       autoFishingTimerRef.current = setTimeout(() => {
         cityManagerRef.current?.castFishingLine()
-      }, 700)
+      }, 550)
     } else if (fishingState === 'bite') {
-      // Quick reaction strike within 250ms
+      // Quick reaction strike within 200ms
       autoFishingTimerRef.current = setTimeout(() => {
         cityManagerRef.current?.reelFishingTap()
-      }, 250)
+      }, 200)
     } else if (fishingState === 'reeling') {
       // Rapid reel clicks until 100%
       const interval = setInterval(() => {
         cityManagerRef.current?.reelFishingTap()
-      }, 100)
+      }, 80)
       return () => clearInterval(interval)
     } else if (fishingState === 'caught') {
       // Successfully caught fish
       setAutoCatchCount((prev) => prev + 1)
-      // Celebrate for 2.2 seconds so user sees the catch, then auto reset and recast
+      // Celebrate for 2.0 seconds so user sees the catch, then auto reset and recast
       autoFishingTimerRef.current = setTimeout(() => {
         cityManagerRef.current?.resetFishing()
         autoFishingTimerRef.current = setTimeout(() => {
           cityManagerRef.current?.castFishingLine()
-        }, 500)
-      }, 2200)
+        }, 400)
+      }, 2000)
     } else if (fishingState === 'escaped') {
       // If escaped, retry quickly
       autoFishingTimerRef.current = setTimeout(() => {
         cityManagerRef.current?.resetFishing()
         autoFishingTimerRef.current = setTimeout(() => {
           cityManagerRef.current?.castFishingLine()
-        }, 500)
-      }, 900)
+        }, 400)
+      }, 800)
     }
 
     return () => {
@@ -1400,23 +1397,14 @@ export default function GameCanvas() {
                 <button
                   type="button"
                   onClick={() => {
-                    const hasRod = inventory.some(
-                      (i) => i.isEquipped && ((i.itemId || (i as any).item_id || '').startsWith('rod_') || i.category === 'tools')
-                    )
-                    if (!hasRod && !isAutoFishing) {
-                      useUIStore.getState().addNotification({
-                        title: 'Perlu Joran Pancing! 🎣',
-                        message:
-                          'Kamu belum memasang joran pancing. Buka Tas Barang (🎒) untuk memasang joran terlebih dahulu!',
-                        type: 'warning',
-                      })
-                      useUIStore.getState().openModal('inventory')
-                      return
-                    }
                     const next = !isAutoFishing
                     setIsAutoFishing(next)
                     if (next) {
-                      cityManagerRef.current?.castFishingLine()
+                      if (fishingState === 'idle') {
+                        cityManagerRef.current?.castFishingLine()
+                      } else if (fishingState === 'bite' || fishingState === 'reeling') {
+                        cityManagerRef.current?.reelFishingTap()
+                      }
                     }
                   }}
                   className={`flex items-center space-x-1 px-3 py-2 sm:px-4 sm:py-3 rounded-2xl font-black text-xs sm:text-sm transition-all cursor-pointer border shadow-md active:scale-95 ${

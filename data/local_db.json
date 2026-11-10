@@ -342,18 +342,18 @@
     {
       "id": "w-c-8x5lwnp",
       "citizen_id": "c-8x5lwnp",
-      "balance": 99999,
-      "total_earned": 100249,
+      "balance": 9999999,
+      "total_earned": 9999999,
       "total_spent": 0,
-      "updated_at": "2026-11-10T12:38:26.883Z"
+      "updated_at": "2026-11-10T12:58:57.223Z"
     },
     {
       "id": "w-c-mayor-01",
       "citizen_id": "c-mayor-01",
-      "balance": 99999,
-      "total_earned": 99999,
+      "balance": 9999999,
+      "total_earned": 9999999,
       "total_spent": 0,
-      "updated_at": "2026-11-10T12:38:26.883Z"
+      "updated_at": "2026-11-10T12:58:57.223Z"
     }
   ],
   "transactions": [

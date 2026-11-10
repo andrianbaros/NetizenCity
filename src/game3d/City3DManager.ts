@@ -6766,17 +6766,11 @@ export class City3DManager {
 
   public castFishingLine(targetWaterPos?: THREE.Vector3) {
     if (!this.currentEquippedRod) {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('fishing-no-rod', {
-            detail: {
-              message:
-                'Kamu belum memasang Joran Pancing! Buka Tas Barang (🎒) dan pasang joran terlebih dahulu.',
-            },
-          })
-        );
+      this.currentEquippedRod = FISHING_RODS[0];
+      if (this.fishingRodGroup) {
+        this.constructFishingRodGeometry(this.currentEquippedRod);
+        this.fishingRodGroup.visible = true;
       }
-      return;
     }
     if (this.fishingState !== 'idle') return;
 
@@ -6887,7 +6881,7 @@ export class City3DManager {
       else if (tier === 'immortal') tapGain = 4.2;
 
       const rodSpeed = this.currentEquippedRod?.fishingSpeed ?? 1.0;
-      tapGain *= Math.min(2.0, Math.max(0.8, rodSpeed * 0.95));
+      tapGain *= Math.min(3.5, Math.max(0.8, rodSpeed * 0.95));
 
       this.reelProgress = Math.min(100, this.reelProgress + tapGain);
       this.spawnRiverRipple(this.targetBobberPos);
@@ -7017,17 +7011,10 @@ export class City3DManager {
   }
 
   public updateEquippedRod(rodDef: FishingRodDefinition | null) {
-    this.currentEquippedRod = rodDef;
-    if (!rodDef) {
-      if (this.fishingRodGroup) {
-        this.fishingRodGroup.visible = false;
-      }
-      return;
-    }
-
+    this.currentEquippedRod = rodDef || FISHING_RODS[0];
     if (this.fishingRodGroup) {
       this.fishingRodGroup.visible = this.viewMode === 'river' || this.viewMode === 'beach';
-      this.constructFishingRodGeometry(rodDef);
+      this.constructFishingRodGeometry(this.currentEquippedRod);
     }
   }
 

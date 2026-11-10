@@ -190,10 +190,12 @@ export default function GameHUD() {
 
             // If local activity has a newer or equal timestamp than server's container DB,
             // or if server balance reverted to stale 500/old cache while local has verified activity:
+            const isServerBoost = serverBalance > localBal
             const isLocalMoreAuthoritative =
-              (localTime >= serverTime && localBal !== serverBalance) ||
-              (serverBalance < localBal && localBal >= 50000) ||
-              (serverBalance === 500 && localBal !== 500 && (localSpent > 0 || localEarned > 500))
+              !isServerBoost &&
+              ((localTime >= serverTime && localBal !== serverBalance) ||
+              (serverBalance < localBal) ||
+              (serverBalance === 500 && localBal !== 500 && (localSpent > 0 || localEarned > 500)))
 
             if (isLocalMoreAuthoritative) {
               // Self-heal serverless container DB with client's confirmed wallet
