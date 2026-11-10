@@ -8,9 +8,9 @@ import {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { avatarConfig, itemId } = body
+    const { avatarConfig, itemId, citizenId: bodyCitizenId } = body
 
-    const citizenId = request.cookies.get('nc_citizen_id')?.value
+    const citizenId = request.cookies.get('nc_citizen_id')?.value || bodyCitizenId
     const citizen = getActiveCitizen(citizenId)
     if (!citizen) {
       return NextResponse.json({ error: 'Citizen not found' }, { status: 404 })
@@ -105,11 +105,23 @@ export async function POST(request: NextRequest) {
       writeLocalDB(db)
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       citizen: cit,
       avatarConfig: cit ? cit.avatar_config : null,
     })
+
+    if (cit && cit.avatar_config) {
+      try {
+        response.cookies.set('nc_avatar_config', encodeURIComponent(JSON.stringify(cit.avatar_config)), {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30, // 30 days
+          sameSite: 'lax',
+        })
+      } catch {}
+    }
+
+    return response
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Kesalahan server'
     return NextResponse.json({ error: msg }, { status: 500 })

@@ -91,7 +91,7 @@ function AnalogJoystick({
     const dx = clientX - centerX
     const dy = clientY - centerY
     const dist = Math.hypot(dx, dy)
-    const maxRadius = Math.max(22, rect.width / 2 - 14)
+    const maxRadius = Math.max(26, rect.width / 2 - 16)
 
     let clampedX = dx
     let clampedY = dy
@@ -103,11 +103,15 @@ function AnalogJoystick({
     // Direct hardware-accelerated transform with zero CSS transition or React state latency
     knobRef.current.style.transform = `translate3d(${clampedX}px, ${clampedY}px, 0)`
 
-    // Send normalized proportional vector (-1.0 to 1.0) instantly
-    onMove({
-      x: clampedX / maxRadius,
-      y: clampedY / maxRadius,
-    })
+    // Send normalized proportional vector (-1.0 to 1.0) with micro deadzone
+    const normX = clampedX / maxRadius
+    const normY = clampedY / maxRadius
+    const mag = Math.hypot(normX, normY)
+    if (mag < 0.04) {
+      onMove(null)
+    } else {
+      onMove({ x: normX, y: normY })
+    }
   }, [onMove])
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -145,19 +149,21 @@ function AnalogJoystick({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#F7F4E9]/95 border-2 border-[#D8CEBE] shadow-xl backdrop-blur-xs flex items-center justify-center touch-none select-none pointer-events-auto cursor-grab active:cursor-grabbing"
+      className="relative w-22 h-22 sm:w-26 sm:h-26 rounded-full bg-[#F7F4E9]/95 border-2 border-[#D8CEBE] shadow-2xl backdrop-blur-md flex items-center justify-center touch-none select-none pointer-events-auto cursor-grab active:cursor-grabbing p-1 ring-4 ring-black/5"
       title="Analog Joystick Karakter (Sentuh & Gerakkan)"
     >
-      {/* Decorative concentric indicator */}
-      <div className="absolute w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-[#D8CEBE]/80 pointer-events-none" />
-      <div className="absolute w-2 h-2 rounded-full bg-[#78634B]/30 pointer-events-none" />
+      {/* Decorative concentric indicator & crosshairs */}
+      <div className="absolute w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-[#D8CEBE]/90 pointer-events-none" />
+      <div className="absolute w-full h-[1px] bg-[#D8CEBE]/40 pointer-events-none" />
+      <div className="absolute h-full w-[1px] bg-[#D8CEBE]/40 pointer-events-none" />
+      <div className="absolute w-2 h-2 rounded-full bg-[#78634B]/35 pointer-events-none" />
 
       {/* Movable Knob (Zero-latency direct 1:1 hardware transform) */}
       <div
         ref={knobRef}
-        className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-[#668B65] border-2 border-[#527251] shadow-md flex items-center justify-center pointer-events-none will-change-transform"
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-b from-[#668B65] to-[#4D6E4C] border-2 border-[#3D5A3C] shadow-lg flex items-center justify-center pointer-events-none will-change-transform"
       >
-        <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white/40" />
+        <div className="w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-white/35 border border-white/20 shadow-inner" />
       </div>
     </div>
   )
@@ -237,6 +243,11 @@ export default function GameCanvas() {
   const setAllRooms = useGameStore((s) => s.setAllRooms)
   const roomPlayers = useGameStore((s) => s.roomPlayers)
   const setRoomPlayers = useGameStore((s) => s.setRoomPlayers)
+
+  const currentRoomIdRef = useRef(currentRoomId)
+  useEffect(() => {
+    currentRoomIdRef.current = currentRoomId
+  }, [currentRoomId])
 
   const myClientIdRef = useRef<string>('')
   const lastSentChatRef = useRef<{ text: string; id: string } | null>(null)
@@ -327,7 +338,7 @@ export default function GameCanvas() {
           z: playerState.z,
           facing: playerState.facing,
           isMoving: Boolean(playerState.isMoving),
-          preferredRoomId: currentRoomId,
+          preferredRoomId: currentRoomIdRef.current,
           isFishing: isFishingNow,
         }
 
@@ -360,7 +371,8 @@ export default function GameCanvas() {
           if (data.myClientId) {
             myClientIdRef.current = data.myClientId
           }
-          if (data.roomId && data.roomId !== currentRoomId) {
+          if (data.roomId && data.roomId !== currentRoomIdRef.current) {
+            currentRoomIdRef.current = data.roomId
             setCurrentRoomId(data.roomId)
           }
           if (typeof data.userCount === 'number') {
@@ -412,7 +424,7 @@ export default function GameCanvas() {
         }).catch(() => {})
       }
     }
-  }, [viewMode, currentRoomId, setCurrentRoomId, setRoomUserCount, setAllRooms, setRoomPlayers])
+  }, [viewMode, setCurrentRoomId, setRoomUserCount, setAllRooms, setRoomPlayers])
 
   useEffect(() => {
     if (containerRef.current && !cityManagerRef.current) {
@@ -1332,7 +1344,7 @@ export default function GameCanvas() {
       {/* Positioned at bottom-6 left-4 (spacious, thumb-friendly)     */}
       {/* ============================================================ */}
       {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium' || viewMode === 'beach') && (
-        <div className="md:hidden absolute bottom-6 sm:bottom-8 left-4 sm:left-8 z-30 pointer-events-auto">
+        <div className="md:hidden absolute bottom-[calc(env(safe-area-inset-bottom,20px)+2.25rem)] left-[calc(env(safe-area-inset-left,12px)+1.25rem)] z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}

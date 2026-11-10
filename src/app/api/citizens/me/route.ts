@@ -35,6 +35,22 @@ export async function GET(request: NextRequest) {
     // ignore
   }
 
+  // Parse cookie avatar_config if available to prevent outfit reset across lambdas
+  try {
+    const rawAvatarCookie = request.cookies.get('nc_avatar_config')?.value
+    if (rawAvatarCookie) {
+      const parsedAvatar = JSON.parse(decodeURIComponent(rawAvatarCookie))
+      if (parsedAvatar && typeof parsedAvatar === 'object') {
+        citizen.avatar_config = {
+          ...citizen.avatar_config,
+          ...parsedAvatar,
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
   const rawEquippedRod = request.cookies.get('nc_equipped_rod')?.value
   const wallet = getCitizenWallet(citizen.id, fallbackWallet)
   const inventory = getCitizenInventoryDetailed(citizen.id, rawEquippedRod)
@@ -73,6 +89,17 @@ export async function GET(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 30,
       sameSite: 'lax',
     })
+  }
+
+  // Ensure active avatar config is synced in cookie
+  if (citizen && citizen.avatar_config) {
+    try {
+      response.cookies.set('nc_avatar_config', encodeURIComponent(JSON.stringify(citizen.avatar_config)), {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      })
+    } catch {}
   }
 
   return response

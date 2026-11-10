@@ -113,13 +113,23 @@ export default function GameHUD() {
       if (citRes.ok) {
         const citData = await citRes.json()
         if (citData.citizen) {
+          // Protect user's customized outfit from being overwritten by stale defaults during 15s polling
+          const currentStoreAvatar = useCitizenStore.getState().profile?.avatarConfig
+          let activeAvatar = citData.citizen.avatar_config || {}
+          if (currentStoreAvatar && Object.keys(currentStoreAvatar).length > 0) {
+            activeAvatar = {
+              ...activeAvatar,
+              ...currentStoreAvatar,
+            }
+          }
+
           setProfile({
             id: citData.citizen.id,
             userId: citData.citizen.user_id,
             username: citData.citizen.username,
             displayName: citData.citizen.display_name,
             ktnNumber: citData.citizen.ktn_number,
-            avatarConfig: citData.citizen.avatar_config,
+            avatarConfig: activeAvatar,
             level: citData.citizen.level || 1,
             xp: citData.citizen.xp || 0,
             job: citData.citizen.job || 'Warga Baru',
@@ -133,10 +143,6 @@ export default function GameHUD() {
             joinedAt: citData.citizen.joined_at,
             updatedAt: citData.citizen.updated_at || citData.citizen.joined_at,
           })
-
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('avatar-updated'))
-          }
         } else {
           setProfile(null)
         }

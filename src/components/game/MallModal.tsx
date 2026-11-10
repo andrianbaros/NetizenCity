@@ -327,12 +327,15 @@ export default function MallModal() {
       )
     }
 
-    // 3. Persist to server /api/citizens/avatar
+    // 3. Persist to server /api/citizens/avatar with cookie redundancy
     try {
+      if (typeof document !== 'undefined') {
+        document.cookie = `nc_avatar_config=${encodeURIComponent(JSON.stringify(updatedAvatar))}; path=/; max-age=2592000; SameSite=Lax`
+      }
       await fetch('/api/citizens/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatarConfig: updatedAvatar, itemId: item.id }),
+        body: JSON.stringify({ avatarConfig: updatedAvatar, itemId: item.id, citizenId: profile?.id }),
       })
     } catch {
       // ignore
@@ -370,10 +373,13 @@ export default function MallModal() {
     }
 
     try {
+      if (typeof document !== 'undefined') {
+        document.cookie = `nc_avatar_config=${encodeURIComponent(JSON.stringify(updatedAvatar))}; path=/; max-age=2592000; SameSite=Lax`
+      }
       await fetch('/api/citizens/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatarConfig: updatedAvatar }),
+        body: JSON.stringify({ avatarConfig: updatedAvatar, citizenId: profile?.id }),
       })
     } catch {
       // ignore

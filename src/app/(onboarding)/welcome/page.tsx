@@ -58,6 +58,7 @@ export default function OnboardingPage() {
     setKtnNumber(generateKTNNumber())
   }, [])
 
+  const profile = useCitizenStore((s) => s.profile)
   const updateAvatar = useCitizenStore((s) => s.updateAvatar)
 
   const handleFinishOnboarding = async () => {
@@ -84,10 +85,13 @@ export default function OnboardingPage() {
     })
 
     try {
+      if (typeof document !== 'undefined') {
+        document.cookie = `nc_avatar_config=${encodeURIComponent(JSON.stringify(avatarConfig))}; path=/; max-age=2592000; SameSite=Lax`
+      }
       await fetch('/api/citizens/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatarConfig }),
+        body: JSON.stringify({ avatarConfig, citizenId: profile?.id }),
       })
     } catch {
       // ignore

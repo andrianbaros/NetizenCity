@@ -195,6 +195,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
   const inventory = Array.isArray(rawInventory) ? rawInventory : []
   const setInventory = useCitizenStore((s) => s.setInventory)
   const updateBalance = useCitizenStore((s) => s.updateBalance)
+  const updateAvatar = useCitizenStore((s) => s.updateAvatar)
   const toggleFavorite = useCitizenStore((s) => s.toggleFavorite)
   const equipItem = useCitizenStore((s) => s.equipItem)
   const unequipItem = useCitizenStore((s) => s.unequipItem)
@@ -394,6 +395,8 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
     const action = nextEquipped ? 'equip' : 'unequip'
     const rodId = item.itemId || (item as any).item_id
     const isRod = (rodId || '').startsWith('rod_') || item.category === 'tools'
+    const cat = (item.category || '').toLowerCase()
+    const isFashion = ['tops', 'bottoms', 'shoes', 'hairstyles', 'accessories', 'back', 'clothing', 'fashion'].includes(cat)
 
     if (nextEquipped && isRod && rodId) {
       if (typeof document !== 'undefined') {
@@ -404,6 +407,84 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
           localStorage.setItem('nc_equipped_rod', rodId)
         } catch {}
       }
+    }
+
+    // Synchronize avatar config if equipping clothing or accessories
+    if (isFashion && profile) {
+      const curAvatar = profile.avatarConfig || {
+        skinTone: '#f5d0b0',
+        hairStyle: 'short',
+        hairColor: '#1e293b',
+        shirtColor: '#2563eb',
+        pantsColor: '#1e293b',
+        shoesColor: '#f1f5f9',
+      }
+      const curOutfit = curAvatar.outfit || {
+        top: curAvatar.shirtColor || '#2563eb',
+        bottom: curAvatar.pantsColor || '#1e293b',
+        shoes: curAvatar.shoesColor || '#f1f5f9',
+        accessory: curAvatar.accessory || null,
+      }
+      const updatedAvatar: any = {
+        ...curAvatar,
+        outfit: { ...curOutfit },
+      }
+      const itemColor = (item as any).color || item.metadata?.color
+      const itemPattern = (item as any).pattern || item.metadata?.pattern
+
+      if (nextEquipped) {
+        if (cat === 'tops' || cat === 'clothing') {
+          if (itemColor) {
+            updatedAvatar.shirtColor = itemColor
+            updatedAvatar.outfit.top = itemColor
+          }
+          if (itemPattern) updatedAvatar.outfitPattern = itemPattern
+        } else if (cat === 'bottoms') {
+          if (itemColor) {
+            updatedAvatar.pantsColor = itemColor
+            updatedAvatar.outfit.bottom = itemColor
+          }
+          if (itemPattern && ['sarung', 'skirt', 'techwear'].includes(itemPattern)) {
+            updatedAvatar.outfitPattern = itemPattern
+          }
+        } else if (cat === 'shoes') {
+          if (itemColor) {
+            updatedAvatar.shoesColor = itemColor
+            updatedAvatar.outfit.shoes = itemColor
+          }
+        } else if (cat === 'hairstyles') {
+          if (itemColor) updatedAvatar.hairColor = itemColor
+          if (itemPattern) updatedAvatar.hairStyle = itemPattern
+        } else if (cat === 'accessories') {
+          const accVal = itemPattern || item.itemId || item.id
+          updatedAvatar.accessory = accVal
+          updatedAvatar.outfit.accessory = accVal
+        } else if (cat === 'back') {
+          updatedAvatar.backpack = itemPattern || item.itemId || item.id
+        }
+      } else {
+        if (cat === 'accessories') {
+          updatedAvatar.accessory = null
+          updatedAvatar.outfit.accessory = null
+        } else if (cat === 'back') {
+          updatedAvatar.backpack = null
+        }
+      }
+
+      updateAvatar(updatedAvatar)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('avatar-updated', { detail: updatedAvatar }))
+        document.cookie = `nc_avatar_config=${encodeURIComponent(JSON.stringify(updatedAvatar))}; path=/; max-age=2592000; SameSite=Lax`
+      }
+      fetch('/api/citizens/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          avatarConfig: updatedAvatar,
+          itemId: nextEquipped ? item.itemId || item.id : undefined,
+          citizenId: profile.id,
+        }),
+      }).catch(() => {})
     }
 
     // Optimistic update

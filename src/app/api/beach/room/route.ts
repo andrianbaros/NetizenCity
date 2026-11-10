@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
       displayName = `Tamu #${clientId.slice(-4)}`
     }
 
+    const effectiveAvatar = body.avatarConfig || citizen?.avatar_config
+
     const result = syncPlayerInBeachRoom({
       clientId,
       name: displayName,
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
       x: typeof body.x === 'number' ? body.x : 0,
       z: typeof body.z === 'number' ? body.z : -5.5,
       facing: typeof body.facing === 'number' ? body.facing : Math.PI,
-      avatarConfig: citizen?.avatar_config || body.avatarConfig,
+      avatarConfig: effectiveAvatar,
       isFishing: Boolean(body.isFishing),
       isMoving: Boolean(body.isMoving),
       preferredRoomId: body.preferredRoomId,

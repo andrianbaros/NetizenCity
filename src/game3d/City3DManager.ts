@@ -962,6 +962,7 @@ export class City3DManager {
       missingSince?: number;
       isFishing?: boolean;
       isMoving?: boolean;
+      lastAvatarConfigHash?: string;
       fishingLine?: THREE.Line;
       bobber?: THREE.Group;
       rodTip?: THREE.Object3D;
@@ -971,6 +972,7 @@ export class City3DManager {
   // Event handlers for mode changes
   private handleEnterTuguEvent?: () => void;
   private handleExitTuguEvent?: () => void;
+  private handleAvatarUpdated?: (e: any) => void;
 
   // Orbit / Camera controls state
   private target = new THREE.Vector3(0, 0, 0); // City center overview
@@ -5095,6 +5097,17 @@ export class City3DManager {
         this.playerCitizen.updateColors(colors);
       }
     });
+
+    this.handleAvatarUpdated = (e: any) => {
+      const cfg = e.detail || useCitizenStore.getState().profile?.avatarConfig;
+      if (this.playerCitizen && cfg) {
+        const colors = resolveAvatarColors(cfg);
+        this.playerCitizen.updateColors(colors);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('avatar-updated', this.handleAvatarUpdated);
+    }
   }
 
   private spawnTuguCitizens() {
@@ -5706,6 +5719,14 @@ export class City3DManager {
           }
         }
 
+        // Update avatar colors & clothing accessories if changed in real-time
+        const avatarConfigHash = JSON.stringify(p.avatarConfig || {});
+        if (avatarConfigHash !== existing.lastAvatarConfigHash) {
+          existing.lastAvatarConfigHash = avatarConfigHash;
+          const colors = resolveAvatarColors(p.avatarConfig);
+          existing.citizen.updateColors(colors);
+        }
+
         // Update fishing state & nametag if changed
         if (typeof p.isFishing === 'boolean' && p.isFishing !== existing.isFishing) {
           existing.isFishing = p.isFishing;
@@ -5799,6 +5820,7 @@ export class City3DManager {
           missingSince: 0,
           isFishing: Boolean(p.isFishing),
           isMoving: Boolean(p.isMoving),
+          lastAvatarConfigHash: JSON.stringify(p.avatarConfig || {}),
           fishingLine: remoteLine,
           bobber: remoteBobber,
           rodTip: anglerRodTip,
@@ -9322,6 +9344,7 @@ private setupAirplanes() {
     if (this.handleTimeOfDayEvent) window.removeEventListener('time-of-day-changed', this.handleTimeOfDayEvent);
     if (this.handleToggleDayNightEvent) window.removeEventListener('toggle-day-night', this.handleToggleDayNightEvent);
     if (this.handleAdjustCameraPOV) window.removeEventListener('adjust-camera-pov', this.handleAdjustCameraPOV);
+    if (this.handleAvatarUpdated) window.removeEventListener('avatar-updated', this.handleAvatarUpdated);
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('blur', this.onWindowBlur);

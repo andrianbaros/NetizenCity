@@ -166,11 +166,18 @@ export const useCitizenStore = create<CitizenState>()(
           ),
         })),
       updateAvatar: (avatarConfig) =>
-        set((state) => ({
-          profile: state.profile
-            ? { ...state.profile, avatarConfig }
-            : null,
-        })),
+        set((state) => {
+          if (typeof document !== 'undefined') {
+            try {
+              document.cookie = `nc_avatar_config=${encodeURIComponent(JSON.stringify(avatarConfig))}; path=/; max-age=2592000; SameSite=Lax`
+            } catch {}
+          }
+          return {
+            profile: state.profile
+              ? { ...state.profile, avatarConfig }
+              : null,
+          }
+        }),
       setLoading: (isLoading) => set({ isLoading }),
       reset: () => set({ profile: null, wallet: null, inventory: [], isLoading: false }),
     }),
@@ -185,6 +192,11 @@ export const useCitizenStore = create<CitizenState>()(
       onRehydrateStorage: () => (state) => {
         if (state?.wallet) {
           syncWalletCookie(state.wallet)
+        }
+        if (state?.profile?.avatarConfig && typeof document !== 'undefined') {
+          try {
+            document.cookie = `nc_avatar_config=${encodeURIComponent(JSON.stringify(state.profile.avatarConfig))}; path=/; max-age=2592000; SameSite=Lax`
+          } catch {}
         }
       },
     }
