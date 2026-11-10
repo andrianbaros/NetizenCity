@@ -214,6 +214,7 @@ export default function FreekickModal({ isOpen, onClose }: FreekickModalProps) {
           body: JSON.stringify({
             action: 'earn',
             amount: 20,
+            currentBalance: curBal,
             description: 'Hadiah cetak gol penalti di Stadion Netizen City',
           }),
         })
@@ -252,6 +253,7 @@ export default function FreekickModal({ isOpen, onClose }: FreekickModalProps) {
               body: JSON.stringify({
                 action: 'earn',
                 amount: 50,
+                currentBalance: currentB,
                 description: 'Bonus Top Scorer 3+ Gol Stadion Netizen City',
               }),
             })

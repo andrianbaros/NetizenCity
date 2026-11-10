@@ -68,7 +68,23 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { action } = body
+    const { action, currentBalance } = body
+
+    // Parse fallback balance from cookie or client body
+    let effectiveBalance = typeof currentBalance === 'number' ? currentBalance : undefined
+    if (effectiveBalance === undefined) {
+      try {
+        const rawWalletCookie = request.cookies.get('nc_wallet')?.value
+        if (rawWalletCookie) {
+          const parsed = JSON.parse(decodeURIComponent(rawWalletCookie))
+          if (parsed && parsed.cid === citizen.id && typeof parsed.b === 'number') {
+            effectiveBalance = parsed.b
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
 
     if (action === 'water') {
       const result = waterCitizenGarden(citizen.id)
@@ -87,19 +103,51 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'refill_water') {
-      const result = refillGardenWater(citizen.id)
+      const result = refillGardenWater(citizen.id, effectiveBalance)
       if (!result.success) {
         return NextResponse.json(result, { status: 400 })
       }
-      return NextResponse.json(result)
+      const response = NextResponse.json(result)
+      if (result.wallet) {
+        response.cookies.set(
+          'nc_wallet',
+          encodeURIComponent(
+            JSON.stringify({
+              cid: citizen.id,
+              b: result.wallet.balance,
+              te: result.wallet.total_earned,
+              ts: result.wallet.total_spent,
+              u: result.wallet.updated_at,
+            })
+          ),
+          { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+        )
+      }
+      return response
     }
 
     if (action === 'harvest') {
-      const result = harvestCitizenGarden(citizen.id)
+      const result = harvestCitizenGarden(citizen.id, effectiveBalance)
       if (!result.success) {
         return NextResponse.json(result, { status: 400 })
       }
-      return NextResponse.json(result)
+      const response = NextResponse.json(result)
+      if (result.wallet) {
+        response.cookies.set(
+          'nc_wallet',
+          encodeURIComponent(
+            JSON.stringify({
+              cid: citizen.id,
+              b: result.wallet.balance,
+              te: result.wallet.total_earned,
+              ts: result.wallet.total_spent,
+              u: result.wallet.updated_at,
+            })
+          ),
+          { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+        )
+      }
+      return response
     }
 
     if (action === 'plant') {

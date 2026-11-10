@@ -143,6 +143,7 @@ export default function CatHuntModal({ isOpen, onClose }: CatHuntModalProps) {
           body: JSON.stringify({
             action: 'earn',
             amount: 50,
+            currentBalance: curBal,
             description: `Menemukan kucing liar: ${cat.name}`,
           }),
         })
@@ -191,6 +192,7 @@ export default function CatHuntModal({ isOpen, onClose }: CatHuntModalProps) {
         body: JSON.stringify({
           action: 'earn',
           amount: 250,
+          currentBalance: curBal,
           description: 'Hadiah Utama: Menemukan Seluruh Kucing Kota',
         }),
       })

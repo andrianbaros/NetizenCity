@@ -37,12 +37,53 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = claimDailyStreakReward(citizen.id)
+    let currentBalance: number | undefined
+    try {
+      const body = await request.json()
+      if (typeof body?.currentBalance === 'number') {
+        currentBalance = body.currentBalance
+      }
+    } catch {
+      // ignore
+    }
+
+    let effectiveBalance = currentBalance
+    if (effectiveBalance === undefined) {
+      try {
+        const rawWalletCookie = request.cookies.get('nc_wallet')?.value
+        if (rawWalletCookie) {
+          const parsed = JSON.parse(decodeURIComponent(rawWalletCookie))
+          if (parsed && parsed.cid === citizen.id && typeof parsed.b === 'number') {
+            effectiveBalance = parsed.b
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const result = claimDailyStreakReward(citizen.id, effectiveBalance)
     if (!result.success) {
       return NextResponse.json(result, { status: 400 })
     }
 
-    return NextResponse.json(result)
+    const response = NextResponse.json(result)
+    if (result.wallet) {
+      response.cookies.set(
+        'nc_wallet',
+        encodeURIComponent(
+          JSON.stringify({
+            cid: citizen.id,
+            b: result.wallet.balance,
+            te: result.wallet.total_earned,
+            ts: result.wallet.total_spent,
+            u: result.wallet.updated_at,
+          })
+        ),
+        { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+      )
+    }
+    return response
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Kesalahan server'
     return NextResponse.json({ error: msg }, { status: 500 })

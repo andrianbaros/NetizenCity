@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, amount, description, totalEarned, totalSpent, updatedAt } = body
+    const { action, amount, description, currentBalance, totalEarned, totalSpent, updatedAt } = body
     const citizenId = request.cookies.get('nc_citizen_id')?.value
     const citizen = getActiveCitizen(citizenId)
     if (!citizen) {
@@ -81,9 +81,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Determine current verified client balance from request body or cookie
+    let clientBal = typeof currentBalance === 'number' && Number.isFinite(currentBalance) ? currentBalance : undefined
+    if (clientBal === undefined) {
+      try {
+        const rawWalletCookie = request.cookies.get('nc_wallet')?.value
+        if (rawWalletCookie) {
+          const parsed = JSON.parse(decodeURIComponent(rawWalletCookie))
+          if (parsed && parsed.cid === citizen.id && typeof parsed.b === 'number') {
+            clientBal = parsed.b
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     let wallet: any = null
 
     if (action === 'earn' || action === 'reward') {
+      if (typeof clientBal === 'number') {
+        const db = readLocalDB()
+        let w = db.wallets.find((x) => x.citizen_id === citizen.id)
+        if (w && w.balance !== clientBal) {
+          w.balance = clientBal
+        }
+      }
       wallet = updateWalletBalance(
         citizen.id,
         Number(amount),
@@ -99,6 +122,13 @@ export async function POST(request: NextRequest) {
         { totalEarned, totalSpent, updatedAt }
       )
     } else if (action === 'spend') {
+      if (typeof clientBal === 'number') {
+        const db = readLocalDB()
+        let w = db.wallets.find((x) => x.citizen_id === citizen.id)
+        if (w && w.balance !== clientBal) {
+          w.balance = clientBal
+        }
+      }
       wallet = updateWalletBalance(
         citizen.id,
         Number(amount),

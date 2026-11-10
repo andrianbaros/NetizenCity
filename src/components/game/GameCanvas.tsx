@@ -600,6 +600,7 @@ export default function GameCanvas() {
           body: JSON.stringify({
             action: 'earn',
             amount: 20,
+            currentBalance: currentBalance,
             description: 'Hadiah cetak gol penalti di Stadion Netizen City',
           }),
         })

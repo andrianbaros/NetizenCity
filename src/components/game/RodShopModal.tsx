@@ -187,6 +187,7 @@ export default function RodShopModal() {
         body: JSON.stringify({
           action: 'buy_rod',
           rodId: rod.id,
+          currentBalance: currentCoins,
         }),
       })
 

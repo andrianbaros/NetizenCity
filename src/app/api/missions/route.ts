@@ -76,12 +76,29 @@ export async function POST(request: NextRequest) {
     userM.status = 'completed'
     userM.progress = mission.target
 
+    // Parse fallback balance from cookie or client body
+    let effectiveBalance = typeof body?.currentBalance === 'number' ? body.currentBalance : undefined
+    if (effectiveBalance === undefined) {
+      try {
+        const rawWalletCookie = request.cookies.get('nc_wallet')?.value
+        if (rawWalletCookie) {
+          const parsed = JSON.parse(decodeURIComponent(rawWalletCookie))
+          if (parsed && parsed.cid === citizen.id && typeof parsed.b === 'number') {
+            effectiveBalance = parsed.b
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     // Award coins
     const walletRes = updateWalletBalance(
       citizen.id,
       mission.reward_coins,
       'reward',
-      `Hadiah Misi Kota: ${mission.name}`
+      `Hadiah Misi Kota: ${mission.name}`,
+      { clientBalance: effectiveBalance }
     )
 
     // Award XP
@@ -92,14 +109,33 @@ export async function POST(request: NextRequest) {
 
     writeLocalDB(db)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       rewardCoins: mission.reward_coins,
       rewardXp: mission.reward_xp,
       newBalance: walletRes?.balance,
+      wallet: walletRes,
       newLevel: citizen.level,
       newXp: citizen.xp,
     })
+
+    if (walletRes) {
+      response.cookies.set(
+        'nc_wallet',
+        encodeURIComponent(
+          JSON.stringify({
+            cid: citizen.id,
+            b: walletRes.balance,
+            te: walletRes.total_earned,
+            ts: walletRes.total_spent,
+            u: walletRes.updated_at,
+          })
+        ),
+        { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+      )
+    }
+
+    return response
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Kesalahan server'
     return NextResponse.json({ error: msg }, { status: 500 })

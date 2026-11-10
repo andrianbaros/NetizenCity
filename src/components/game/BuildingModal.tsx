@@ -366,6 +366,7 @@ export default function BuildingModal() {
           body: JSON.stringify({
             action: 'earn',
             amount: 25,
+            currentBalance: cur,
             description: 'Bonus partisipasi polling Balai Kota',
           }),
         })
@@ -395,6 +396,7 @@ export default function BuildingModal() {
         body: JSON.stringify({
           action: 'earn',
           amount: 25,
+          currentBalance: cur,
           description: 'Bonus partisipasi polling Balai Kota',
         }),
       })

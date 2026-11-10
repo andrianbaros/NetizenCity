@@ -205,7 +205,7 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
       const res = await fetch('/api/garden', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'refill_water' }),
+        body: JSON.stringify({ action: 'refill_water', currentBalance }),
       })
       const data = await res.json()
       if (data.success && data.garden) {
@@ -233,10 +233,11 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
 
     setIsHarvesting(true)
     try {
+      const currentBalance = useCitizenStore.getState().wallet?.balance ?? 0
       const res = await fetch('/api/garden', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'harvest' }),
+        body: JSON.stringify({ action: 'harvest', currentBalance }),
       })
       const data = await res.json()
       if (data.success && data.garden) {

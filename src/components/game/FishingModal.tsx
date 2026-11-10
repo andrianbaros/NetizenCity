@@ -273,6 +273,7 @@ export default function FishingModal({ isOpen, onClose }: FishingModalProps) {
       body: JSON.stringify({
         action: 'earn',
         amount: chosen.price,
+        currentBalance: curBalance,
         description: `Menangkap ikan ${chosen.name} di Dermaga Pancing`,
       }),
     })

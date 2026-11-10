@@ -51,9 +51,11 @@ export default function MallModal() {
   const closeModal = useUIStore((s) => s.closeModal)
   const addNotification = useUIStore((s) => s.addNotification)
   const wallet = useCitizenStore((s) => s.wallet)
+  const setWallet = useCitizenStore((s) => s.setWallet)
   const updateBalance = useCitizenStore((s) => s.updateBalance)
   const profile = useCitizenStore((s) => s.profile)
   const updateAvatar = useCitizenStore((s) => s.updateAvatar)
+  const addToInventory = useCitizenStore((s) => s.addToInventory)
 
   const isOpen = activeModal === 'mall'
 
@@ -189,14 +191,38 @@ export default function MallModal() {
       const res = await fetch('/api/mall', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId: item.id }),
+        body: JSON.stringify({ itemId: item.id, currentBalance: currentCoins }),
       })
 
       const data = await res.json()
 
       if (res.ok && data.success) {
         setOwnedIds((prev) => [...prev, item.id])
-        updateBalance(data.newBalance)
+        if (data.wallet) {
+          setWallet({
+            id: data.wallet.id || 'w-' + profile?.id,
+            citizenId: profile?.id || 'citizen',
+            balance: data.wallet.balance,
+            totalEarned: data.wallet.total_earned ?? data.wallet.balance,
+            totalSpent: data.wallet.total_spent ?? 0,
+            updatedAt: data.wallet.updated_at || new Date().toISOString(),
+          })
+        } else if (typeof data.newBalance === 'number') {
+          updateBalance(data.newBalance)
+        }
+
+        if (data.inventoryItem && profile) {
+          addToInventory({
+            id: data.inventoryItem.id,
+            citizenId: profile.id,
+            itemId: item.id,
+            isEquipped: false,
+            acquiredAt: data.inventoryItem.acquired_at || new Date().toISOString(),
+            category: item.category as any,
+            name: item.name,
+            item: item as any,
+          })
+        }
 
         addNotification({
           title: 'Pembelian Berhasil! 🛍️',
@@ -204,22 +230,17 @@ export default function MallModal() {
           type: 'success',
         })
       } else {
-        // Fallback local purchase
-        setOwnedIds((prev) => [...prev, item.id])
-        updateBalance(currentCoins - item.price)
         addNotification({
-          title: 'Pembelian Berhasil! 🛍️',
-          message: `${item.name} berhasil dibeli.`,
-          type: 'success',
+          title: 'Pembelian Gagal',
+          message: data.error || 'Saldo koin tidak mencukupi untuk membeli item ini.',
+          type: 'error',
         })
       }
     } catch {
-      setOwnedIds((prev) => [...prev, item.id])
-      updateBalance(currentCoins - item.price)
       addNotification({
-        title: 'Pembelian Berhasil! 🛍️',
-        message: `${item.name} berhasil dibeli.`,
-        type: 'success',
+        title: 'Koneksi Gagal',
+        message: 'Gagal menghubungi server Balai Kota. Silakan periksa koneksi internet Anda.',
+        type: 'error',
       })
     } finally {
       setIsPurchasing(false)

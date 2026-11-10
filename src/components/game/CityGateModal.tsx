@@ -74,6 +74,7 @@ export default function CityGateModal({ isOpen, onSuccess }: CityGateModalProps)
         body: JSON.stringify({
           action: 'earn',
           amount: 100,
+          currentBalance: curBal,
           description: 'Bonus follow akun Instagram resmi @netizencity.id',
         }),
       })

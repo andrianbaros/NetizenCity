@@ -37,7 +37,23 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { action } = body
+    const { action, currentBalance } = body
+
+    // Parse fallback balance from cookie or client body
+    let effectiveBalance = typeof currentBalance === 'number' ? currentBalance : undefined
+    if (effectiveBalance === undefined) {
+      try {
+        const rawWalletCookie = request.cookies.get('nc_wallet')?.value
+        if (rawWalletCookie) {
+          const parsed = JSON.parse(decodeURIComponent(rawWalletCookie))
+          if (parsed && parsed.cid === citizen.id && typeof parsed.b === 'number') {
+            effectiveBalance = parsed.b
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
 
     if (action === 'add_fish') {
       const { fish } = body
@@ -67,13 +83,29 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'ID barang tidak valid' }, { status: 400 })
       }
 
-      const result = sellInventoryItem(citizen.id, inventoryId, item)
+      const result = sellInventoryItem(citizen.id, inventoryId, item, effectiveBalance)
       if (!result.success) {
         return NextResponse.json(result, { status: 400 })
       }
 
       const updatedInventory = getCitizenInventoryDetailed(citizen.id)
-      return NextResponse.json({ ...result, inventory: updatedInventory })
+      const response = NextResponse.json({ ...result, inventory: updatedInventory })
+      if (result.wallet) {
+        response.cookies.set(
+          'nc_wallet',
+          encodeURIComponent(
+            JSON.stringify({
+              cid: citizen.id,
+              b: result.wallet.balance,
+              te: result.wallet.total_earned,
+              ts: result.wallet.total_spent,
+              u: result.wallet.updated_at,
+            })
+          ),
+          { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+        )
+      }
+      return response
     }
 
     if (action === 'batch_sell') {
@@ -82,13 +114,29 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Pilih setidaknya 1 ikan untuk dijual.' }, { status: 400 })
       }
 
-      const result = batchSellInventoryItems(citizen.id, inventoryIds, items)
+      const result = batchSellInventoryItems(citizen.id, inventoryIds, items, effectiveBalance)
       if (!result.success) {
         return NextResponse.json(result, { status: 400 })
       }
 
       const updatedInventory = getCitizenInventoryDetailed(citizen.id)
-      return NextResponse.json({ ...result, inventory: updatedInventory })
+      const response = NextResponse.json({ ...result, inventory: updatedInventory })
+      if (result.wallet) {
+        response.cookies.set(
+          'nc_wallet',
+          encodeURIComponent(
+            JSON.stringify({
+              cid: citizen.id,
+              b: result.wallet.balance,
+              te: result.wallet.total_earned,
+              ts: result.wallet.total_spent,
+              u: result.wallet.updated_at,
+            })
+          ),
+          { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+        )
+      }
+      return response
     }
 
     if (action === 'equip') {
@@ -142,7 +190,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'ID joran tidak valid' }, { status: 400 })
       }
 
-      const result = buyFishingRod(citizen.id, rodId)
+      const result = buyFishingRod(citizen.id, rodId, effectiveBalance)
       if (!result.success) {
         return NextResponse.json(result, { status: 400 })
       }

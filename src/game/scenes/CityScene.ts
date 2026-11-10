@@ -600,6 +600,7 @@ export class CityScene extends Phaser.Scene {
           body: JSON.stringify({
             action: 'earn',
             amount: 15,
+            currentBalance: balance,
             description: 'Membersihkan sampah trotoar kota',
           }),
         }).catch(() => {})
@@ -716,6 +717,7 @@ export class CityScene extends Phaser.Scene {
         body: JSON.stringify({
           action: 'earn',
           amount: reward,
+          currentBalance: cur,
           description: `Pengantaran paket ke ${this.activeDelivery.targetName}`,
         }),
       }).catch(() => {})

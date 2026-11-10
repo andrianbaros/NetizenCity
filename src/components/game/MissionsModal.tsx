@@ -132,10 +132,11 @@ export default function MissionsModal() {
     setClaimingId(mission.id)
 
     try {
+      const currentCoins = wallet?.balance ?? 0
       const res = await fetch('/api/missions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ missionId: mission.id }),
+        body: JSON.stringify({ missionId: mission.id, currentBalance: currentCoins }),
       })
 
       const data = await res.json()

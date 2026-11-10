@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { registerLocalCitizen } from '@/lib/db/localDb'
+import { registerLocalCitizen, getCitizenWallet } from '@/lib/db/localDb'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,13 +22,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    const response = NextResponse.json(result)
+    const wallet = getCitizenWallet(result.citizen.id)
+
+    const response = NextResponse.json({ ...result, wallet })
     response.cookies.set('nc_citizen_id', result.citizen.id, {
       path: '/',
       httpOnly: false,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30,
     })
+
+    if (wallet) {
+      response.cookies.set(
+        'nc_wallet',
+        encodeURIComponent(
+          JSON.stringify({
+            cid: result.citizen.id,
+            b: wallet.balance,
+            te: wallet.total_earned,
+            ts: wallet.total_spent,
+            u: wallet.updated_at,
+          })
+        ),
+        { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+      )
+    }
+
     return response
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Kesalahan server'

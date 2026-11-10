@@ -940,20 +940,35 @@ export function updateWalletBalance(
   amount: number,
   type: 'earn' | 'spend' | 'reward' | 'reconcile',
   description: string,
-  extra?: { totalEarned?: number; totalSpent?: number; updatedAt?: string; force?: boolean }
+  extra?: { totalEarned?: number; totalSpent?: number; updatedAt?: string; force?: boolean; clientBalance?: number }
 ) {
   const db = readLocalDB()
   let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
   if (!wallet) {
+    const baseBal =
+      typeof extra?.clientBalance === 'number'
+        ? extra.clientBalance
+        : type === 'reconcile'
+        ? amount
+        : 500
     wallet = {
       id: 'w-' + citizenId,
       citizen_id: citizenId,
-      balance: type === 'reconcile' ? amount : 500,
-      total_earned: extra?.totalEarned ?? (type === 'reconcile' ? amount : 500),
+      balance: baseBal,
+      total_earned: extra?.totalEarned ?? baseBal,
       total_spent: extra?.totalSpent ?? 0,
       updated_at: extra?.updatedAt || new Date().toISOString(),
     }
     db.wallets.push(wallet)
+  }
+
+  // If client provided its verified balance, reconcile before applying earn/spend/reward!
+  if (
+    typeof extra?.clientBalance === 'number' &&
+    Number.isFinite(extra.clientBalance) &&
+    extra.clientBalance >= 0
+  ) {
+    wallet.balance = extra.clientBalance
   }
 
   const prev = wallet.balance
@@ -1015,7 +1030,7 @@ export function updateWalletBalance(
   return wallet
 }
 
-export function buyShopItem(citizenId: string, itemId: string) {
+export function buyShopItem(citizenId: string, itemId: string, clientBalance?: number) {
   const db = readLocalDB()
   const item = db.items.find((i) => i.id === itemId)
   if (!item) return { success: false, error: 'Item tidak ditemukan' }
@@ -1025,9 +1040,26 @@ export function buyShopItem(citizenId: string, itemId: string) {
   )
   if (owned) return { success: false, error: 'Item sudah dimiliki' }
 
-  const wallet = db.wallets.find((w) => w.citizen_id === citizenId)
-  if (!wallet || wallet.balance < item.price) {
-    return { success: false, error: 'Saldo koin tidak mencukupi' }
+  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) {
+    wallet = {
+      id: 'w-' + citizenId,
+      citizen_id: citizenId,
+      balance: clientBalance ?? 500,
+      total_earned: clientBalance ?? 500,
+      total_spent: 0,
+      updated_at: new Date().toISOString(),
+    }
+    db.wallets.push(wallet)
+  }
+
+  // If client provided its verified balance, reconcile to that balance before deducting
+  if (typeof clientBalance === 'number' && Number.isFinite(clientBalance) && clientBalance >= 0) {
+    wallet.balance = clientBalance
+  }
+
+  if (wallet.balance < item.price) {
+    return { success: false, error: `Saldo koin tidak mencukupi (Butuh ${item.price} koin, saldo kamu ${wallet.balance} koin)` }
   }
 
   wallet.balance -= item.price
@@ -1047,16 +1079,17 @@ export function buyShopItem(citizenId: string, itemId: string) {
     created_at: new Date().toISOString(),
   })
 
-  db.inventory.push({
+  const newInv = {
     id: 'inv-' + Math.random().toString(36).substring(2, 9),
     citizen_id: citizenId,
     item_id: itemId,
     is_equipped: false,
     acquired_at: new Date().toISOString(),
-  })
+  }
+  db.inventory.push(newInv)
 
   writeLocalDB(db)
-  return { success: true, item, newBalance: wallet.balance }
+  return { success: true, item, newBalance: wallet.balance, wallet, inventoryItem: newInv }
 }
 
 export function getCitizenInventoryDetailed(citizenId: string) {
@@ -1207,19 +1240,23 @@ export function addCaughtFishToInventory(
   }
 }
 
-export function sellInventoryItem(citizenId: string, inventoryId: string, fallbackItem?: any) {
+export function sellInventoryItem(citizenId: string, inventoryId: string, fallbackItem?: any, clientBalance?: number) {
   const db = readLocalDB()
   let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
   if (!wallet) {
     wallet = {
       id: 'w-' + citizenId,
       citizen_id: citizenId,
-      balance: 500,
-      total_earned: 500,
+      balance: clientBalance ?? 500,
+      total_earned: clientBalance ?? 500,
       total_spent: 0,
       updated_at: new Date().toISOString(),
     }
     db.wallets.push(wallet)
+  }
+
+  if (typeof clientBalance === 'number' && Number.isFinite(clientBalance) && clientBalance >= 0) {
+    wallet.balance = clientBalance
   }
 
   const index = db.inventory.findIndex(
@@ -1283,13 +1320,15 @@ export function sellInventoryItem(citizenId: string, inventoryId: string, fallba
     success: true,
     soldItem: { id: inventoryId, name: itemName, sellPrice },
     newBalance: wallet.balance,
+    wallet,
   }
 }
 
 export function batchSellInventoryItems(
   citizenId: string,
   inventoryIds: string[],
-  fallbackItems?: Array<{ id: string; name?: string; sellPrice?: number }>
+  fallbackItems?: Array<{ id: string; name?: string; sellPrice?: number }>,
+  clientBalance?: number
 ) {
   const db = readLocalDB()
   let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
@@ -1297,12 +1336,16 @@ export function batchSellInventoryItems(
     wallet = {
       id: 'w-' + citizenId,
       citizen_id: citizenId,
-      balance: 500,
-      total_earned: 500,
+      balance: clientBalance ?? 500,
+      total_earned: clientBalance ?? 500,
       total_spent: 0,
       updated_at: new Date().toISOString(),
     }
     db.wallets.push(wallet)
+  }
+
+  if (typeof clientBalance === 'number' && Number.isFinite(clientBalance) && clientBalance >= 0) {
+    wallet.balance = clientBalance
   }
 
   const idSet = new Set(inventoryIds)
@@ -1382,6 +1425,7 @@ export function batchSellInventoryItems(
     soldCount: soldList.length,
     totalCoins,
     newBalance: wallet.balance,
+    wallet,
   }
 }
 
@@ -1435,7 +1479,7 @@ export function toggleFavoriteInventoryItem(citizenId: string, inventoryId: stri
   return { success: true, isFavorite: target.metadata.isFavorite }
 }
 
-export function buyFishingRod(citizenId: string, rodId: string) {
+export function buyFishingRod(citizenId: string, rodId: string, clientBalance?: number) {
   const db = readLocalDB()
   const rod = getFishingRodById(rodId)
   if (!rod) return { success: false, error: 'Joran pancing tidak terdaftar di kota.' }
@@ -1448,11 +1492,27 @@ export function buyFishingRod(citizenId: string, rodId: string) {
     return { success: false, error: 'Kamu sudah memiliki joran pancing ini di tas!' }
   }
 
-  const wallet = db.wallets.find((w) => w.citizen_id === citizenId)
-  if (!wallet || wallet.balance < rod.price) {
+  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) {
+    wallet = {
+      id: 'w-' + citizenId,
+      citizen_id: citizenId,
+      balance: clientBalance ?? 500,
+      total_earned: clientBalance ?? 500,
+      total_spent: 0,
+      updated_at: new Date().toISOString(),
+    }
+    db.wallets.push(wallet)
+  }
+
+  if (typeof clientBalance === 'number' && Number.isFinite(clientBalance) && clientBalance >= 0) {
+    wallet.balance = clientBalance
+  }
+
+  if (wallet.balance < rod.price) {
     return {
       success: false,
-      error: `Saldo Netizen Coins kamu tidak mencukupi (Butuh ${rod.price.toLocaleString('id-ID')} koin).`,
+      error: `Saldo Netizen Coins kamu tidak mencukupi (Butuh ${rod.price.toLocaleString('id-ID')} koin, saldo kamu ${wallet.balance} koin).`,
     }
   }
 
@@ -1507,7 +1567,7 @@ export function buyFishingRod(citizenId: string, rodId: string) {
 
   db.inventory.unshift(newEntry)
   writeLocalDB(db)
-  return { success: true, item: newEntry, newBalance: wallet.balance }
+  return { success: true, item: newEntry, newBalance: wallet.balance, wallet }
 }
 
 export function castVote(citizenId: string, voteId: string, optionId: number) {
@@ -1557,7 +1617,7 @@ export function castVote(citizenId: string, voteId: string, optionId: number) {
   return { success: true, options: vote.options, newBalance: wallet ? wallet.balance : undefined, wallet }
 }
 
-export function claimDailyStreakReward(citizenId: string) {
+export function claimDailyStreakReward(citizenId: string, clientBalance?: number) {
   const db = readLocalDB()
   const today = new Date().toISOString().split('T')[0]
 
@@ -1593,24 +1653,38 @@ export function claimDailyStreakReward(citizenId: string) {
     claimed_at: new Date().toISOString(),
   })
 
-  const wallet = db.wallets.find((w) => w.citizen_id === citizenId)
-  if (wallet) {
-    wallet.balance += rewardCoins
-    wallet.total_earned += rewardCoins
-    wallet.updated_at = new Date().toISOString()
-    db.transactions.unshift({
-      id: 'tx-' + Math.random().toString(36).substring(2, 9),
+  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) {
+    wallet = {
+      id: 'w-' + citizenId,
       citizen_id: citizenId,
-      type: 'reward',
-      amount: rewardCoins,
-      previous_balance: wallet.balance - rewardCoins,
-      new_balance: wallet.balance,
-      description: `Hadiah Login Harian Hari ke-${streak}`,
-      reference_type: 'daily_reward',
-      reference_id: null,
-      created_at: new Date().toISOString(),
-    })
+      balance: clientBalance ?? 500,
+      total_earned: clientBalance ?? 500,
+      total_spent: 0,
+      updated_at: new Date().toISOString(),
+    }
+    db.wallets.push(wallet)
   }
+
+  if (typeof clientBalance === 'number' && Number.isFinite(clientBalance) && clientBalance >= 0) {
+    wallet.balance = clientBalance
+  }
+
+  wallet.balance += rewardCoins
+  wallet.total_earned += rewardCoins
+  wallet.updated_at = new Date().toISOString()
+  db.transactions.unshift({
+    id: 'tx-' + Math.random().toString(36).substring(2, 9),
+    citizen_id: citizenId,
+    type: 'reward',
+    amount: rewardCoins,
+    previous_balance: wallet.balance - rewardCoins,
+    new_balance: wallet.balance,
+    description: `Hadiah Login Harian Hari ke-${streak}`,
+    reference_type: 'daily_reward',
+    reference_id: null,
+    created_at: new Date().toISOString(),
+  })
 
   writeLocalDB(db)
 
@@ -1980,7 +2054,7 @@ export function fertilizeCitizenGarden(citizenId: string) {
   }
 }
 
-export function refillGardenWater(citizenId: string) {
+export function refillGardenWater(citizenId: string, clientBalance?: number) {
   const db = readLocalDB()
   if (!db.gardens) db.gardens = []
 
@@ -1993,7 +2067,23 @@ export function refillGardenWater(citizenId: string) {
     }
   }
 
-  const wallet = getCitizenWallet(citizenId)
+  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) {
+    wallet = {
+      id: 'w-' + citizenId,
+      citizen_id: citizenId,
+      balance: clientBalance ?? 500,
+      total_earned: clientBalance ?? 500,
+      total_spent: 0,
+      updated_at: new Date().toISOString(),
+    }
+    db.wallets.push(wallet)
+  }
+
+  if (typeof clientBalance === 'number' && Number.isFinite(clientBalance) && clientBalance >= 0) {
+    wallet.balance = clientBalance
+  }
+
   const currentBalance = wallet ? wallet.balance : 0
   if (currentBalance < WATER_REFILL_PRICE) {
     return {
@@ -2006,9 +2096,10 @@ export function refillGardenWater(citizenId: string) {
   // Deduct 200 coins
   const updatedWallet = updateWalletBalance(
     citizenId,
-    -WATER_REFILL_PRICE,
+    WATER_REFILL_PRICE,
     'spend',
-    `Reset Air Gembor Kebun 100L (-${WATER_REFILL_PRICE} Koin)`
+    `Reset Air Gembor Kebun 100L (-${WATER_REFILL_PRICE} Koin)`,
+    { clientBalance: currentBalance }
   )
 
   garden.water_level = 100
@@ -2021,11 +2112,12 @@ export function refillGardenWater(citizenId: string) {
     success: true,
     garden,
     newBalance: updatedWallet ? updatedWallet.balance : currentBalance - WATER_REFILL_PRICE,
+    wallet: updatedWallet,
     cost: WATER_REFILL_PRICE,
   }
 }
 
-export function harvestCitizenGarden(citizenId: string) {
+export function harvestCitizenGarden(citizenId: string, clientBalance?: number) {
   const db = readLocalDB()
   if (!db.gardens) db.gardens = []
 
@@ -2035,6 +2127,7 @@ export function harvestCitizenGarden(citizenId: string) {
       success: false,
       error: 'Pohon belum mencapai tahap buah matang untuk dipanen. Siram dan beri pupuk lagi!',
       garden,
+      wallet: undefined,
     }
   }
 
@@ -2046,7 +2139,8 @@ export function harvestCitizenGarden(citizenId: string) {
     citizenId,
     rewardCoins,
     'reward',
-    `Hasil Panen Kebun Netizen: ${seed.name}`
+    `Hasil Panen Kebun Netizen: ${seed.name}`,
+    { clientBalance }
   )
 
   // 2. If seed yields special crop item, insert into backpack inventory
@@ -2085,6 +2179,7 @@ export function harvestCitizenGarden(citizenId: string) {
     rewardCoins,
     rewardItem: seed.rewardItem,
     newBalance: wallet ? wallet.balance : undefined,
+    wallet,
     garden,
   }
 }

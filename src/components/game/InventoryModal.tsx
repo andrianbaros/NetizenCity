@@ -523,7 +523,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
       const res = await fetch('/api/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sell', inventoryId: item.id, item: itemPayload }),
+        body: JSON.stringify({ action: 'sell', inventoryId: item.id, item: itemPayload, currentBalance: currentCoins }),
       })
 
       if (res.ok) {
@@ -607,7 +607,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
       const res = await fetch('/api/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'batch_sell', inventoryIds: ids, items: itemsPayload }),
+        body: JSON.stringify({ action: 'batch_sell', inventoryIds: ids, items: itemsPayload, currentBalance: currentCoins }),
       })
 
       if (res.ok) {
@@ -641,7 +641,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
       const res = await fetch('/api/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'buy_rod', rodId: rod.id }),
+        body: JSON.stringify({ action: 'buy_rod', rodId: rod.id, currentBalance: currentCoins }),
       })
 
       if (res.ok) {

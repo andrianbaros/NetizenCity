@@ -77,8 +77,11 @@ export default function DailyRewardModal() {
     setIsClaiming(true)
 
     try {
+      const currentCoins = wallet?.balance ?? 0
       const res = await fetch('/api/daily-rewards', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentBalance: currentCoins }),
       })
 
       const data = await res.json()

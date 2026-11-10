@@ -33,6 +33,24 @@ const dummyStorage = {
   removeItem: () => {},
 }
 
+function syncWalletCookie(wallet: Wallet | null) {
+  if (typeof document === 'undefined' || !wallet) return
+  try {
+    const payload = encodeURIComponent(
+      JSON.stringify({
+        cid: wallet.citizenId,
+        b: wallet.balance,
+        te: wallet.totalEarned ?? wallet.balance,
+        ts: wallet.totalSpent ?? 0,
+        u: wallet.updatedAt || new Date().toISOString(),
+      })
+    )
+    document.cookie = `nc_wallet=${payload}; path=/; max-age=2592000; SameSite=Lax`
+  } catch {
+    // ignore
+  }
+}
+
 export const useCitizenStore = create<CitizenState>()(
   persist(
     (set) => ({
@@ -48,38 +66,41 @@ export const useCitizenStore = create<CitizenState>()(
           }
           return { profile }
         }),
-      setWallet: (wallet) => set({ wallet }),
+      setWallet: (wallet) => {
+        syncWalletCookie(wallet)
+        set({ wallet })
+      },
       updateBalance: (balance) =>
         set((state) => {
           if (!state.wallet) {
-            return {
-              wallet: {
-                id: 'w-' + (state.profile?.id || 'saved'),
-                citizenId: state.profile?.id || 'citizen',
-                balance,
-                totalEarned: balance,
-                totalSpent: 0,
-                updatedAt: new Date().toISOString(),
-              },
+            const newW: Wallet = {
+              id: 'w-' + (state.profile?.id || 'saved'),
+              citizenId: state.profile?.id || 'citizen',
+              balance,
+              totalEarned: balance,
+              totalSpent: 0,
+              updatedAt: new Date().toISOString(),
             }
+            syncWalletCookie(newW)
+            return { wallet: newW }
           }
           const prev = state.wallet.balance
           const diff = balance - prev
-          return {
-            wallet: {
-              ...state.wallet,
-              balance,
-              totalEarned:
-                diff > 0
-                  ? (state.wallet.totalEarned ?? prev) + diff
-                  : state.wallet.totalEarned,
-              totalSpent:
-                diff < 0
-                  ? (state.wallet.totalSpent ?? 0) + Math.abs(diff)
-                  : state.wallet.totalSpent,
-              updatedAt: new Date().toISOString(),
-            },
+          const updatedW: Wallet = {
+            ...state.wallet,
+            balance,
+            totalEarned:
+              diff > 0
+                ? (state.wallet.totalEarned ?? prev) + diff
+                : state.wallet.totalEarned,
+            totalSpent:
+              diff < 0
+                ? (state.wallet.totalSpent ?? 0) + Math.abs(diff)
+                : state.wallet.totalSpent,
+            updatedAt: new Date().toISOString(),
           }
+          syncWalletCookie(updatedW)
+          return { wallet: updatedW }
         }),
       setInventory: (inventory) => set({ inventory: Array.isArray(inventory) ? inventory : [] }),
       addToInventory: (item) =>
@@ -145,6 +166,11 @@ export const useCitizenStore = create<CitizenState>()(
         wallet: state.wallet,
         inventory: state.inventory,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.wallet) {
+          syncWalletCookie(state.wallet)
+        }
+      },
     }
   )
 )

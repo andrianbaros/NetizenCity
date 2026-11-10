@@ -141,15 +141,34 @@ export default function GameHUD() {
           setProfile(null)
         }
         if (citData.wallet && citData.citizen) {
-          const currentStoreProfile = useCitizenStore.getState().profile
-          const currentLocalWallet = useCitizenStore.getState().wallet
+          let currentStoreProfile = useCitizenStore.getState().profile
+          let currentLocalWallet = useCitizenStore.getState().wallet
+
+          // If store is still hydrating on reload, read directly from localStorage
+          if (!currentLocalWallet && typeof window !== 'undefined') {
+            try {
+              const raw = localStorage.getItem('netizen_citizen_storage_v1')
+              if (raw) {
+                const parsed = JSON.parse(raw)
+                if (parsed?.state?.wallet) {
+                  currentLocalWallet = parsed.state.wallet
+                }
+                if (parsed?.state?.profile) {
+                  currentStoreProfile = parsed.state.profile
+                }
+              }
+            } catch {
+              // ignore
+            }
+          }
+
           const isSameCitizen =
-            currentStoreProfile?.id === citData.citizen.id &&
+            (currentStoreProfile?.id === citData.citizen.id || !currentStoreProfile) &&
             currentLocalWallet?.citizenId === citData.citizen.id
           const serverBalance =
             typeof citData.wallet.balance === 'number' ? citData.wallet.balance : 0
 
-          if (!isSameCitizen) {
+          if (!isSameCitizen || !currentLocalWallet) {
             // Fresh login or switched citizen: strictly adopt official server wallet
             setWallet({
               id: citData.wallet.id || 'w-' + citData.citizen.id,
@@ -169,9 +188,9 @@ export default function GameHUD() {
             const serverTime = new Date(citData.wallet.updated_at || 0).getTime()
             const localTime = new Date(currentLocalWallet?.updatedAt || 0).getTime()
 
-            // If local activity has a newer timestamp than server's stale file DB:
-            // Client's verified state (whether spent or earned) is authoritative over serverless cold-start!
-            if (localTime > serverTime && localBal !== serverBalance) {
+            // If local activity has a newer or equal timestamp than server's container DB,
+            // or if server balance reverted to stale 500 while local has verified activity:
+            if ((localTime >= serverTime && localBal !== serverBalance) || (serverBalance === 500 && localBal !== 500 && localSpent > 0)) {
               // Self-heal serverless container DB with client's confirmed wallet
               fetch('/api/economy', {
                 method: 'POST',
@@ -181,7 +200,7 @@ export default function GameHUD() {
                   amount: localBal,
                   totalEarned: Math.max(localEarned, serverEarned),
                   totalSpent: Math.max(localSpent, serverSpent),
-                  updatedAt: currentLocalWallet?.updatedAt,
+                  updatedAt: currentLocalWallet?.updatedAt || new Date().toISOString(),
                   description: 'Sinkronisasi rekonsiliasi saldo warga',
                 }),
               }).catch(() => {})
