@@ -1120,6 +1120,26 @@ export default function GameHUD() {
                     <div className="text-[10px] text-[#78634B] truncate">+100 Koin per Antar</div>
                   </div>
                 </button>
+
+                {/* 7. Toko Joran Pancing */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    openModal('rod_shop')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-2xl bg-[#F7F4E9] hover:bg-[#EFE9D8] border border-[#D8CEBE] text-left transition-colors cursor-pointer group shadow-2xs"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 shrink-0 text-base">
+                    🎣
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-heading font-black text-xs text-[#343B35] truncate">
+                      Toko Joran
+                    </div>
+                    <div className="text-[10px] text-[#78634B] truncate">7 Tier Joran &amp; Efek</div>
+                  </div>
+                </button>
               </div>
             </div>
 

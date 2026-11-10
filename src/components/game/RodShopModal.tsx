@@ -115,16 +115,23 @@ export default function RodShopModal() {
 
   // Helper: check if a rod is in user inventory
   const getInventoryEntry = (rodId: string) => {
-    return (inventory || []).find(
-      (inv) =>
-        (inv.itemId === rodId || (inv as any).item_id === rodId) &&
-        ((inv.itemId || '').startsWith('rod_') || inv.category === 'tools')
-    )
+    return (inventory || []).find((inv) => {
+      const id = inv.itemId || (inv as any).item_id || inv.id || ''
+      return (
+        id === rodId ||
+        id.startsWith(rodId) ||
+        (inv as any).metadata?.itemId === rodId ||
+        (inv as any).metadata?.id === rodId
+      )
+    })
   }
 
   // Handle equipping an owned rod
   const handleEquipRod = async (rod: FishingRodDefinition) => {
-    const invItem = getInventoryEntry(rod.id)
+    let invItem = getInventoryEntry(rod.id)
+    if (!invItem && rod.id === 'rod_wooden') {
+      invItem = (inventory || []).find((i) => (i.id || '').startsWith('inv-rod-starter'))
+    }
     if (!invItem) return
 
     setLoadingRodId(rod.id)
@@ -281,7 +288,14 @@ export default function RodShopModal() {
             const theme = RARITY_THEMES[rod.rarity] || RARITY_THEMES.common
             const invEntry = getInventoryEntry(rod.id)
             const isOwned = Boolean(invEntry) || (rod.price === 0 && rod.id === 'rod_wooden')
-            const isEquipped = Boolean(invEntry?.isEquipped) || (rod.id === 'rod_wooden' && !inventory.some((i) => i.isEquipped && (i.itemId || '').startsWith('rod_')))
+            const isEquipped =
+              Boolean(invEntry?.isEquipped || (invEntry as any)?.is_equipped) ||
+              (rod.id === 'rod_wooden' &&
+                !inventory.some(
+                  (i) =>
+                    Boolean(i.isEquipped || (i as any)?.is_equipped) &&
+                    ((i.itemId || (i as any)?.item_id || '').startsWith('rod_') || i.category === 'tools')
+                ))
             const canAfford = currentCoins >= rod.price
             const isLoading = loadingRodId === rod.id
 

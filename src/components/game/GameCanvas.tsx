@@ -259,10 +259,13 @@ export default function GameCanvas() {
   useEffect(() => {
     if (!cityManagerRef.current) return
     const equipped = inventory.find(
-      (item) => item.isEquipped && ((item.itemId || (item as any).item_id || '').startsWith('rod_') || item.category === 'tools')
+      (item) =>
+        Boolean(item.isEquipped || (item as any).is_equipped) &&
+        ((item.itemId || (item as any).item_id || '').startsWith('rod_') || item.category === 'tools')
     )
     if (equipped) {
-      const rodDef = getFishingRodById(equipped.itemId)
+      const rodId = equipped.itemId || (equipped as any).item_id
+      const rodDef = getFishingRodById(rodId)
       cityManagerRef.current.updateEquippedRod(rodDef)
     } else {
       cityManagerRef.current.updateEquippedRod(null)
@@ -1424,6 +1427,17 @@ export default function GameCanvas() {
                 >
                   <Zap className="w-3 h-3 text-amber-500" />
                   <span>{isAutoFishing ? 'Auto On' : 'Auto'}</span>
+                </button>
+
+                {/* Toko Joran Direct Kiosk Button */}
+                <button
+                  type="button"
+                  onClick={() => useUIStore.getState().openModal('rod_shop')}
+                  className="flex items-center space-x-1 px-3 py-2 sm:px-4 sm:py-3 rounded-2xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-stone-950 border border-amber-300 shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
+                  title="Buka Toko Joran Pancing"
+                >
+                  <span className="text-xs sm:text-sm">🏪</span>
+                  <span>Toko Joran</span>
                 </button>
               </div>
             </div>

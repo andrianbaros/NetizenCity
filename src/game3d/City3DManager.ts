@@ -889,6 +889,7 @@ export class City3DManager {
   private rodReelMesh: THREE.Mesh | null = null;
   private rodTipGlowMesh: THREE.Mesh | null = null;
   private rodTip: THREE.Object3D | null = null;
+  private rodSpecialEffects: THREE.Object3D[] = [];
   private fishingBobber: THREE.Group | null = null;
   private fishingLine: THREE.Line | null = null;
   private targetBobberPos = new THREE.Vector3(0, -0.05, -6);
@@ -3560,6 +3561,12 @@ export class City3DManager {
 
     this.beachWorldGroup.add(pierDeckGroup);
 
+    // 16b. Toko Pancing Mang Ujang (Beach Pier Kiosk at x = 3.8, z = 24.2)
+    const beachRodShop = this.createRodShopKiosk('river');
+    beachRodShop.position.set(3.8, 0.1, 24.2);
+    beachRodShop.rotation.y = -Math.PI / 4;
+    this.beachWorldGroup.add(beachRodShop);
+
     // 17. Docked Cargo Ship / Ferry ("KOTA NETIZEN" Sandar di Dermaga)
     const cargoShip = this.makeCargoShip();
     cargoShip.position.set(-9.5, 0, 34.0);
@@ -4321,83 +4328,489 @@ export class City3DManager {
     });
   }
 
+  private constructFishingRodGeometry(rodConfig: FishingRodDefinition) {
+    if (!this.fishingRodGroup) return;
+
+    // Clear previous rod geometry
+    while (this.fishingRodGroup.children.length > 0) {
+      const child = this.fishingRodGroup.children[0];
+      this.fishingRodGroup.remove(child);
+      if ((child as any).geometry) (child as any).geometry.dispose();
+    }
+    this.rodSpecialEffects = [];
+
+    const id = rodConfig.id;
+    let tipY = 2.15;
+
+    if (id === 'rod_bamboo') {
+      // -------------------------------------------------------------
+      // 2. BAMBOO ROD (Joran Bambu - Uncommon)
+      // Segmented culm with golden-green nodes & woven rattan handle
+      // -------------------------------------------------------------
+      const handleMat = new THREE.MeshStandardMaterial({ color: '#65A30D', roughness: 0.85 });
+      this.rodHandleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.03, 0.38, 8), handleMat);
+      this.fishingRodGroup.add(this.rodHandleMesh);
+
+      const rattanMat = new THREE.MeshStandardMaterial({ color: '#A38953', roughness: 0.9 });
+      for (let w = -0.14; w <= 0.14; w += 0.05) {
+        const wrap = new THREE.Mesh(new THREE.TorusGeometry(0.028, 0.005, 5, 8), rattanMat);
+        wrap.position.set(0, w, 0);
+        this.fishingRodGroup.add(wrap);
+      }
+
+      const reelMat = new THREE.MeshStandardMaterial({ color: '#4D7C0F', roughness: 0.6 });
+      this.rodReelMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.04, 8), reelMat);
+      this.rodReelMesh.rotation.z = Math.PI / 2;
+      this.rodReelMesh.position.set(0.045, 0.1, 0);
+      this.fishingRodGroup.add(this.rodReelMesh);
+
+      const bambooMat = new THREE.MeshStandardMaterial({ color: '#84CC16', roughness: 0.35 });
+      const nodeMat = new THREE.MeshStandardMaterial({ color: '#4D7C0F', roughness: 0.5 });
+      const segmentCount = 5;
+      const segLength = 0.36;
+      for (let s = 0; s < segmentCount; s++) {
+        const rBottom = 0.024 - s * 0.0035;
+        const rTop = 0.021 - s * 0.0035;
+        const seg = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBottom, segLength, 8), bambooMat);
+        seg.position.set(0, 0.22 + s * segLength + segLength / 2, 0);
+        this.fishingRodGroup.add(seg);
+
+        const node = new THREE.Mesh(new THREE.TorusGeometry(rBottom + 0.004, 0.005, 6, 10), nodeMat);
+        node.position.set(0, 0.22 + s * segLength, 0);
+        this.fishingRodGroup.add(node);
+      }
+
+      const guideMat = new THREE.MeshStandardMaterial({ color: '#CA8A04', metalness: 0.8, roughness: 0.3 });
+      [0.6, 1.0, 1.4, 1.8].forEach((gy) => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.004, 6, 8), guideMat);
+        ring.position.set(0, gy, 0.025);
+        this.fishingRodGroup?.add(ring);
+      });
+
+      tipY = 0.22 + segmentCount * segLength + 0.08;
+
+      const leafMesh = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.09, 3), new THREE.MeshBasicMaterial({ color: '#A3E635' }));
+      leafMesh.position.set(0.06, 1.2, 0);
+      (leafMesh as any).isFloating = true;
+      (leafMesh as any).baseY = 1.2;
+      (leafMesh as any).rotSpeed = 1.2;
+      this.fishingRodGroup.add(leafMesh);
+      this.rodSpecialEffects.push(leafMesh);
+
+    } else if (id === 'rod_carbon') {
+      // -------------------------------------------------------------
+      // 3. CARBON ROD (Joran Karbon - Rare)
+      // High-tech graphite split-grip, angular blank & low-poly baitcaster
+      // -------------------------------------------------------------
+      const evaMat = new THREE.MeshStandardMaterial({ color: '#1E293B', roughness: 0.9 });
+      this.rodHandleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.03, 0.16, 8), evaMat);
+      this.rodHandleMesh.position.set(0, 0.08, 0);
+
+      const buttMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.03, 0.12, 8), evaMat);
+      buttMesh.position.set(0, -0.12, 0);
+
+      const triggerMat = new THREE.MeshStandardMaterial({ color: '#0F172A', metalness: 0.5, roughness: 0.5 });
+      const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 0.06), triggerMat);
+      trigger.position.set(0, 0.02, 0.04);
+      trigger.rotation.x = -0.3;
+      this.fishingRodGroup.add(this.rodHandleMesh, buttMesh, trigger);
+
+      const reelMat = new THREE.MeshStandardMaterial({ color: '#0EA5E9', metalness: 0.85, roughness: 0.2 });
+      this.rodReelMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.06), reelMat);
+      this.rodReelMesh.position.set(0.04, 0.12, 0);
+      const crankBar = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.09, 0.015), reelMat);
+      crankBar.position.set(0.085, 0.12, 0);
+      this.fishingRodGroup.add(this.rodReelMesh, crankBar);
+
+      const blankMat = new THREE.MeshStandardMaterial({
+        color: '#2563EB',
+        roughness: 0.3,
+        metalness: 0.6,
+        emissive: new THREE.Color('#1D4ED8'),
+        emissiveIntensity: 0.25,
+      });
+      this.rodBlankMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.022, 1.95, 8), blankMat);
+      this.rodBlankMesh.position.set(0, 1.15, 0);
+      this.fishingRodGroup.add(this.rodBlankMesh);
+
+      const guideMat = new THREE.MeshStandardMaterial({ color: '#38BDF8', emissive: '#0284C7', emissiveIntensity: 0.5 });
+      [0.55, 0.95, 1.35, 1.75, 2.05].forEach((gy) => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.004, 6, 8), guideMat);
+        ring.position.set(0, gy, 0.025);
+        this.fishingRodGroup?.add(ring);
+      });
+
+      tipY = 2.15;
+
+      const pulseRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.08, 0.008, 6, 16),
+        new THREE.MeshBasicMaterial({ color: '#38BDF8', transparent: true, opacity: 0.8 })
+      );
+      pulseRing.rotation.x = Math.PI / 2;
+      pulseRing.position.set(0.04, 0.12, 0);
+      (pulseRing as any).rotSpeed = 2.5;
+      (pulseRing as any).isHalo = true;
+      this.fishingRodGroup.add(pulseRing);
+      this.rodSpecialEffects.push(pulseRing);
+
+    } else if (id === 'rod_professional') {
+      // -------------------------------------------------------------
+      // 4. PROFESSIONAL ROD (Joran Pro - Epic)
+      // Aerodynamic tournament blank in royal purple with titanium spinning reel
+      // -------------------------------------------------------------
+      const handleMat = new THREE.MeshStandardMaterial({ color: '#3B0764', roughness: 0.7 });
+      this.rodHandleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.42, 10), handleMat);
+      const buttCap = new THREE.Mesh(new THREE.SphereGeometry(0.034, 8, 8), new THREE.MeshStandardMaterial({ color: '#DDD6FE', metalness: 0.9, roughness: 0.2 }));
+      buttCap.position.set(0, -0.21, 0);
+      this.fishingRodGroup.add(this.rodHandleMesh, buttCap);
+
+      const reelMat = new THREE.MeshStandardMaterial({ color: '#C084FC', metalness: 0.9, roughness: 0.2 });
+      this.rodReelMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.045, 0.08, 12), reelMat);
+      this.rodReelMesh.rotation.z = Math.PI / 2;
+      this.rodReelMesh.position.set(0.055, 0.14, 0);
+      this.fishingRodGroup.add(this.rodReelMesh);
+
+      const blankMat = new THREE.MeshStandardMaterial({
+        color: '#9333EA',
+        metalness: 0.75,
+        roughness: 0.25,
+        emissive: new THREE.Color('#7E22CE'),
+        emissiveIntensity: 0.35,
+      });
+      this.rodBlankMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.024, 2.05, 8), blankMat);
+      this.rodBlankMesh.position.set(0, 1.22, 0);
+      this.fishingRodGroup.add(this.rodBlankMesh);
+
+      const guideMat = new THREE.MeshStandardMaterial({ color: '#DDD6FE', metalness: 0.9, roughness: 0.2 });
+      [0.55, 0.95, 1.35, 1.75, 2.15].forEach((gy) => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.004, 6, 8), guideMat);
+        ring.position.set(0, gy, 0.028);
+        this.fishingRodGroup?.add(ring);
+      });
+
+      tipY = 2.25;
+
+      for (let p = 0; p < 2; p++) {
+        const star = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.035, 0),
+          new THREE.MeshBasicMaterial({ color: '#E9D5FF' })
+        );
+        const orbitPivot = new THREE.Group();
+        orbitPivot.position.set(0, 1.4, 0);
+        star.position.set(p === 0 ? 0.12 : -0.12, 0, 0);
+        orbitPivot.add(star);
+        (orbitPivot as any).rotSpeed = 2.2 * (p === 0 ? 1 : -1);
+        this.fishingRodGroup.add(orbitPivot);
+        this.rodSpecialEffects.push(orbitPivot);
+      }
+
+    } else if (id === 'rod_golden') {
+      // -------------------------------------------------------------
+      // 5. GOLDEN ROD (Joran Emas Midas - Legendary)
+      // Solid sculpted 24K gold, jewel-encrusted reel & orbiting gold sparkles
+      // -------------------------------------------------------------
+      const handleMat = new THREE.MeshStandardMaterial({ color: '#78350F', roughness: 0.6 });
+      this.rodHandleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.034, 0.42, 8), handleMat);
+      const goldMat = new THREE.MeshStandardMaterial({ color: '#EAB308', metalness: 0.95, roughness: 0.15 });
+      const crownButt = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.028, 0.08, 6), goldMat);
+      crownButt.position.set(0, -0.21, 0);
+      this.fishingRodGroup.add(this.rodHandleMesh, crownButt);
+
+      [-0.12, 0, 0.12].forEach((hy) => {
+        const band = new THREE.Mesh(new THREE.TorusGeometry(0.033, 0.005, 6, 12), goldMat);
+        band.position.set(0, hy, 0);
+        this.fishingRodGroup?.add(band);
+      });
+
+      const reelMat = new THREE.MeshStandardMaterial({ color: '#FDE047', metalness: 0.98, roughness: 0.1 });
+      this.rodReelMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.08, 12), reelMat);
+      this.rodReelMesh.rotation.z = Math.PI / 2;
+      this.rodReelMesh.position.set(0.06, 0.14, 0);
+      const ruby = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.025, 0),
+        new THREE.MeshStandardMaterial({ color: '#DC2626', roughness: 0.1, metalness: 0.5 })
+      );
+      ruby.position.set(0.105, 0.14, 0);
+      this.fishingRodGroup.add(this.rodReelMesh, ruby);
+
+      const blankMat = new THREE.MeshStandardMaterial({
+        color: '#EAB308',
+        metalness: 0.96,
+        roughness: 0.18,
+        emissive: new THREE.Color('#CA8A04'),
+        emissiveIntensity: 0.35,
+      });
+      this.rodBlankMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.026, 2.1, 6), blankMat);
+      this.rodBlankMesh.position.set(0, 1.25, 0);
+      this.fishingRodGroup.add(this.rodBlankMesh);
+
+      [0.6, 1.0, 1.4, 1.8, 2.15].forEach((gy) => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.005, 6, 10), goldMat);
+        ring.position.set(0, gy, 0.03);
+        this.fishingRodGroup?.add(ring);
+      });
+
+      const sunburst = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), goldMat);
+      sunburst.position.set(0, 2.3, 0);
+      this.fishingRodGroup.add(sunburst);
+
+      tipY = 2.3;
+
+      const diamondMat = new THREE.MeshBasicMaterial({ color: '#FEF08A' });
+      for (let i = 0; i < 4; i++) {
+        const orbitPivot = new THREE.Group();
+        orbitPivot.position.set(0, 0.8 + i * 0.35, 0);
+        const diamond = new THREE.Mesh(new THREE.OctahedronGeometry(0.028, 0), diamondMat);
+        const radius = 0.1 + (i % 2) * 0.04;
+        diamond.position.set(Math.cos(i * 1.57) * radius, 0, Math.sin(i * 1.57) * radius);
+        orbitPivot.add(diamond);
+        (orbitPivot as any).rotSpeed = 1.6 + i * 0.3;
+        this.fishingRodGroup.add(orbitPivot);
+        this.rodSpecialEffects.push(orbitPivot);
+      }
+
+    } else if (id === 'rod_mythic') {
+      // -------------------------------------------------------------
+      // 6. MYTHIC ROD (Joran Naga Api Merah - Mythic)
+      // Jagged dragon-bone vertebra shaft, magma skull reel & rising flame embers
+      // -------------------------------------------------------------
+      const handleMat = new THREE.MeshStandardMaterial({ color: '#450A0A', roughness: 0.85 });
+      this.rodHandleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.034, 0.42, 8), handleMat);
+      const pommel = new THREE.Mesh(
+        new THREE.ConeGeometry(0.035, 0.1, 4).rotateX(Math.PI),
+        new THREE.MeshStandardMaterial({ color: '#18181B', roughness: 0.2, metalness: 0.8 })
+      );
+      pommel.position.set(0, -0.24, 0);
+      this.fishingRodGroup.add(this.rodHandleMesh, pommel);
+
+      const skullMat = new THREE.MeshStandardMaterial({ color: '#7F1D1D', metalness: 0.6, roughness: 0.4 });
+      this.rodReelMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.055, 1), skullMat);
+      this.rodReelMesh.position.set(0.06, 0.14, 0);
+      const magmaCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 8, 8),
+        new THREE.MeshBasicMaterial({ color: '#F87171' })
+      );
+      magmaCore.position.set(0.06, 0.14, 0);
+      this.fishingRodGroup.add(this.rodReelMesh, magmaCore);
+
+      const boneMat = new THREE.MeshStandardMaterial({
+        color: '#DC2626',
+        metalness: 0.4,
+        roughness: 0.35,
+        emissive: new THREE.Color('#EF4444'),
+        emissiveIntensity: 0.75,
+      });
+      const coreBlank = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.024, 2.1, 6), boneMat);
+      coreBlank.position.set(0, 1.25, 0);
+      this.fishingRodGroup.add(coreBlank);
+      this.rodBlankMesh = coreBlank;
+
+      for (let s = 0; s < 6; s++) {
+        const spineFin = new THREE.Mesh(new THREE.ConeGeometry(0.025 - s * 0.002, 0.08, 3), boneMat);
+        spineFin.position.set(0, 0.45 + s * 0.3, -0.025);
+        spineFin.rotation.x = -0.5;
+        this.fishingRodGroup.add(spineFin);
+      }
+
+      const talonMat = new THREE.MeshStandardMaterial({ color: '#991B1B', metalness: 0.7, roughness: 0.3 });
+      [0.6, 1.0, 1.4, 1.8, 2.15].forEach((gy) => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.005, 5, 8), talonMat);
+        ring.position.set(0, gy, 0.03);
+        this.fishingRodGroup?.add(ring);
+      });
+
+      const dragonHorn = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 4), boneMat);
+      dragonHorn.position.set(0, 2.35, 0);
+      this.fishingRodGroup.add(dragonHorn);
+
+      tipY = 2.38;
+
+      for (let e = 0; e < 4; e++) {
+        const ember = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(0.022, 0),
+          new THREE.MeshBasicMaterial({ color: e % 2 === 0 ? '#EF4444' : '#F97316' })
+        );
+        const pivot = new THREE.Group();
+        pivot.position.set(0, 0.9 + e * 0.35, 0);
+        ember.position.set(Math.sin(e * 2.0) * 0.09, 0, Math.cos(e * 2.0) * 0.09);
+        pivot.add(ember);
+        (pivot as any).rotSpeed = 2.4 + e * 0.5;
+        (pivot as any).isFloating = true;
+        (pivot as any).baseY = 0.9 + e * 0.35;
+        this.fishingRodGroup.add(pivot);
+        this.rodSpecialEffects.push(pivot);
+      }
+
+    } else if (id === 'rod_immortal') {
+      // -------------------------------------------------------------
+      // 7. IMMORTAL ROD (Trisula Pancing Abadi 🔱 - Immortal)
+      // Celestial crystal shaft, levitating core, dual rotating holy halos & SACRED TRIDENT HEAD
+      // -------------------------------------------------------------
+      const handleMat = new THREE.MeshStandardMaterial({ color: '#083344', roughness: 0.5 });
+      this.rodHandleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.032, 0.44, 12), handleMat);
+      const silkMat = new THREE.MeshBasicMaterial({ color: '#67E8F9' });
+      for (let sw = -0.16; sw <= 0.16; sw += 0.06) {
+        const wrap = new THREE.Mesh(new THREE.TorusGeometry(0.033, 0.004, 6, 12), silkMat);
+        wrap.position.set(0, sw, 0);
+        this.fishingRodGroup.add(wrap);
+      }
+      this.fishingRodGroup.add(this.rodHandleMesh);
+
+      const reelRingMat = new THREE.MeshStandardMaterial({ color: '#06B6D4', metalness: 0.95, roughness: 0.1 });
+      const gyroRing = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.007, 8, 16), reelRingMat);
+      gyroRing.rotation.y = Math.PI / 2;
+      gyroRing.position.set(0.06, 0.15, 0);
+      const cosmicGem = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.035, 0),
+        new THREE.MeshBasicMaterial({ color: '#EC4899' })
+      );
+      cosmicGem.position.set(0.06, 0.15, 0);
+      (gyroRing as any).rotSpeed = 3.5;
+      (gyroRing as any).isHalo = true;
+      this.fishingRodGroup.add(gyroRing, cosmicGem);
+      this.rodSpecialEffects.push(gyroRing);
+      this.rodReelMesh = gyroRing;
+
+      const blankMat = new THREE.MeshStandardMaterial({
+        color: '#EC4899',
+        metalness: 0.85,
+        roughness: 0.15,
+        emissive: new THREE.Color('#06B6D4'),
+        emissiveIntensity: 0.55,
+      });
+      this.rodBlankMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.026, 2.15, 8), blankMat);
+      this.rodBlankMesh.position.set(0, 1.28, 0);
+      this.fishingRodGroup.add(this.rodBlankMesh);
+
+      const guideHaloMat = new THREE.MeshBasicMaterial({ color: '#38BDF8', transparent: true, opacity: 0.85 });
+      [0.65, 1.1, 1.55, 1.95].forEach((gy) => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.005, 6, 12), guideHaloMat);
+        ring.position.set(0, gy, 0.032);
+        this.fishingRodGroup?.add(ring);
+      });
+
+      // 🔱 SACRED TRIDENT HEAD (🔱)
+      const tridentGroup = new THREE.Group();
+      tridentGroup.position.set(0, 2.35, 0);
+
+      const centerSpear = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.32, 6), blankMat);
+      centerSpear.position.set(0, 0.16, 0);
+      tridentGroup.add(centerSpear);
+
+      const leftProng = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.014, 6, 12, Math.PI / 1.6), blankMat);
+      leftProng.position.set(-0.06, 0.08, 0);
+      leftProng.rotation.z = Math.PI * 0.3;
+      const leftTip = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 5), blankMat);
+      leftTip.position.set(-0.11, 0.22, 0);
+      leftTip.rotation.z = 0.2;
+      tridentGroup.add(leftProng, leftTip);
+
+      const rightProng = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.014, 6, 12, Math.PI / 1.6), blankMat);
+      rightProng.position.set(0.06, 0.08, 0);
+      rightProng.rotation.z = Math.PI * 0.7;
+      const rightTip = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 5), blankMat);
+      rightTip.position.set(0.11, 0.22, 0);
+      rightTip.rotation.z = -0.2;
+      tridentGroup.add(rightProng, rightTip);
+
+      const tridentJewel = new THREE.Mesh(new THREE.DodecahedronGeometry(0.04, 0), new THREE.MeshBasicMaterial({ color: '#38BDF8' }));
+      tridentJewel.position.set(0, 0.04, 0);
+      tridentGroup.add(tridentJewel);
+
+      this.fishingRodGroup.add(tridentGroup);
+      tipY = 2.35 + 0.32;
+
+      const haloMat1 = new THREE.MeshBasicMaterial({ color: '#38BDF8', transparent: true, opacity: 0.8 });
+      const halo1 = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.01, 8, 20), haloMat1);
+      halo1.position.set(0, 2.45, 0);
+      halo1.rotation.x = Math.PI / 2;
+      (halo1 as any).rotSpeed = 3.2;
+      (halo1 as any).isHalo = true;
+
+      const haloMat2 = new THREE.MeshBasicMaterial({ color: '#EC4899', transparent: true, opacity: 0.75 });
+      const halo2 = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.008, 8, 20), haloMat2);
+      halo2.position.set(0, 2.45, 0);
+      halo2.rotation.x = Math.PI / 3;
+      halo2.rotation.y = Math.PI / 4;
+      (halo2 as any).rotSpeed = -2.8;
+      (halo2 as any).isHalo = true;
+
+      this.fishingRodGroup.add(halo1, halo2);
+      this.rodSpecialEffects.push(halo1, halo2);
+
+    } else {
+      // -------------------------------------------------------------
+      // 1. WOODEN ROD (Joran Kayu - Common / Default)
+      // Natural carved branch with twine wrapping & rustic wood spool
+      // -------------------------------------------------------------
+      const handleMat = new THREE.MeshStandardMaterial({ color: '#5C3818', roughness: 0.9 });
+      this.rodHandleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.03, 0.38, 6), handleMat);
+      const twineMat = new THREE.MeshStandardMaterial({ color: '#A07855', roughness: 0.95 });
+      [-0.1, 0.02].forEach((ty) => {
+        const wrap = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.005, 5, 8), twineMat);
+        wrap.position.set(0, ty, 0);
+        this.fishingRodGroup?.add(wrap);
+      });
+      this.fishingRodGroup.add(this.rodHandleMesh);
+
+      const reelMat = new THREE.MeshStandardMaterial({ color: '#4A3728', roughness: 0.8 });
+      this.rodReelMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.05, 8), reelMat);
+      this.rodReelMesh.rotation.z = Math.PI / 2;
+      this.rodReelMesh.position.set(0.04, 0.1, 0);
+      const crankPeg = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.04, 4), handleMat);
+      crankPeg.position.set(0.075, 0.13, 0);
+      this.fishingRodGroup.add(this.rodReelMesh, crankPeg);
+
+      const branchMat = new THREE.MeshStandardMaterial({ color: '#8B5A2B', roughness: 0.85 });
+      const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.024, 0.65, 6), branchMat);
+      b1.position.set(0, 0.5, 0);
+      b1.rotation.z = 0.02;
+
+      const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.016, 0.65, 6), branchMat);
+      b2.position.set(0.01, 1.15, 0);
+      b2.rotation.z = -0.03;
+
+      const b3 = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.011, 0.65, 6), branchMat);
+      b3.position.set(0, 1.8, 0);
+      b3.rotation.z = 0.01;
+
+      const knot = new THREE.Mesh(new THREE.DodecahedronGeometry(0.02, 0), handleMat);
+      knot.position.set(0.02, 0.85, 0);
+
+      this.fishingRodGroup.add(b1, b2, b3, knot);
+      this.rodBlankMesh = b2;
+
+      const guideMat = new THREE.MeshStandardMaterial({ color: '#B45309', metalness: 0.6, roughness: 0.5 });
+      [0.6, 1.1, 1.6].forEach((gy) => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.004, 5, 8), guideMat);
+        ring.position.set(0, gy, 0.022);
+        this.fishingRodGroup?.add(ring);
+      });
+
+      tipY = 2.12;
+    }
+
+    // Set Rod Tip Marker at EXACT 3D tip position
+    this.rodTip = new THREE.Object3D();
+    this.rodTip.name = 'RodTipMarker';
+    this.rodTip.position.set(0, tipY, 0);
+
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: rodConfig.glowColor || '#FFFFFF',
+    });
+    this.rodTipGlowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), glowMat);
+    this.rodTipGlowMesh.visible = Boolean(rodConfig.glowColor);
+    this.rodTip.add(this.rodTipGlowMesh);
+
+    this.fishingRodGroup.add(this.rodTip);
+  }
+
   private setupFishingGear() {
     this.fishingRodGroup = new THREE.Group();
     this.fishingRodGroup.name = 'FishingRod';
 
     const rodConfig = this.currentEquippedRod || FISHING_RODS[0];
-
-    // Handle (cork grip) centered at (0, 0, 0)
-    const handleMat = new THREE.MeshStandardMaterial({
-      color: rodConfig.handleColor,
-      roughness: 0.8,
-    });
-    this.rodHandleMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.032, 0.036, 0.38, 8),
-      handleMat
-    );
-    this.rodHandleMesh.position.set(0, 0, 0);
-    this.fishingRodGroup.add(this.rodHandleMesh);
-
-    // Reel seat & mini reel
-    const reelMat = new THREE.MeshStandardMaterial({
-      color: rodConfig.reelColor,
-      metalness: 0.8,
-      roughness: 0.25,
-    });
-    this.rodReelMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.05, 0.05, 0.08, 12),
-      reelMat
-    );
-    this.rodReelMesh.rotation.z = Math.PI / 2;
-    this.rodReelMesh.position.set(0.05, 0.12, 0);
-    this.fishingRodGroup.add(this.rodReelMesh);
-
-    // Blank (tapered flexible rod shaft, height 2.0, center at y = 1.19)
-    const rodMat = new THREE.MeshStandardMaterial({
-      color: rodConfig.color,
-      roughness: 0.4,
-      metalness: rodConfig.rarity === 'legendary' || rodConfig.rarity === 'immortal' ? 0.85 : 0.3,
-      emissive: new THREE.Color(rodConfig.glowColor || '#000000'),
-      emissiveIntensity: rodConfig.glowColor ? 0.55 : 0,
-    });
-    this.rodBlankMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.012, 0.028, 2.0, 8),
-      rodMat
-    );
-    this.rodBlankMesh.position.set(0, 1.19, 0);
-    this.fishingRodGroup.add(this.rodBlankMesh);
-
-    // Line Guide rings
-    const ringMat = new THREE.MeshStandardMaterial({
-      color: '#D1D5DB',
-      metalness: 0.9,
-      roughness: 0.2,
-    });
-    const rod = this.fishingRodGroup;
-    [0.55, 0.95, 1.35, 1.75, 2.15].forEach((gy) => {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.022, 0.005, 6, 8),
-        ringMat
-      );
-      ring.position.set(0, gy, 0.03);
-      rod.add(ring);
-    });
-
-    // Rod Tip Marker (EXACT 3D tip of the fishing rod at y = 2.2)
-    this.rodTip = new THREE.Object3D();
-    this.rodTip.name = 'RodTipMarker';
-    this.rodTip.position.set(0, 2.2, 0);
-
-    // Glowing tip bead for enchanted / higher tier rods
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: rodConfig.glowColor || '#FFFFFF',
-    });
-    this.rodTipGlowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), glowMat);
-    this.rodTipGlowMesh.visible = Boolean(rodConfig.glowColor);
-    this.rodTip.add(this.rodTipGlowMesh);
-
-    this.fishingRodGroup.add(this.rodTip);
+    this.constructFishingRodGeometry(rodConfig);
 
     // Fishing Bobber (Classic red & white float)
     this.fishingBobber = new THREE.Group();
@@ -4617,13 +5030,25 @@ export class City3DManager {
 
     // 9. Interactive Hitbox for Click / Raycast
     const hitGeo = new THREE.BoxGeometry(4.8, 3.6, 4.2);
-    const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+    const hitMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
     const hitBox = new THREE.Mesh(hitGeo, hitMat);
     hitBox.position.set(0, 1.8, 0);
     (hitBox as any).isRodShop = true;
     (hitBox as any).shopType = type;
     kiosk.add(hitBox);
     this.interactiveRodShopMeshes.push(hitBox);
+
+    // Also register kiosk visual components for raycasting so clicking anywhere on the shop works
+    kiosk.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        (child as any).isRodShop = true;
+        this.interactiveRodShopMeshes.push(child);
+      }
+    });
 
     return kiosk;
   }
@@ -6575,42 +7000,7 @@ export class City3DManager {
 
     if (this.fishingRodGroup) {
       this.fishingRodGroup.visible = this.viewMode === 'river' || this.viewMode === 'beach';
-
-      if (this.rodBlankMesh) {
-        const mat = this.rodBlankMesh.material as THREE.MeshStandardMaterial;
-        mat.color.set(rodDef.color);
-        mat.metalness =
-          rodDef.rarity === 'legendary' || rodDef.rarity === 'immortal' ? 0.85 : 0.25;
-        mat.roughness =
-          rodDef.rarity === 'rare' || rodDef.rarity === 'epic' ? 0.25 : 0.45;
-        if (rodDef.glowColor) {
-          mat.emissive.set(rodDef.glowColor);
-          mat.emissiveIntensity = 0.55;
-        } else {
-          mat.emissive.set('#000000');
-          mat.emissiveIntensity = 0;
-        }
-      }
-
-      if (this.rodHandleMesh) {
-        const mat = this.rodHandleMesh.material as THREE.MeshStandardMaterial;
-        mat.color.set(rodDef.handleColor);
-      }
-
-      if (this.rodReelMesh) {
-        const mat = this.rodReelMesh.material as THREE.MeshStandardMaterial;
-        mat.color.set(rodDef.reelColor);
-        mat.metalness = rodDef.rarity === 'common' ? 0.5 : 0.85;
-      }
-
-      if (this.rodTipGlowMesh) {
-        if (rodDef.glowColor) {
-          this.rodTipGlowMesh.visible = true;
-          (this.rodTipGlowMesh.material as THREE.MeshBasicMaterial).color.set(rodDef.glowColor);
-        } else {
-          this.rodTipGlowMesh.visible = false;
-        }
-      }
+      this.constructFishingRodGeometry(rodDef);
     }
   }
 
@@ -6652,6 +7042,20 @@ export class City3DManager {
   }
 
   private updateRiver(delta: number, elapsed: number) {
+    // 0. Update Fishing Rod Special Effects (Sparkles, Halos, Magma Embers, Floating Gems)
+    if (this.rodSpecialEffects.length > 0) {
+      this.rodSpecialEffects.forEach((fx, idx) => {
+        const speed = (fx as any).rotSpeed || 1.8;
+        fx.rotation.y += speed * delta;
+        if ((fx as any).isFloating) {
+          fx.position.y = (fx as any).baseY + Math.sin(elapsed * 3 + idx) * 0.05;
+        }
+        if ((fx as any).isHalo) {
+          fx.rotation.z += 0.8 * delta;
+        }
+      });
+    }
+
     // 1. Update Water Ripples
     for (let i = this.riverRipples.length - 1; i >= 0; i--) {
       const rip = this.riverRipples[i];
@@ -7618,7 +8022,7 @@ private setupAirplanes() {
 
         // Check if player tapped the 3D Rod Shop Kiosk!
         if (this.interactiveRodShopMeshes.length > 0) {
-          const rodHits = this.raycaster.intersectObjects(this.interactiveRodShopMeshes);
+          const rodHits = this.raycaster.intersectObjects(this.interactiveRodShopMeshes, true);
           if (rodHits.length > 0) {
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('open-rod-shop'));
@@ -7683,7 +8087,7 @@ private setupAirplanes() {
 
         // Check if player tapped the 3D Rod Shop Kiosk!
         if (this.interactiveRodShopMeshes.length > 0) {
-          const rodHits = this.raycaster.intersectObjects(this.interactiveRodShopMeshes);
+          const rodHits = this.raycaster.intersectObjects(this.interactiveRodShopMeshes, true);
           if (rodHits.length > 0) {
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('open-rod-shop'));
@@ -7783,7 +8187,7 @@ private setupAirplanes() {
 
       // 0b. Raycast against Rod Shop kiosks (Forest & River)
       if (this.interactiveRodShopMeshes.length > 0) {
-        const rodHits = this.raycaster.intersectObjects(this.interactiveRodShopMeshes);
+        const rodHits = this.raycaster.intersectObjects(this.interactiveRodShopMeshes, true);
         if (rodHits.length > 0) {
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('open-rod-shop'));

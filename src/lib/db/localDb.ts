@@ -92,9 +92,9 @@ export interface LocalDBSchema {
     id: string
     name: string
     description: string
-    category: 'tops' | 'bottoms' | 'shoes' | 'hairstyles' | 'accessories' | 'back'
+    category: 'tops' | 'bottoms' | 'shoes' | 'hairstyles' | 'accessories' | 'back' | 'tools' | 'fish' | string
     price: number
-    rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
+    rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'immortal' | string
     color: string
     sprite_key: string
     is_available: boolean
@@ -726,6 +726,83 @@ function getInitialSeedData(): LocalDBSchema {
             "sprite_key": "acc_snorkel",
             "is_available": true,
             "pattern": "snorkel"
+      },
+      {
+            "id": "rod_wooden",
+            "name": "Wooden Rod (Joran Kayu)",
+            "description": "Terbuat dari dahan kayu tepi kali yang diraut halus. Mudah digunakan dan tidak membebani pemula.",
+            "category": "tools",
+            "price": 0,
+            "rarity": "common",
+            "color": "#8B5A2B",
+            "sprite_key": "rod_wooden",
+            "is_available": true
+      },
+      {
+            "id": "rod_bamboo",
+            "name": "Bamboo Rod (Joran Bambu)",
+            "description": "Dianyam dari bambu kuning pilihan tepi sungai. Memiliki lentur alami dan daya tahan prima (+15% Luck).",
+            "category": "tools",
+            "price": 350,
+            "rarity": "uncommon",
+            "color": "#84CC16",
+            "sprite_key": "rod_bamboo",
+            "is_available": true
+      },
+      {
+            "id": "rod_carbon",
+            "name": "Carbon Rod (Joran Karbon)",
+            "description": "Material serat karbon komposit modern dengan bobot sangat ringan namun mampu menahan tarikan kuat (+35% Luck).",
+            "category": "tools",
+            "price": 1200,
+            "rarity": "rare",
+            "color": "#2563EB",
+            "sprite_key": "rod_carbon",
+            "is_available": true
+      },
+      {
+            "id": "rod_professional",
+            "name": "Professional Rod (Joran Turnamen Pro)",
+            "description": "Joran turnamen dengan ceramic line guides dan titanium reel berputar super halus (+65% Luck, max 35 kg).",
+            "category": "tools",
+            "price": 3500,
+            "rarity": "epic",
+            "color": "#9333EA",
+            "sprite_key": "rod_pro",
+            "is_available": true
+      },
+      {
+            "id": "rod_golden",
+            "name": "Golden Rod (Joran Emas Midas)",
+            "description": "Berlapis emas murni 24 karat berhiaskan ukiran kuno penguasa sungai (+110% Luck, max 60 kg).",
+            "category": "tools",
+            "price": 9500,
+            "rarity": "legendary",
+            "color": "#EAB308",
+            "sprite_key": "rod_golden",
+            "is_available": true
+      },
+      {
+            "id": "rod_mythic",
+            "name": "Mythic Rod (Joran Naga Api Merah)",
+            "description": "Ditempa dari sisik naga merah purba dan bara api abadi penghuni palung terdalam (+185% Luck, max 100 kg).",
+            "category": "tools",
+            "price": 25000,
+            "rarity": "mythic",
+            "color": "#DC2626",
+            "sprite_key": "rod_mythic",
+            "is_available": true
+      },
+      {
+            "id": "rod_immortal",
+            "name": "Immortal Rod (Trisula Pancing Abadi 🔱)",
+            "description": "Pusaka pancing tertinggi bermahkota trisula kosmik yang memancarkan aura suci dewa laut abadi (+300% Luck, max 250 kg).",
+            "category": "tools",
+            "price": 75000,
+            "rarity": "immortal",
+            "color": "#EC4899",
+            "sprite_key": "rod_immortal",
+            "is_available": true
       }
 ],
     inventory: [
