@@ -2380,17 +2380,8 @@ export function plantCitizenGarden(citizenId: string, seedId: string) {
   }
 }
 
-export interface InvestorEntry {
-  id: string
-  name: string
-  handle: string
-  tier: 'sultan' | 'diamond' | 'gold' | 'silver'
-  unitNumber: string
-  message: string
-  trakteer_order_id?: string
-  amount?: number
-  created_at: string
-}
+import { SEED_103_INVESTORS, type InvestorEntry } from '@/lib/db/investorsSeed'
+export { type InvestorEntry }
 
 export const OFFICIAL_TRAKTEER_CONFIG = {
   creatorName: 'Mayor Netizen City',
@@ -2408,93 +2399,23 @@ export const OFFICIAL_TRAKTEER_CONFIG = {
   ],
 }
 
-export const DEFAULT_INVESTORS_LIST: InvestorEntry[] = [
-  {
-    id: 'inv_1',
-    name: 'Sultan Alun-Alun',
-    handle: '@sultan_nc',
-    tier: 'sultan',
-    unitNumber: 'Crown Window 01',
-    message: 'Maju terus NetizenCity! Kota virtual kebanggaan kita bersama.',
-    amount: 100000,
-    created_at: '2026-11-01T10:00:00.000Z',
-  },
-  {
-    id: 'inv_2',
-    name: 'Rizki RZNN',
-    handle: '@rznn8619',
-    tier: 'sultan',
-    unitNumber: 'Crown Window 02',
-    message: 'Stadion dan kompleks olahraga keren banget!',
-    amount: 100000,
-    created_at: '2026-11-02T12:00:00.000Z',
-  },
-  {
-    id: 'inv_3',
-    name: 'Siddiq Profesor',
-    handle: '@sidddiq_s',
-    tier: 'sultan',
-    unitNumber: 'Crown Window 03',
-    message: 'Observatorium dan lab sains Day 8 akhirnya terwujud!',
-    amount: 100000,
-    created_at: '2026-11-03T15:00:00.000Z',
-  },
-  {
-    id: 'inv_4',
-    name: 'Aftone Moon',
-    handle: '@aftone_moon',
-    tier: 'diamond',
-    unitNumber: 'Lantai 10 - Unit 102',
-    message: 'Kebun Binatang dan satwa kota favoritku!',
-    amount: 50000,
-    created_at: '2026-11-04T16:00:00.000Z',
-  },
-  {
-    id: 'inv_5',
-    name: 'Ji Hann',
-    handle: '@ji_hann09',
-    tier: 'diamond',
-    unitNumber: 'Lantai 09 - Unit 94',
-    message: 'Perpustakaan kota tempat ternyaman membaca.',
-    amount: 50000,
-    created_at: '2026-11-05T09:00:00.000Z',
-  },
-  {
-    id: 'inv_6',
-    name: 'Kopi Hangat Netizen',
-    handle: '@kopinetizen',
-    tier: 'gold',
-    unitNumber: 'Lantai 07 - Unit 72',
-    message: 'Semoga kotanya makin ramai dan warganya kompak selalu!',
-    amount: 25000,
-    created_at: '2026-11-06T11:00:00.000Z',
-  },
-  {
-    id: 'inv_7',
-    name: 'Budi Warga Baru',
-    handle: '@budi_warga',
-    tier: 'silver',
-    unitNumber: 'Lantai 03 - Unit 31',
-    message: 'Traktir kopi buat developer hebat pembangun kota.',
-    amount: 15000,
-    created_at: '2026-11-07T14:00:00.000Z',
-  },
-  {
-    id: 'inv_8',
-    name: 'Andra Digital',
-    handle: '@andra_dg',
-    tier: 'silver',
-    unitNumber: 'Lantai 02 - Unit 18',
-    message: 'Support penuh karya anak bangsa!',
-    amount: 5000,
-    created_at: '2026-11-08T17:00:00.000Z',
-  },
-]
+export const DEFAULT_INVESTORS_LIST: InvestorEntry[] = SEED_103_INVESTORS
 
 export function getInvestorsList(): InvestorEntry[] {
   const db = readLocalDB()
-  if (!db.investors || db.investors.length === 0) {
-    db.investors = [...DEFAULT_INVESTORS_LIST]
+  if (!db.investors || db.investors.length < 103) {
+    // Preserve any dynamically submitted Trakteer claims
+    const dynamicClaims = (db.investors || []).filter((inv) => (inv.id || '').startsWith('inv_trakteer_'))
+    const mergedMap = new Map<string, InvestorEntry>()
+    for (const c of dynamicClaims) {
+      mergedMap.set(c.id, c)
+    }
+    for (const s of SEED_103_INVESTORS) {
+      if (!mergedMap.has(s.id)) {
+        mergedMap.set(s.id, s)
+      }
+    }
+    db.investors = Array.from(mergedMap.values())
     writeLocalDB(db)
   }
   return db.investors
