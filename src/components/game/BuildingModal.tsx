@@ -174,10 +174,10 @@ export default function BuildingModal() {
       actionType: 'inspect',
     },
     investor_tower: {
-      title: 'MONUMEN INVESTOR KOTA (103 INVESTOR)',
+      title: 'MENARA INVESTOR NETIZEN CITY',
       icon: <Building2 className="w-6 h-6 text-purple-400" />,
-      district: 'Monumen Investor Kota',
-      desc: 'Monumen megah 11 lantai berlapis opal dengan 100 jendela menyala untuk para investor, 3 Crown Windows emas di puncak, cincin halo terapung, dan sign neon "TERIMA KASIH, INVESTOR KOTA".',
+      district: 'Kawasan Finansial Kota',
+      desc: 'Menara megah 11 lantai spiral dengan 100 jendela unit dan 3 Crown Windows emas di puncak untuk para pendukung kota via Trakteer (@sahamnetzencity).',
       actionName: 'Buka Hall of Fame Investor & Trakteer ☕',
       actionType: 'investor',
     },

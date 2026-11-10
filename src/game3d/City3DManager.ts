@@ -1056,8 +1056,8 @@ export class City3DManager {
     },
     {
       id: 'investor_tower',
-      name: 'Monumen Investor Kota (103 Investor)',
-      district: 'Monumen Investor Kota',
+      name: 'Menara Investor Netizen City',
+      district: 'Kawasan Finansial Kota',
       type: 'investor',
       position: new THREE.Vector3(TOWER.x, 0, TOWER.z),
       cameraTarget: new THREE.Vector3(TOWER.x, 10, TOWER.z),

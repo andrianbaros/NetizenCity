@@ -877,7 +877,7 @@ function getInitialSeedData(): LocalDBSchema {
         created_at: new Date().toISOString(),
       },
     ],
-    investors: [...DEFAULT_INVESTORS_LIST],
+    investors: [],
   }
 }
 
@@ -2399,23 +2399,12 @@ export const OFFICIAL_TRAKTEER_CONFIG = {
   ],
 }
 
-export const DEFAULT_INVESTORS_LIST: InvestorEntry[] = SEED_103_INVESTORS
+export const DEFAULT_INVESTORS_LIST: InvestorEntry[] = []
 
 export function getInvestorsList(): InvestorEntry[] {
   const db = readLocalDB()
-  if (!db.investors || db.investors.length < 103) {
-    // Preserve any dynamically submitted Trakteer claims
-    const dynamicClaims = (db.investors || []).filter((inv) => (inv.id || '').startsWith('inv_trakteer_'))
-    const mergedMap = new Map<string, InvestorEntry>()
-    for (const c of dynamicClaims) {
-      mergedMap.set(c.id, c)
-    }
-    for (const s of SEED_103_INVESTORS) {
-      if (!mergedMap.has(s.id)) {
-        mergedMap.set(s.id, s)
-      }
-    }
-    db.investors = Array.from(mergedMap.values())
+  if (!db.investors) {
+    db.investors = []
     writeLocalDB(db)
   }
   return db.investors
@@ -2432,7 +2421,7 @@ export function addInvestorEntry(data: {
 }): { success: boolean; investor: InvestorEntry; bonusCoinsAwarded?: number } {
   const db = readLocalDB()
   if (!db.investors) {
-    db.investors = [...DEFAULT_INVESTORS_LIST]
+    db.investors = []
   }
 
   const amount = typeof data.amount === 'number' && data.amount > 0 ? data.amount : 5000

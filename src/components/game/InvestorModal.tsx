@@ -11,22 +11,16 @@ import {
   Building2,
   ExternalLink,
   Crown,
-  Heart,
-  Sparkles,
   Search,
-  Award,
   Coffee,
   CheckCircle2,
-  Star,
   Users,
   Copy,
   Check,
-  Send,
   Loader2,
 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
-import { useCitizenStore } from '@/lib/stores/useCitizenStore'
 import { useUIStore } from '@/lib/stores/useUIStore'
 
 export interface InvestorEntry {
@@ -59,22 +53,13 @@ interface InvestorModalProps {
 }
 
 export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
-  const [tab, setTab] = useState<'list' | 'trakteer' | 'claim'>('list')
+  const [tab, setTab] = useState<'list' | 'trakteer'>('list')
   const [searchQuery, setSearchQuery] = useState('')
   const [copiedLink, setCopiedLink] = useState(false)
   const [investors, setInvestors] = useState<InvestorEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  // Claim Form State
-  const profile = useCitizenStore((s) => s.profile)
   const addNotification = useUIStore((s) => s.addNotification)
-  const [claimName, setClaimName] = useState(profile?.displayName || profile?.username || '')
-  const [claimHandle, setClaimHandle] = useState(profile?.username ? `@${profile.username}` : '')
-  const [claimOrderId, setClaimOrderId] = useState('')
-  const [claimMessage, setClaimMessage] = useState('')
-  const [claimQty, setClaimQty] = useState(1)
-  const [isSubmittingClaim, setIsSubmittingClaim] = useState(false)
-  const [claimSuccess, setClaimSuccess] = useState<string | null>(null)
 
   // Fetch live investors list from backend
   const fetchInvestors = async () => {
@@ -97,12 +82,8 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
   useEffect(() => {
     if (isOpen) {
       fetchInvestors()
-      if (profile) {
-        setClaimName(profile.displayName || profile.username || '')
-        setClaimHandle(profile.username ? `@${profile.username}` : '')
-      }
     }
-  }, [isOpen, profile])
+  }, [isOpen])
 
   const filteredInvestors = investors.filter(
     (inv) =>
@@ -127,59 +108,11 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
     })
   }
 
-  const handleClaimSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!claimName.trim()) {
-      addNotification({ title: 'Nama Diperlukan', message: 'Harap masukkan nama donatur Anda.', type: 'warning' })
-      return
-    }
-
-    try {
-      setIsSubmittingClaim(true)
-      const amount = claimQty * 5000
-      const res = await fetch('/api/trakteer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: claimName.trim(),
-          handle: claimHandle.trim() || undefined,
-          message: claimMessage.trim() || undefined,
-          orderId: claimOrderId.trim() || undefined,
-          amount,
-          citizenId: profile?.id,
-        }),
-      })
-
-      const data = await res.json()
-      if (res.ok && data.success) {
-        setClaimSuccess(`🎉 Selamat! Nama ${claimName} berhasil diukir di Menara Investor 3D!`)
-        addNotification({
-          title: 'Klaim Investor Berhasil! 🏢',
-          message: `Terima kasih! Kamu mendapatkan tempat di Menara Investor dan bonus koin warga!`,
-          type: 'success',
-        })
-        fetchInvestors()
-        setTimeout(() => {
-          setTab('list')
-          setClaimSuccess(null)
-          setClaimOrderId('')
-          setClaimMessage('')
-        }, 2500)
-      } else {
-        throw new Error(data.error || 'Gagal memproses klaim investor')
-      }
-    } catch (err: any) {
-      addNotification({ title: 'Gagal Klaim', message: err.message || 'Terjadi kesalahan.', type: 'error' })
-    } finally {
-      setIsSubmittingClaim(false)
-    }
-  }
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Monumen Investor Kota Netizen (103 Investor)"
+      title="Menara Investor Netizen City (Otomatis Webhook)"
       maxWidth="md"
     >
       <div className="space-y-4 font-sans text-[#343B35]">
@@ -193,7 +126,7 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[10px] font-black text-amber-300 uppercase tracking-widest flex items-center">
                   <Crown className="w-3 h-3 mr-1" />
-                  Monumen Investor 3D
+                  Menara Investor 3D (Otomatis)
                 </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/30 text-rose-200 border border-rose-400/30">
                   Trakteer: {TRAKTEER_HANDLE}
@@ -203,7 +136,7 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
                 {TRAKTEER_NAME}
               </h3>
               <p className="text-xs text-purple-200 mt-0.5">
-                100 Jendela menyala dan 3 Crown Windows emas untuk pendukung kota.
+                100 Jendela kamar &amp; 3 Crown Windows terisi otomatis via Webhook Trakteer.
               </p>
             </div>
           </div>
@@ -218,7 +151,7 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
           </div>
         </div>
 
-        {/* Tab Buttons */}
+        {/* Tab Buttons (2 Tab Saja: Daftar Investor & Traktir Trakteer) */}
         <div className="flex rounded-xl bg-[#EFE9D8] p-1 border border-[#D8CEBE]">
           <button
             type="button"
@@ -244,45 +177,55 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
             <Coffee className="w-3.5 h-3.5" />
             <span>Traktir Mayor (Trakteer ☕)</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setTab('claim')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
-              tab === 'claim'
-                ? 'bg-[#668B65] text-white shadow-xs'
-                : 'text-[#78634B] hover:text-[#343B35]'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Klaim Nama</span>
-          </button>
         </div>
 
         {/* TAB 1: LIST INVESTOR */}
         {tab === 'list' && (
           <div className="space-y-3">
-            {/* Search Box */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#78634B]" />
-              <input
-                type="text"
-                placeholder="Cari nama investor atau username..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#FFFDF9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
-              />
-            </div>
+            {investors.length > 0 && (
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#78634B]" />
+                <input
+                  type="text"
+                  placeholder="Cari nama investor atau username..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#FFFDF9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
+                />
+              </div>
+            )}
 
-            {/* List */}
+            {/* List or Empty State */}
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
               {isLoading ? (
                 <div className="py-12 flex flex-col items-center justify-center text-[#78634B]">
                   <Loader2 className="w-6 h-6 animate-spin text-[#668B65] mb-2" />
                   <span className="text-xs font-bold">Memuat daftar investor...</span>
                 </div>
+              ) : investors.length === 0 ? (
+                <div className="py-10 px-4 text-center bg-[#FFFDF9] rounded-2xl border border-[#D8CEBE]">
+                  <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-2xl shadow-sm text-white mb-3">
+                    🏢
+                  </div>
+                  <h4 className="font-extrabold text-sm text-[#343B35]">Menara Investor Siap Terisi!</h4>
+                  <p className="text-xs text-[#78634B] mt-1.5 max-w-sm mx-auto leading-relaxed">
+                    Belum ada investor terdaftar. Setiap donatur yang mentraktir kopi di Trakteer (<strong>@sahamnetzencity</strong>) akan <strong>otomatis terukir namanya di Menara 3D secara real-time via Webhook</strong> tanpa perlu klaim manual!
+                  </p>
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setTab('trakteer')}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-white font-extrabold text-xs shadow-md hover:opacity-95 active:scale-95 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Coffee className="w-3.5 h-3.5 text-amber-200" />
+                      <span>Jadi Investor Pertama di Trakteer</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
               ) : filteredInvestors.length === 0 ? (
                 <div className="py-8 text-center text-[#78634B]">
-                  <p className="text-xs font-bold">Tidak ada investor yang cocok dengan pencarian.</p>
+                  <p className="text-xs font-bold">Tidak ada investor yang cocok dengan pencarian "{searchQuery}".</p>
                 </div>
               ) : (
                 filteredInvestors.map((inv) => (
@@ -333,6 +276,17 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
         {/* TAB 2: DAFTAR INVESTOR VIA TRAKTEER */}
         {tab === 'trakteer' && (
           <div className="space-y-3.5 p-1 text-center">
+            {/* Automatic Notice Banner */}
+            <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-950 text-left flex items-start gap-2.5">
+              <span className="text-base leading-none">⚡</span>
+              <div>
+                <p className="font-extrabold text-[#343B35]">100% Otomatis dengan Webhook Trakteer!</p>
+                <p className="text-[11px] text-purple-900 mt-0.5 leading-relaxed">
+                  Setiap kali kamu mentraktir kopi di halaman Trakteer Pak Mayor, nama &amp; pesanmu akan langsung dikirim oleh Trakteer ke game ini secara otomatis. Tidak perlu input kode atau klaim manual!
+                </p>
+              </div>
+            </div>
+
             {/* Creator Badge Box */}
             <div className="bg-gradient-to-br from-rose-50 via-[#FFFDF9] to-amber-50 border-2 border-rose-200 rounded-2xl p-3.5 text-center">
               <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-2xl shadow-md text-white mb-2">
@@ -422,118 +376,7 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
           </div>
         )}
 
-        {/* TAB 3: KLAIM NAMA DI MENARA */}
-        {tab === 'claim' && (
-          <form onSubmit={handleClaimSubmit} className="space-y-3 text-left">
-            <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 leading-relaxed">
-              <p className="font-bold mb-0.5">Sudah mentraktir kopi di Trakteer?</p>
-              <p className="text-[11px] text-purple-800">
-                Masukkan nama donatur dan Order ID Trakteer Anda di bawah ini agar sistem langsung mengukir nama Anda di Menara Investor 3D dan memberikan bonus koin!
-              </p>
-            </div>
-
-            {claimSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-xs text-emerald-800 font-bold animate-in fade-in">
-                {claimSuccess}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-bold text-[#343B35] mb-1">
-                Nama Donatur (Sesuai di Trakteer) *
-              </label>
-              <input
-                type="text"
-                required
-                maxLength={32}
-                value={claimName}
-                onChange={(e) => setClaimName(e.target.value)}
-                placeholder="Contoh: Budi Santoso / Sultan Alun-Alun"
-                className="w-full px-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#FFFDF9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-[#343B35] mb-1">
-                  Username / Instagram (Opsional)
-                </label>
-                <input
-                  type="text"
-                  maxLength={30}
-                  value={claimHandle}
-                  onChange={(e) => setClaimHandle(e.target.value)}
-                  placeholder="@username"
-                  className="w-full px-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#FFFDF9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#343B35] mb-1">
-                  Jumlah Traktir Kopi
-                </label>
-                <select
-                  value={claimQty}
-                  onChange={(e) => setClaimQty(parseInt(e.target.value, 10))}
-                  className="w-full px-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#FFFDF9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
-                >
-                  <option value={1}>1 Kopi (Rp 5.000) &bull; +1.000 Koin</option>
-                  <option value={3}>3 Kopi (Rp 15.000) &bull; +3.500 Koin</option>
-                  <option value={5}>5 Kopi (Rp 25.000) &bull; +6.500 Koin</option>
-                  <option value={10}>10 Kopi (Rp 50.000) &bull; +15.000 Koin</option>
-                  <option value={20}>20 Kopi Sultan (Rp 100.000) &bull; +35.000 Koin</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#343B35] mb-1">
-                Trakteer Order ID / Catatan Donasi (Opsional)
-              </label>
-              <input
-                type="text"
-                maxLength={40}
-                value={claimOrderId}
-                onChange={(e) => setClaimOrderId(e.target.value)}
-                placeholder="Contoh: TRK-98234 atau ID pembayaran"
-                className="w-full px-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#FFFDF9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#343B35] mb-1">
-                Pesan untuk Warga / Kota (Maks 140 karakter)
-              </label>
-              <textarea
-                rows={2}
-                maxLength={140}
-                value={claimMessage}
-                onChange={(e) => setClaimMessage(e.target.value)}
-                placeholder="Tulis pesan motivasi atau salam untuk sesama warga..."
-                className="w-full px-3 py-2 rounded-xl border border-[#D8CEBE] bg-[#FFFDF9] text-xs text-[#343B35] focus:outline-none focus:ring-2 focus:ring-[#668B65]"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmittingClaim}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#668B65] to-[#4D6E4C] hover:from-[#577756] hover:to-[#435C42] text-white font-extrabold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {isSubmittingClaim ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Memverifikasi &amp; Menyimpan...</span>
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Kirim &amp; Abadikan di Menara Investor 3D</span>
-                </>
-              )}
-            </button>
-          </form>
-        )}
-
+        {/* Footer */}
         {/* Footer */}
         <div className="flex items-center justify-between pt-2 border-t border-[#D8CEBE]">
           <a
