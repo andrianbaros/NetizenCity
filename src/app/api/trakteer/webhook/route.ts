@@ -12,13 +12,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
-    // Trakteer webhook sends: supporter_name, supporter_message, quantity, price, unit_name, order_id
+    // Trakteer official webhook payload: supporter_name, supporter_message, transaction_id, quantity, price, unit
     const supporterName = body.supporter_name || body.name || 'Warga Dermawan'
     const supporterMessage = body.supporter_message || body.message || 'Traktir kopi untuk Pak Mayor!'
     const quantity = typeof body.quantity === 'number' ? body.quantity : 1
     const price = typeof body.price === 'number' ? body.price : 5000
-    const totalAmount = typeof body.amount === 'number' ? body.amount : quantity * price
-    const orderId = body.order_id || body.id
+    const totalAmount = typeof body.amount === 'number' ? body.amount : (typeof body.price === 'number' ? body.price * quantity : quantity * 5000)
+    const orderId = body.transaction_id || body.order_id || body.id
 
     const result = addInvestorEntry({
       name: supporterName,

@@ -122,46 +122,28 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   }
 
   // ------------------------------------------------------------
-  // PANTS / TROUSERS & PELVIS WAISTBAND
-  // Covers the entire lower half of the capsule body in pantsMat
+  // PANTS / TROUSERS & WAISTBAND
+  // Sleek hip connector leaving both trouser legs distinct & prominent
   // ------------------------------------------------------------
-  // Pelvis Cylinder (y = 0.28 to y = 0.38)
-  const pantsPelvisGeo = new THREE.CylinderGeometry(0.27, 0.27, 0.10, 24);
+  // Pelvis / Hip Band (y = 0.31 to y = 0.38)
+  const pantsPelvisGeo = new THREE.CylinderGeometry(0.268, 0.23, 0.07, 24);
   const pantsPelvisMesh = new THREE.Mesh(pantsPelvisGeo, pantsMat);
-  pantsPelvisMesh.position.y = 0.33;
+  pantsPelvisMesh.position.y = 0.345;
   pantsPelvisMesh.castShadow = false;
   pantsPelvisMesh.receiveShadow = false;
   torsoGroup.add(pantsPelvisMesh);
 
-  // Bottom Dome Groin Cap in pantsMat (y = 0.01 to y = 0.28)
-  const pantsBottomGeo = new THREE.SphereGeometry(0.27, 24, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
-  const pantsBottomMesh = new THREE.Mesh(pantsBottomGeo, pantsMat);
-  pantsBottomMesh.position.y = 0.28;
-  pantsBottomMesh.castShadow = false;
-  pantsBottomMesh.receiveShadow = false;
-  torsoGroup.add(pantsBottomMesh);
-
   // Stylish Leather Belt & Buckle at waistband (y = 0.38)
   const beltMat = mat('#2A2018', { roughness: 0.65 });
-  const beltRing = new THREE.Mesh(new THREE.TorusGeometry(0.276, 0.016, 6, 26), beltMat);
+  const beltRing = new THREE.Mesh(new THREE.TorusGeometry(0.274, 0.015, 6, 26), beltMat);
   beltRing.position.y = 0.38;
   beltRing.rotation.x = Math.PI / 2;
   torsoGroup.add(beltRing);
 
   const buckleMat = mat('#F1F5F9', { metalness: 0.85, roughness: 0.2 });
   const beltBuckle = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.036, 0.016), buckleMat);
-  beltBuckle.position.set(0, 0.38, 0.278);
+  beltBuckle.position.set(0, 0.38, 0.276);
   torsoGroup.add(beltBuckle);
-
-  // Slanted Trouser Pockets
-  for (const s of [-1, 1]) {
-    const pocket = new THREE.Mesh(
-      new THREE.BoxGeometry(0.048, 0.01, 0.012).translate(s * 0.13, 0.33, 0.268),
-      mat('#000000', { transparent: true, opacity: 0.22 })
-    );
-    pocket.rotation.z = -s * 0.35;
-    torsoGroup.add(pocket);
-  }
 
   // Dynamic Outfit Pattern Group (Tuxedo, Overalls, Stripes)
   const patternGroup = new THREE.Group();
@@ -210,6 +192,29 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
         rivet.position.set(s * 0.11, 0.72, 0.276);
         patternGroup.add(strap, rivet);
       }
+    } else if (p.includes('sarung')) {
+      // Traditional Indonesian Batik Plaid Sarung wrapping
+      const sarungMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.245, 0.255, 0.26, 16),
+        pantsMat
+      );
+      sarungMesh.position.y = 0.22;
+      patternGroup.add(sarungMesh);
+      const plaidMat = mat('#F8FAFC', { transparent: true, opacity: 0.35, roughness: 0.6 });
+      for (const py of [0.26, 0.18, 0.12]) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.252, 0.008, 4, 20), plaidMat);
+        ring.position.y = py;
+        ring.rotation.x = Math.PI / 2;
+        patternGroup.add(ring);
+      }
+    } else if (p.includes('skirt')) {
+      // Harajuku Pleated Tartan Skirt Flare
+      const skirtMesh = new THREE.Mesh(
+        new THREE.ConeGeometry(0.32, 0.16, 16, 1, true),
+        pantsMat
+      );
+      skirtMesh.position.y = 0.27;
+      patternGroup.add(skirtMesh);
     }
   };
 
@@ -378,42 +383,56 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   });
 
   // ------------------------------------------------------------
-  // 5. LEGS & POLISHED SHOES (Matching Pak Mayor's Hip Anchor y=0.36)
+  // 5. DISTINCT TROUSER LEGS & POLISHED SHOES (Hip Anchor y=0.34)
+  // Both legs are distinct, prominently textured in pantsMat, and
+  // swing independently with full visibility (no engulfing sphere)
   // ------------------------------------------------------------
   const leftLeg = new THREE.Group();
-  leftLeg.position.set(-0.11, 0.36, 0);
+  leftLeg.position.set(-0.11, 0.34, 0);
   body.add(leftLeg);
 
   const rightLeg = new THREE.Group();
-  rightLeg.position.set(0.11, 0.36, 0);
+  rightLeg.position.set(0.11, 0.34, 0);
   body.add(rightLeg);
 
-  [leftLeg, rightLeg].forEach((leg) => {
+  [leftLeg, rightLeg].forEach((leg, idx) => {
+    const s = idx === 0 ? -1 : 1;
+    // 1. Main Trouser Leg (Thick, stylish chibi pants geometry)
     const pantMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.075, 0.07, 0.28, 8).translate(0, -0.14, 0),
+      new THREE.CylinderGeometry(0.092, 0.082, 0.26, 12).translate(0, -0.13, 0),
       pantsMat
     );
     pantMesh.castShadow = false;
     leg.add(pantMesh);
 
-    // Trouser hem cuff ring in pantsMat
-    const cuff = new THREE.Mesh(
-      new THREE.TorusGeometry(0.072, 0.012, 6, 16),
+    // 2. Cargo / Slacks Outer Pocket Flap
+    const pocket = new THREE.Mesh(
+      new THREE.BoxGeometry(0.024, 0.08, 0.09).translate(s * 0.088, -0.10, 0),
       pantsMat
     );
-    cuff.position.y = -0.27;
+    pocket.castShadow = false;
+    leg.add(pocket);
+
+    // 3. Trouser Hem Cuff Ring in pantsMat
+    const cuff = new THREE.Mesh(
+      new THREE.TorusGeometry(0.084, 0.012, 6, 18),
+      pantsMat
+    );
+    cuff.position.y = -0.25;
     cuff.rotation.x = Math.PI / 2;
     leg.add(cuff);
 
+    // 4. Polished Footwear (Shoes)
     const shoe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, 0.09, 0.20).translate(0, -0.32, 0.03),
+      new THREE.BoxGeometry(0.12, 0.09, 0.20).translate(0, -0.30, 0.03),
       shoesMat
     );
     shoe.castShadow = false;
     leg.add(shoe);
 
+    // 5. Clean Sole
     const sole = new THREE.Mesh(
-      new THREE.BoxGeometry(0.124, 0.025, 0.204).translate(0, -0.36, 0.03),
+      new THREE.BoxGeometry(0.124, 0.025, 0.204).translate(0, -0.34, 0.03),
       mat('#FFFFFF', { roughness: 0.85 })
     );
     sole.castShadow = false;
