@@ -1345,7 +1345,7 @@ export default function GameCanvas() {
       {/* Positioned comfortably above bottom bars & away from screen edge */}
       {/* ============================================================ */}
       {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium' || viewMode === 'beach') && (
-        <div className="md:hidden absolute bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] left-[calc(env(safe-area-inset-left,0px)+1.25rem)] z-30 pointer-events-auto">
+        <div className="md:hidden absolute bottom-[calc(env(safe-area-inset-bottom,0px)+9.5rem)] left-[calc(env(safe-area-inset-left,0px)+1.5rem)] z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}
@@ -1378,15 +1378,15 @@ export default function GameCanvas() {
             </div>
           )}
 
-          {/* 1. IDLE STATE: Centered Action Controls */}
+          {/* 1. IDLE STATE: Action Controls (Right-aligned on mobile, centered on desktop) */}
           {fishingState === 'idle' && (
-            <div className="flex flex-col items-center gap-1.5">
+            <div className="flex flex-col items-end sm:items-center gap-1.5">
               <span className="text-[9px] sm:text-[10px] font-semibold text-[#343B35] bg-[#F7F4E9]/95 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-[#D8CEBE] shadow-xs">
                 {viewMode === 'beach' ? '💡 Tap air laut atau tombol lempar kail' : '💡 Tap air sungai atau tombol lempar'}
               </span>
 
-              <div className="flex items-center gap-1.5 justify-center">
-                {/* Main Centered Throw Button */}
+              <div className="flex items-center gap-1.5 justify-end sm:justify-center">
+                {/* Main Action Throw Button */}
                 <button
                   type="button"
                   onClick={() => {
@@ -1435,11 +1435,11 @@ export default function GameCanvas() {
                   <span>{isAutoFishing ? 'Auto On' : 'Auto'}</span>
                 </button>
 
-                {/* Toko Joran Direct Kiosk Button */}
+                {/* Toko Joran Direct Kiosk Button - visible on sm+ desktop; mobile has it in top bar */}
                 <button
                   type="button"
                   onClick={() => useUIStore.getState().openModal('rod_shop')}
-                  className="flex items-center space-x-1 px-3 py-2 sm:px-4 sm:py-3 rounded-2xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-stone-950 border border-amber-300 shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
+                  className="hidden sm:flex items-center space-x-1 px-3 py-2 sm:px-4 sm:py-3 rounded-2xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-stone-950 border border-amber-300 shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
                   title="Buka Toko Joran Pancing"
                 >
                   <span className="text-xs sm:text-sm">🏪</span>

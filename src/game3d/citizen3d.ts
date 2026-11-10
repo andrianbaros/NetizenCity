@@ -70,21 +70,26 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   const accessoryMat = mat('#F59E0B', { metalness: 0.7, roughness: 0.25, flatShading: false });
 
   // ------------------------------------------------------------
-  // 1. ICONIC CAPSULE BODY (Identical Geometry to Pak Mayor)
-  // Single smooth CapsuleGeometry(0.27, 0.48) at y = 0.52
+  // 1. ICONIC CAPSULE BODY (Seamless Multi-Part Chibi Capsule)
+  // Continuous 0.27-radius capsule:
+  // - Head Dome: skinMat (y = 0.74 to 1.01)
+  // - Torso Cylinder: shirtMat (y = 0.38 to 0.74)
+  // - Pelvis Cylinder: pantsMat (y = 0.28 to 0.38)
+  // - Pelvis Dome: pantsMat (y = 0.01 to 0.28)
+  // Total capsule height = 1.00, perfectly matching Pak Mayor
   // ------------------------------------------------------------
   const torsoGroup = new THREE.Group();
   body.add(torsoGroup);
 
-  // Pure single capsule mesh - the core signature artstyle of NetizenCity
-  const capsuleGeo = new THREE.CapsuleGeometry(0.27, 0.48, 8, 20);
-  const capsuleMesh = new THREE.Mesh(capsuleGeo, shirtMat);
-  capsuleMesh.position.y = 0.52;
-  capsuleMesh.castShadow = false;
-  capsuleMesh.receiveShadow = false;
-  torsoGroup.add(capsuleMesh);
+  // Upper Torso Shirt Cylinder (Waist y=0.38 to Neck y=0.74)
+  const shirtTorsoGeo = new THREE.CylinderGeometry(0.27, 0.27, 0.36, 24);
+  const shirtTorsoMesh = new THREE.Mesh(shirtTorsoGeo, shirtMat);
+  shirtTorsoMesh.position.y = 0.56;
+  shirtTorsoMesh.castShadow = false;
+  shirtTorsoMesh.receiveShadow = false;
+  torsoGroup.add(shirtTorsoMesh);
 
-  // Tailored clothing trims on the capsule body
+  // Tailored clothing trims on the shirt
   // Inner white collar fold & neckline
   const innerShirt = new THREE.Mesh(
     new THREE.BoxGeometry(0.12, 0.16, 0.04).translate(0, 0.68, 0.256),
@@ -116,16 +121,47 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
     torsoGroup.add(btn);
   }
 
-  // Belt Ring & Buckle dividing torso and hips
-  const beltRing = new THREE.Mesh(new THREE.TorusGeometry(0.274, 0.015, 6, 26), pantsMat);
+  // ------------------------------------------------------------
+  // PANTS / TROUSERS & PELVIS WAISTBAND
+  // Covers the entire lower half of the capsule body in pantsMat
+  // ------------------------------------------------------------
+  // Pelvis Cylinder (y = 0.28 to y = 0.38)
+  const pantsPelvisGeo = new THREE.CylinderGeometry(0.27, 0.27, 0.10, 24);
+  const pantsPelvisMesh = new THREE.Mesh(pantsPelvisGeo, pantsMat);
+  pantsPelvisMesh.position.y = 0.33;
+  pantsPelvisMesh.castShadow = false;
+  pantsPelvisMesh.receiveShadow = false;
+  torsoGroup.add(pantsPelvisMesh);
+
+  // Bottom Dome Groin Cap in pantsMat (y = 0.01 to y = 0.28)
+  const pantsBottomGeo = new THREE.SphereGeometry(0.27, 24, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+  const pantsBottomMesh = new THREE.Mesh(pantsBottomGeo, pantsMat);
+  pantsBottomMesh.position.y = 0.28;
+  pantsBottomMesh.castShadow = false;
+  pantsBottomMesh.receiveShadow = false;
+  torsoGroup.add(pantsBottomMesh);
+
+  // Stylish Leather Belt & Buckle at waistband (y = 0.38)
+  const beltMat = mat('#2A2018', { roughness: 0.65 });
+  const beltRing = new THREE.Mesh(new THREE.TorusGeometry(0.276, 0.016, 6, 26), beltMat);
   beltRing.position.y = 0.38;
   beltRing.rotation.x = Math.PI / 2;
   torsoGroup.add(beltRing);
 
-  const buckleMat = mat('#E2E8F0', { metalness: 0.85, roughness: 0.2 });
-  const beltBuckle = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.034, 0.015), buckleMat);
-  beltBuckle.position.set(0, 0.38, 0.276);
+  const buckleMat = mat('#F1F5F9', { metalness: 0.85, roughness: 0.2 });
+  const beltBuckle = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.036, 0.016), buckleMat);
+  beltBuckle.position.set(0, 0.38, 0.278);
   torsoGroup.add(beltBuckle);
+
+  // Slanted Trouser Pockets
+  for (const s of [-1, 1]) {
+    const pocket = new THREE.Mesh(
+      new THREE.BoxGeometry(0.048, 0.01, 0.012).translate(s * 0.13, 0.33, 0.268),
+      mat('#000000', { transparent: true, opacity: 0.22 })
+    );
+    pocket.rotation.z = -s * 0.35;
+    torsoGroup.add(pocket);
+  }
 
   // Dynamic Outfit Pattern Group (Tuxedo, Overalls, Stripes)
   const patternGroup = new THREE.Group();
@@ -182,10 +218,21 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   // ------------------------------------------------------------
   // 2. HEAD & CHIBI FACE (Positioned on the Capsule Dome at y=0.82)
   // Identical to Pak Mayor's Head Anchor
+  // Head dome is skinMat (y = 0.74 to 1.01)
   // ------------------------------------------------------------
   const head = new THREE.Group();
   head.position.y = 0.82;
   body.add(head);
+
+  // Top Dome Head Cap in skinMat (Capsule Head Apex)
+  const headMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.27, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+    skinMat
+  );
+  headMesh.position.y = -0.08;
+  headMesh.castShadow = false;
+  headMesh.receiveShadow = false;
+  head.add(headMesh);
 
   // Chibi Anime Eyes with expressive sparkle
   for (const s of [-1, 1]) {
@@ -348,6 +395,15 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
     );
     pantMesh.castShadow = false;
     leg.add(pantMesh);
+
+    // Trouser hem cuff ring in pantsMat
+    const cuff = new THREE.Mesh(
+      new THREE.TorusGeometry(0.072, 0.012, 6, 16),
+      pantsMat
+    );
+    cuff.position.y = -0.27;
+    cuff.rotation.x = Math.PI / 2;
+    leg.add(cuff);
 
     const shoe = new THREE.Mesh(
       new THREE.BoxGeometry(0.12, 0.09, 0.20).translate(0, -0.32, 0.03),
@@ -964,6 +1020,15 @@ export function createPakMayorNPC(
     );
     pantMesh.castShadow = false;
     leg.add(pantMesh);
+
+    // Trouser hem cuff ring in pantsMat
+    const cuff = new THREE.Mesh(
+      new THREE.TorusGeometry(0.072, 0.012, 6, 16),
+      pantsMat
+    );
+    cuff.position.y = -0.27;
+    cuff.rotation.x = Math.PI / 2;
+    leg.add(cuff);
 
     const shoe = new THREE.Mesh(
       new THREE.BoxGeometry(0.12, 0.09, 0.2).translate(0, -0.32, 0.03),
