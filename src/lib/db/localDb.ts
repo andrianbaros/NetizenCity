@@ -992,11 +992,12 @@ export function getCitizenWallet(
     return wallet
   }
 
-  // If a cookie/fallback wallet exists with a newer timestamp than DB, heal the server DB
-  if (fallbackWallet?.updatedAt) {
+  // If a cookie/fallback wallet exists with a newer timestamp or verified activity than DB, heal the server DB
+  if (fallbackWallet?.updatedAt && typeof fallbackWallet.balance === 'number' && Number.isFinite(fallbackWallet.balance)) {
     const dbTime = new Date(wallet.updated_at || 0).getTime()
     const fallbackTime = new Date(fallbackWallet.updatedAt).getTime()
-    if (fallbackTime > dbTime) {
+    const isColdStart500 = (wallet.balance === 500 && fallbackWallet.balance !== 500 && ((fallbackWallet.totalSpent ?? 0) > 0 || (fallbackWallet.totalEarned ?? 0) > 500))
+    if (fallbackTime > dbTime || isColdStart500) {
       wallet.balance = fallbackWallet.balance
       if (typeof fallbackWallet.totalEarned === 'number') {
         wallet.total_earned = Math.max(wallet.total_earned, fallbackWallet.totalEarned)
@@ -1934,6 +1935,7 @@ export function loginLocalCitizen(identifier: string, passwordHash: string) {
     (c) =>
       (c.username.toLowerCase() === clean ||
         (c as any).instagram_handle?.toLowerCase() === clean ||
+        c.display_name?.toLowerCase() === clean ||
         c.email.toLowerCase() === clean ||
         c.email.toLowerCase() === `${clean}@instagram.netizencity.id` ||
         c.ktn_number === identifier.trim()) &&

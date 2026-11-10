@@ -252,7 +252,42 @@
       "role": "citizen",
       "onboarding_completed": true,
       "joined_at": "2026-11-09T05:51:25.566Z",
-      "updated_at": "2026-11-09T05:55:04.493Z"
+      "updated_at": "2026-11-10T12:38:26.876Z"
+    },
+    {
+      "id": "c-mayor-01",
+      "user_id": "u-mayor-01",
+      "email": "mayor@instagram.netizencity.id",
+      "instagram_handle": "mayor",
+      "is_ig_verified": true,
+      "password_hash": "unikomceria",
+      "username": "mayor",
+      "display_name": "Mayor",
+      "ktn_number": "KTN-20261110-MAYOR",
+      "avatar_config": {
+        "skinTone": "#f5d0b0",
+        "hairStyle": "short",
+        "hairColor": "#1e293b",
+        "shirtColor": "#1e3a8a",
+        "pantsColor": "#0f172a",
+        "shoesColor": "#ffffff",
+        "expression": "happy",
+        "accessory": "none",
+        "outfitPattern": "plain",
+        "backpack": null
+      },
+      "level": 1,
+      "xp": 0,
+      "job": "Walikota NETIZENCITY",
+      "housing_id": "house-apt-01",
+      "housing_name": "Balai Kota NETIZENCITY",
+      "district": "Pusat Kota",
+      "biography": "Akun Resmi Walikota NETIZENCITY.",
+      "is_online": false,
+      "role": "citizen",
+      "onboarding_completed": true,
+      "joined_at": "2026-11-10T12:38:26.883Z",
+      "updated_at": "2026-11-10T12:38:26.883Z"
     }
   ],
   "wallets": [
@@ -307,10 +342,18 @@
     {
       "id": "w-c-8x5lwnp",
       "citizen_id": "c-8x5lwnp",
-      "balance": 390,
-      "total_earned": 640,
-      "total_spent": 250,
-      "updated_at": "2026-11-10T08:45:17.040Z"
+      "balance": 99999,
+      "total_earned": 100249,
+      "total_spent": 0,
+      "updated_at": "2026-11-10T12:38:26.883Z"
+    },
+    {
+      "id": "w-c-mayor-01",
+      "citizen_id": "c-mayor-01",
+      "balance": 99999,
+      "total_earned": 99999,
+      "total_spent": 0,
+      "updated_at": "2026-11-10T12:38:26.883Z"
     }
   ],
   "transactions": [
@@ -1462,6 +1505,26 @@
     }
   ],
   "inventory": [
+    {
+      "id": "inv-rod-mayor-starter",
+      "citizen_id": "c-mayor-01",
+      "item_id": "rod_wooden",
+      "is_equipped": true,
+      "acquired_at": "2026-11-10T12:38:26.883Z",
+      "metadata": {
+        "name": "Joran Kayu Pemula",
+        "category": "tools",
+        "rarity": "common",
+        "description": "Joran pancing kayu klasik buatan tangan warga pinggir kali",
+        "icon": "🎣",
+        "rodTier": "common",
+        "luck": 0,
+        "fishingSpeed": 1,
+        "maxWeight": 5,
+        "specialAbility": "Joran ramah pemula tanpa syarat",
+        "sellPrice": 0
+      }
+    },
     {
       "id": "inv-rod-starter-c-8x5lwnp",
       "citizen_id": "c-8x5lwnp",

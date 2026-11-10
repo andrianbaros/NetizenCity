@@ -6112,6 +6112,7 @@ export class City3DManager {
         // Tilt rod forward in a natural ready angling pose (forward and angled upward into the water)
         this.fishingRodGroup.rotation.set(1.2, 0, 0);
         this.fishingRodGroup.visible = true;
+        this.constructFishingRodGeometry(this.currentEquippedRod || FISHING_RODS[0]);
       }
       // Set initial arm pose: reaching forward holding rod with both hands
       this.playerCitizen.rightArm.rotation.set(-0.55, -0.1, 0);
@@ -6224,6 +6225,7 @@ export class City3DManager {
         this.fishingRodGroup.position.set(0, -0.32, 0.05);
         this.fishingRodGroup.rotation.set(1.2, 0, 0);
         this.fishingRodGroup.visible = true;
+        this.constructFishingRodGeometry(this.currentEquippedRod || FISHING_RODS[0]);
       }
       this.playerCitizen.rightArm.rotation.set(-0.55, -0.1, 0);
       this.playerCitizen.leftArm.rotation.set(-0.45, 0.3, 0);
@@ -6315,6 +6317,17 @@ export class City3DManager {
     this.stadiumWorldGroup.visible = true;
 
     // Remove any active speech bubbles immediately so Free Kick / Stadium view is completely unobstructed
+    const purgeBubbles = (objGroup: THREE.Group | undefined | null) => {
+      if (!objGroup) return;
+      for (let i = objGroup.children.length - 1; i >= 0; i--) {
+        const child = objGroup.children[i];
+        if ((child as any).isSprite && child.position.y > 1.8) {
+          objGroup.remove(child);
+        }
+      }
+    };
+    purgeBubbles(this.playerCitizen?.root);
+    purgeBubbles(this.mayorPlayer?.root);
     if (this.playerSpeechBubble) {
       this.playerSpeechBubble.parent?.remove(this.playerSpeechBubble);
       this.playerSpeechBubble = null;
@@ -6541,6 +6554,20 @@ export class City3DManager {
   }
 
   private updateStadium(delta: number, elapsed: number) {
+    // Free kick mode: ensure no speech bubbles ever linger on player avatar
+    if (this.playerSpeechBubble) {
+      this.playerSpeechBubble.parent?.remove(this.playerSpeechBubble);
+      this.playerSpeechBubble = null;
+    }
+    if (this.playerCitizen?.root) {
+      for (let i = this.playerCitizen.root.children.length - 1; i >= 0; i--) {
+        const c = this.playerCitizen.root.children[i];
+        if ((c as any).isSprite && c.position.y > 1.8) {
+          this.playerCitizen.root.remove(c);
+        }
+      }
+    }
+
     // 1. Ball physics update
     if (this.soccerBall && this.isBallKicked) {
       if (!this.isBallCaught) {

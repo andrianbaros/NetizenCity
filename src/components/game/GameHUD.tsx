@@ -189,8 +189,13 @@ export default function GameHUD() {
             const localTime = new Date(currentLocalWallet?.updatedAt || 0).getTime()
 
             // If local activity has a newer or equal timestamp than server's container DB,
-            // or if server balance reverted to stale 500 while local has verified activity:
-            if ((localTime >= serverTime && localBal !== serverBalance) || (serverBalance === 500 && localBal !== 500 && localSpent > 0)) {
+            // or if server balance reverted to stale 500/old cache while local has verified activity:
+            const isLocalMoreAuthoritative =
+              (localTime >= serverTime && localBal !== serverBalance) ||
+              (serverBalance < localBal && localBal >= 50000) ||
+              (serverBalance === 500 && localBal !== 500 && (localSpent > 0 || localEarned > 500))
+
+            if (isLocalMoreAuthoritative) {
               // Self-heal serverless container DB with client's confirmed wallet
               fetch('/api/economy', {
                 method: 'POST',
