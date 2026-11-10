@@ -8,6 +8,8 @@ import {
   harvestCitizenGarden,
   plantCitizenGarden,
   GARDEN_SEEDS,
+  MAX_DAILY_WATERS,
+  WATER_REFILL_PRICE,
 } from '@/lib/db/localDb'
 
 export async function GET(request: NextRequest) {
@@ -26,12 +28,16 @@ export async function GET(request: NextRequest) {
           water_level: 100,
           fertilizer_count: 3,
           total_harvested: 0,
+          daily_waters_count: 0,
+          daily_waters_date: new Date().toISOString().slice(0, 10),
           last_watered_at: new Date().toISOString(),
           last_refilled_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
         seeds: GARDEN_SEEDS,
+        maxDailyWaters: MAX_DAILY_WATERS,
+        waterRefillPrice: WATER_REFILL_PRICE,
       })
     }
 
@@ -41,6 +47,8 @@ export async function GET(request: NextRequest) {
       isGuest: false,
       garden,
       seeds: GARDEN_SEEDS,
+      maxDailyWaters: MAX_DAILY_WATERS,
+      waterRefillPrice: WATER_REFILL_PRICE,
     })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Kesalahan server'
@@ -80,6 +88,9 @@ export async function POST(request: NextRequest) {
 
     if (action === 'refill_water') {
       const result = refillGardenWater(citizen.id)
+      if (!result.success) {
+        return NextResponse.json(result, { status: 400 })
+      }
       return NextResponse.json(result)
     }
 

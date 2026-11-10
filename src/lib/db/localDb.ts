@@ -12,8 +12,10 @@ import {
   type GardenSeedDefinition,
   type GardenState,
   GARDEN_SEEDS,
+  MAX_DAILY_WATERS,
+  WATER_REFILL_PRICE,
 } from '@/types/garden'
-export { GARDEN_SEEDS, type GardenSeedDefinition, type GardenState }
+export { GARDEN_SEEDS, MAX_DAILY_WATERS, WATER_REFILL_PRICE, type GardenSeedDefinition, type GardenState }
 
 const DB_PATH = path.join(process.cwd(), 'data', 'local_db.json')
 const TMP_DB_PATH = path.join(
@@ -162,20 +164,7 @@ export interface LocalDBSchema {
     author: string
     created_at: string
   }>
-  gardens?: Array<{
-    id: string
-    citizen_id: string
-    seed_id: 'coin_tree' | 'apple_tree' | 'orchid' | 'golden_tree'
-    stage: number // 1: Seed, 2: Sprout, 3: Growing, 4: Blooming, 5: Harvest Ready
-    progress: number // 0 to 100
-    water_level: number // 0 to 100
-    fertilizer_count: number
-    total_harvested: number
-    last_watered_at: string
-    last_refilled_at: string
-    created_at: string
-    updated_at: string
-  }>
+  gardens?: GardenState[]
 }
 
 function getInitialSeedData(): LocalDBSchema {
@@ -1709,12 +1698,13 @@ export function loginLocalCitizen(identifier: string, passwordHash: string) {
 // KEBUN NETIZEN (VIRTUAL 3D GARDEN SYSTEM)
 // ============================================================
 
-export function getCitizenGarden(citizenId: string) {
+export function getCitizenGarden(citizenId: string): GardenState {
   const db = readLocalDB()
   if (!db.gardens) db.gardens = []
 
   let garden = db.gardens.find((g) => g.citizen_id === citizenId)
   const now = new Date()
+  const todayDate = now.toISOString().slice(0, 10)
 
   if (!garden) {
     garden = {
@@ -1723,9 +1713,11 @@ export function getCitizenGarden(citizenId: string) {
       seed_id: 'coin_tree',
       stage: 1, // Stage 1 (Benih di Pot Tanah)
       progress: 0,
-      water_level: 100, // Full can of water
+      water_level: 100, // Full can of water starter
       fertilizer_count: 3, // Starter organic fertilizer
       total_harvested: 0,
+      daily_waters_count: 0,
+      daily_waters_date: todayDate,
       last_watered_at: now.toISOString(),
       last_refilled_at: now.toISOString(),
       created_at: now.toISOString(),
@@ -1734,14 +1726,20 @@ export function getCitizenGarden(citizenId: string) {
     db.gardens.push(garden)
     writeLocalDB(db)
   } else {
-    // Passive water regeneration: +10 water per 2 minutes elapsed since last watered
-    const elapsedMinutes = (now.getTime() - new Date(garden.last_watered_at).getTime()) / (1000 * 60)
-    if (elapsedMinutes >= 2 && garden.water_level < 100) {
-      const addedWater = Math.min(100 - garden.water_level, Math.floor(elapsedMinutes / 2) * 10)
-      if (addedWater > 0) {
-        garden.water_level = Math.min(100, garden.water_level + addedWater)
-        writeLocalDB(db)
-      }
+    // Reset daily watering quota at midnight
+    let isChanged = false
+    if (garden.daily_waters_date !== todayDate) {
+      garden.daily_waters_date = todayDate
+      garden.daily_waters_count = 0
+      isChanged = true
+    }
+    if (typeof garden.daily_waters_count !== 'number') {
+      garden.daily_waters_count = 0
+      garden.daily_waters_date = todayDate
+      isChanged = true
+    }
+    if (isChanged) {
+      writeLocalDB(db)
     }
   }
 
@@ -1754,11 +1752,30 @@ export function waterCitizenGarden(citizenId: string) {
 
   const garden = getCitizenGarden(citizenId)
   const seed = GARDEN_SEEDS[garden.seed_id] || GARDEN_SEEDS.coin_tree
+  const todayDate = new Date().toISOString().slice(0, 10)
+
+  // Ensure daily tracking is fresh
+  if (garden.daily_waters_date !== todayDate) {
+    garden.daily_waters_date = todayDate
+    garden.daily_waters_count = 0
+  }
+  if (typeof garden.daily_waters_count !== 'number') {
+    garden.daily_waters_count = 0
+  }
+
+  // Daily limit check: only a few times per day
+  if (garden.daily_waters_count >= MAX_DAILY_WATERS) {
+    return {
+      success: false,
+      error: `Batas siram harian tercapai (${MAX_DAILY_WATERS}/${MAX_DAILY_WATERS} kali). Pohon butuh waktu istirahat menyerap tanah. Siram kembali besok ya!`,
+      garden,
+    }
+  }
 
   if (garden.water_level < seed.waterPerStep) {
     return {
       success: false,
-      error: 'Air di gembor habis! Ketuk tombol "Ambil Air Sumur" untuk mengisi ulang air tawar.',
+      error: `Air di gembor habis! Ketuk tombol "Reset Air Sumur (${WATER_REFILL_PRICE} Koin)" untuk mengisi ulang air tawar.`,
       garden,
     }
   }
@@ -1771,8 +1788,10 @@ export function waterCitizenGarden(citizenId: string) {
     }
   }
 
-  // Deduct water
+  // Deduct water and increment daily water count
   garden.water_level = Math.max(0, garden.water_level - seed.waterPerStep)
+  garden.daily_waters_count += 1
+  garden.daily_waters_date = todayDate
   garden.last_watered_at = new Date().toISOString()
   garden.updated_at = new Date().toISOString()
 
@@ -1864,6 +1883,32 @@ export function refillGardenWater(citizenId: string) {
   if (!db.gardens) db.gardens = []
 
   const garden = getCitizenGarden(citizenId)
+  if (garden.water_level >= 100) {
+    return {
+      success: false,
+      error: 'Air gembor masih penuh (100/100). Belum perlu diisi ulang!',
+      garden,
+    }
+  }
+
+  const wallet = getCitizenWallet(citizenId)
+  const currentBalance = wallet ? wallet.balance : 0
+  if (currentBalance < WATER_REFILL_PRICE) {
+    return {
+      success: false,
+      error: `Koin tidak mencukupi untuk reset air sumur (butuh ${WATER_REFILL_PRICE} Koin, saldo saat ini: ${currentBalance} Koin).`,
+      garden,
+    }
+  }
+
+  // Deduct 200 coins
+  const updatedWallet = updateWalletBalance(
+    citizenId,
+    -WATER_REFILL_PRICE,
+    'spend',
+    `Reset Air Gembor Kebun 100L (-${WATER_REFILL_PRICE} Koin)`
+  )
+
   garden.water_level = 100
   garden.last_refilled_at = new Date().toISOString()
   garden.updated_at = new Date().toISOString()
@@ -1873,6 +1918,8 @@ export function refillGardenWater(citizenId: string) {
   return {
     success: true,
     garden,
+    newBalance: updatedWallet ? updatedWallet.balance : currentBalance - WATER_REFILL_PRICE,
+    cost: WATER_REFILL_PRICE,
   }
 }
 

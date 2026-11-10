@@ -24,6 +24,9 @@ export interface GardenSeedDefinition {
   description: string
 }
 
+export const MAX_DAILY_WATERS = 3 // Maksimal siram 3 kali sehari
+export const WATER_REFILL_PRICE = 200 // Harga reset / isi ulang air sumur kebun (200 Koin Warga)
+
 export interface GardenState {
   id: string
   citizen_id: string
@@ -33,6 +36,8 @@ export interface GardenState {
   water_level: number // 0 to 100
   fertilizer_count: number
   total_harvested: number
+  daily_waters_count: number // Berapa kali sudah disiram hari ini
+  daily_waters_date: string // Tanggal YYYY-MM-DD pelacakan kuota harian
   last_watered_at: string
   last_refilled_at: string
   created_at: string

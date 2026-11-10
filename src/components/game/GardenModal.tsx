@@ -28,6 +28,8 @@ import { Button } from '@/components/ui/Button'
 import Garden3DView from './Garden3DView'
 import {
   GARDEN_SEEDS,
+  MAX_DAILY_WATERS,
+  WATER_REFILL_PRICE,
   type GardenSeedDefinition,
   type GardenState,
 } from '@/types/garden'
@@ -105,11 +107,22 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
     return seeds[garden.seed_id] || GARDEN_SEEDS.coin_tree
   }, [garden, seeds])
 
+  // Daily water calculations
+  const dailyWatersCount = garden?.daily_waters_count || 0
+  const dailyWatersLeft = Math.max(0, MAX_DAILY_WATERS - dailyWatersCount)
+  const isDailyLimitReached = dailyWatersLeft <= 0
+
   // Action: Siram Tanaman
   const handleWater = async () => {
     if (isWatering || isFertilizing || isHarvesting || !garden) return
+
+    if (isDailyLimitReached) {
+      showToast(`⚠️ Batas siram hari ini sudah tercapai (${MAX_DAILY_WATERS}/${MAX_DAILY_WATERS} kali). Pohon butuh istirahat menyerap tanah. Siram lagi besok!`)
+      return
+    }
+
     if (garden.water_level < (currentSeed.waterPerStep || 10)) {
-      showToast('⚠️ Air sumur menipis! Klik tombol "Isi Air Sumur" di bawah.')
+      showToast(`⚠️ Air gembor habis! Beli reset air sumur (${WATER_REFILL_PRICE} Koin) di bawah.`)
       return
     }
 
@@ -123,12 +136,13 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
       const data = await res.json()
       if (data.success && data.garden) {
         setGarden(data.garden)
+        const sisa = Math.max(0, MAX_DAILY_WATERS - (data.garden.daily_waters_count || 0))
         if (data.isHarvestReady) {
           showToast('🌟 Luar biasa! Tanamanmu kini siap dipanen!')
         } else if (data.isStageUp) {
-          showToast(`🌱 Hore! Tanaman berkembang ke Tahap ${data.garden.stage}!`)
+          showToast(`🌱 Hore! Tanaman berkembang ke Tahap ${data.garden.stage}! (Sisa siram: ${sisa}x)`)
         } else {
-          showToast(`💧 Tanaman segar disiram! (+${data.addedProgress}% Pertumbuhan)`)
+          showToast(`💧 Tanaman segar disiram! (+${data.addedProgress}% Pertumbuhan) [Sisa siram: ${sisa}x]`)
         }
       } else {
         showToast(data.error || 'Gagal menyiram tanaman')
@@ -173,9 +187,20 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
     }
   }
 
-  // Action: Ambil Air Sumur Kota
+  // Action: Reset Air Sumur Kota (200 Koin)
   const handleRefillWater = async () => {
     if (!garden) return
+    if (garden.water_level >= 100) {
+      showToast('💧 Air gembor masih penuh (100/100). Belum perlu diisi ulang!')
+      return
+    }
+
+    const currentBalance = useCitizenStore.getState().wallet?.balance ?? 0
+    if (currentBalance < WATER_REFILL_PRICE) {
+      showToast(`⚠️ Saldo koin tidak cukup untuk reset air (butuh ${WATER_REFILL_PRICE} Koin, saldomu: ${currentBalance} Koin).`)
+      return
+    }
+
     try {
       const res = await fetch('/api/garden', {
         method: 'POST',
@@ -184,8 +209,13 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
       })
       const data = await res.json()
       if (data.success && data.garden) {
+        if (typeof data.newBalance === 'number') {
+          useCitizenStore.getState().updateBalance(data.newBalance)
+        }
         setGarden(data.garden)
-        showToast('💧 Gembor air berhasil diisi penuh dari sumur kota (100/100)!')
+        showToast(`💧 Gembor air berhasil direset penuh (100L)! -${WATER_REFILL_PRICE} Koin Warga.`)
+      } else {
+        showToast(data.error || 'Gagal mengisi air sumur')
       }
     } catch (err) {
       console.error('Refill error:', err)
@@ -278,6 +308,10 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
                 </span>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide bg-emerald-100 text-emerald-800 border border-emerald-300">
                   {STAGE_BADGES[(garden?.stage || 1) - 1]}
+                </span>
+                <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide bg-blue-100 text-blue-800 border border-blue-300">
+                  <Droplets className="w-2.5 h-2.5 fill-blue-600 text-blue-600" />
+                  <span>Siram: {dailyWatersCount}/{MAX_DAILY_WATERS}</span>
                 </span>
               </div>
               <p className="text-[11px] text-[#78634B] font-medium leading-tight mt-0.5">
@@ -420,7 +454,7 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-[#78634B] flex items-center space-x-1">
                 <Droplets className="w-3.5 h-3.5 text-blue-500 fill-blue-400" />
-                <span>Air Sumur</span>
+                <span>Air Gembor</span>
               </span>
               <span className="font-mono font-black text-[#343B35] text-[11px]">
                 {garden?.water_level || 0}/100
@@ -432,16 +466,16 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
                 style={{ width: `${Math.min(100, garden?.water_level || 0)}%` }}
               />
             </div>
-            {(garden?.water_level || 0) < 20 && (
-              <button
-                type="button"
-                onClick={handleRefillWater}
-                className="w-full mt-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 underline flex items-center justify-center space-x-1 cursor-pointer"
-              >
-                <RefreshCw className="w-2.5 h-2.5" />
-                <span>Isi Air Sumur</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleRefillWater}
+              disabled={(garden?.water_level || 0) >= 100}
+              className="w-full mt-1 px-1.5 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 disabled:opacity-40 border border-blue-200 text-[10px] font-black text-blue-800 transition-colors flex items-center justify-center space-x-1 cursor-pointer"
+              title={`Isi ulang gembor ke 100 air seharga ${WATER_REFILL_PRICE} Koin`}
+            >
+              <RefreshCw className="w-2.5 h-2.5 shrink-0" />
+              <span>Reset Air ({WATER_REFILL_PRICE} Koin)</span>
+            </button>
           </div>
 
           {/* Organic Fertilizer */}
@@ -496,32 +530,54 @@ export default function GardenModal({ isOpen, onClose }: GardenModalProps) {
             </button>
           ) : (
             /* Watering and Fertilizing Action Grid */
-            <div className="grid grid-cols-2 gap-2.5">
-              {/* Button: Siram Air */}
-              <button
-                type="button"
-                onClick={handleWater}
-                disabled={isWatering || isFertilizing || (garden?.water_level || 0) < 10}
-                className="py-3 px-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 active:translate-y-0.5 disabled:opacity-50 text-white font-heading font-black text-xs sm:text-sm shadow-md border border-blue-400 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
-              >
-                <Droplets className="w-4 h-4 fill-white" />
-                <span>{isWatering ? 'Menyiram...' : '💧 Siram Air (-10 Air)'}</span>
-              </button>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Button: Siram Air */}
+                <button
+                  type="button"
+                  onClick={handleWater}
+                  disabled={isWatering || isFertilizing || isDailyLimitReached || (garden?.water_level || 0) < 10}
+                  className={`py-3 px-3 rounded-2xl active:translate-y-0.5 disabled:opacity-50 text-white font-heading font-black text-xs sm:text-sm shadow-md border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                    isDailyLimitReached
+                      ? 'bg-slate-400 border-slate-500 cursor-not-allowed'
+                      : 'bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 border-blue-400'
+                  }`}
+                >
+                  <Droplets className="w-4 h-4 fill-white" />
+                  <span>
+                    {isWatering
+                      ? 'Menyiram...'
+                      : isDailyLimitReached
+                      ? `Batas Siram Habis (${MAX_DAILY_WATERS}/${MAX_DAILY_WATERS})`
+                      : `💧 Siram Air (-10) [Sisa: ${dailyWatersLeft}x]`}
+                  </span>
+                </button>
 
-              {/* Button: Beri Pupuk */}
-              <button
-                type="button"
-                onClick={handleFertilize}
-                disabled={isWatering || isFertilizing || (garden?.fertilizer_count || 0) <= 0}
-                className="py-3 px-3 rounded-2xl bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 active:translate-y-0.5 disabled:opacity-50 text-white font-heading font-black text-xs sm:text-sm shadow-md border border-emerald-400 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>
-                  {isFertilizing
-                    ? 'Menabur...'
-                    : `✨ Beri Pupuk (${garden?.fertilizer_count || 0})`}
-                </span>
-              </button>
+                {/* Button: Beri Pupuk */}
+                <button
+                  type="button"
+                  onClick={handleFertilize}
+                  disabled={isWatering || isFertilizing || (garden?.fertilizer_count || 0) <= 0}
+                  className="py-3 px-3 rounded-2xl bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 active:translate-y-0.5 disabled:opacity-50 text-white font-heading font-black text-xs sm:text-sm shadow-md border border-emerald-400 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>
+                    {isFertilizing
+                      ? 'Menabur...'
+                      : `✨ Beri Pupuk (${garden?.fertilizer_count || 0})`}
+                  </span>
+                </button>
+              </div>
+
+              {/* Daily Limit Info Banner */}
+              {isDailyLimitReached && (
+                <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-medium flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    Batas siram {MAX_DAILY_WATERS}x hari ini sudah tercapai. Pohon butuh istirahat menyerap tanah. Silakan siram kembali besok ya!
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
