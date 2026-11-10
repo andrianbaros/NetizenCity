@@ -997,7 +997,13 @@ export function getCitizenWallet(
     const dbTime = new Date(wallet.updated_at || 0).getTime()
     const fallbackTime = new Date(fallbackWallet.updatedAt).getTime()
     const isColdStart500 = (wallet.balance === 500 && fallbackWallet.balance !== 500 && ((fallbackWallet.totalSpent ?? 0) > 0 || (fallbackWallet.totalEarned ?? 0) > 500))
-    if (fallbackTime > dbTime || isColdStart500) {
+    
+    // Safety rule: DB balance must NEVER be downgraded by a stale lower cookie (e.g. admin grant 9,999,999 coins vs stale 370/390 cookie)
+    if (wallet.balance > fallbackWallet.balance) {
+      // Server DB is ahead of or has an admin/topup grant: keep DB balance and update fallback
+      fallbackWallet.balance = wallet.balance
+      fallbackWallet.updatedAt = wallet.updated_at
+    } else if (fallbackTime > dbTime || isColdStart500 || fallbackWallet.balance > wallet.balance) {
       wallet.balance = fallbackWallet.balance
       if (typeof fallbackWallet.totalEarned === 'number') {
         wallet.total_earned = Math.max(wallet.total_earned, fallbackWallet.totalEarned)

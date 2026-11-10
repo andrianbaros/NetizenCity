@@ -6455,8 +6455,11 @@ export class City3DManager {
     // Defender wall jumps in unison to block the penalty shot!
     this.defenderJumpTimer = 0.55;
 
-    // Kicking avatar arm & leg swing animation
+    // Kicking avatar arm & leg swing animation (Skeletal Kick_Right on 3D low-poly model)
     if (this.playerCitizen) {
+      if (typeof this.playerCitizen.playAction === 'function') {
+        this.playerCitizen.playAction('Kick_Right');
+      }
       this.playerCitizen.rightLeg.rotation.x = -1.2;
       setTimeout(() => {
         if (this.playerCitizen) this.playerCitizen.rightLeg.rotation.x = 0.8;
