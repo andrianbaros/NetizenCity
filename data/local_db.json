@@ -307,13 +307,25 @@
     {
       "id": "w-c-8x5lwnp",
       "citizen_id": "c-8x5lwnp",
-      "balance": 370,
-      "total_earned": 620,
+      "balance": 390,
+      "total_earned": 640,
       "total_spent": 250,
-      "updated_at": "2026-11-10T07:40:34.397Z"
+      "updated_at": "2026-11-10T08:45:17.040Z"
     }
   ],
   "transactions": [
+    {
+      "id": "tx-vnbxte8",
+      "citizen_id": "c-8x5lwnp",
+      "type": "reward",
+      "amount": 20,
+      "previous_balance": 370,
+      "new_balance": 390,
+      "description": "Hadiah cetak gol penalti di Stadion Netizen City",
+      "reference_type": "stadium",
+      "reference_id": "goal-6",
+      "created_at": "2026-11-10T08:45:17.040Z"
+    },
     {
       "id": "tx-stadium-goal-01",
       "citizen_id": "c-8x5lwnp",
@@ -1497,6 +1509,57 @@
       "item_id": "top_jersey_garuda",
       "is_equipped": true,
       "acquired_at": "2026-11-09T05:55:00.443Z"
+    },
+    {
+      "id": "fish-1794300317041-1",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "fish_ikan_mujair_batu",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T08:45:17.040Z",
+      "metadata": {
+        "name": "Ikan Mujair Batu",
+        "category": "fish",
+        "weight": 1.45,
+        "rarity": "Biasa (Common)",
+        "sellPrice": 65,
+        "color": "#475569",
+        "icon": "🐟",
+        "description": "Tangkapan segar dari Sungai Kali Netizen dengan bobot 1.45 kg."
+      }
+    },
+    {
+      "id": "fish-1794300317041-2",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "fish_ikan_nila_merah",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T08:45:17.040Z",
+      "metadata": {
+        "name": "Ikan Nila Merah",
+        "category": "fish",
+        "weight": 2.1,
+        "rarity": "Biasa (Common)",
+        "sellPrice": 85,
+        "color": "#EF4444",
+        "icon": "🐟",
+        "description": "Tangkapan segar dari Sungai Kali Netizen dengan bobot 2.10 kg."
+      }
+    },
+    {
+      "id": "fish-1794300317041-3",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "fish_ikan_gurame_emas",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T08:45:17.040Z",
+      "metadata": {
+        "name": "Ikan Gurame Emas",
+        "category": "fish",
+        "weight": 3.2,
+        "rarity": "Langka (Rare)",
+        "sellPrice": 150,
+        "color": "#EAB308",
+        "icon": "🐟",
+        "description": "Tangkapan segar dari Sungai Kali Netizen dengan bobot 3.20 kg."
+      }
     }
   ],
   "daily_login_rewards": [

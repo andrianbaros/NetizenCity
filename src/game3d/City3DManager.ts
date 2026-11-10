@@ -5889,6 +5889,18 @@ export class City3DManager {
     this.riverWorldGroup.visible = false;
     this.stadiumWorldGroup.visible = true;
 
+    // Remove any active speech bubbles immediately so Free Kick / Stadium view is completely unobstructed
+    if (this.playerSpeechBubble) {
+      this.playerSpeechBubble.parent?.remove(this.playerSpeechBubble);
+      this.playerSpeechBubble = null;
+    }
+    this.remotePlayers.forEach((rp) => {
+      if (rp.bubble) {
+        rp.root.remove(rp.bubble);
+        rp.bubble = null;
+      }
+    });
+
     // Spawn player avatar at the freekick penalty kick spot (Z = -3.2) facing North toward goal (Z = -12.3)
     this.playerPos.set(0, 0.1, -3.2);
     this.playerFacing = Math.PI;
@@ -7390,6 +7402,7 @@ private setupAirplanes() {
     window.addEventListener('enter-beach-area', this.handleEnterBeachEvent);
     window.addEventListener('exit-beach-area', this.handleExitBeachEvent);
     this.handlePlayerChat = (e: any) => {
+      if (this.viewMode === 'stadium') return;
       const text = e.detail?.text;
       if (text) this.showPlayerSpeechBubble(text);
     };
@@ -7897,6 +7910,14 @@ private setupAirplanes() {
   // ============================================================
 
   private showPlayerSpeechBubble(text: string) {
+    // In freekick / stadium mode, speech bubbles must never appear so the field, goal, and keeper are clearly visible
+    if (this.viewMode === 'stadium') {
+      if (this.playerSpeechBubble) {
+        this.playerSpeechBubble.parent?.remove(this.playerSpeechBubble);
+        this.playerSpeechBubble = null;
+      }
+      return;
+    }
     if (this.playerSpeechBubble) {
       this.playerSpeechBubble.parent?.remove(this.playerSpeechBubble);
       this.playerSpeechBubble = null;
@@ -8062,16 +8083,21 @@ private setupAirplanes() {
   }
 
   private updateCharacter(delta: number, elapsed: number) {
-    if (this.viewMode !== 'tugu' && this.viewMode !== 'river' && this.viewMode !== 'beach') {
-      return;
-    }
-
     if (this.playerSpeechBubble) {
-      this.playerBubbleTimer -= delta;
-      if (this.playerBubbleTimer <= 0) {
+      if (this.viewMode === 'stadium') {
         this.playerSpeechBubble.parent?.remove(this.playerSpeechBubble);
         this.playerSpeechBubble = null;
+      } else {
+        this.playerBubbleTimer -= delta;
+        if (this.playerBubbleTimer <= 0) {
+          this.playerSpeechBubble.parent?.remove(this.playerSpeechBubble);
+          this.playerSpeechBubble = null;
+        }
       }
+    }
+
+    if (this.viewMode !== 'tugu' && this.viewMode !== 'river' && this.viewMode !== 'beach') {
+      return;
     }
 
     const camDir = new THREE.Vector3();

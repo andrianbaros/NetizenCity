@@ -226,11 +226,17 @@ export default function GameHUD() {
             }
           }
         }
-        if (Array.isArray(citData.inventory) && citData.inventory.length > 0) {
+        if (Array.isArray(citData.inventory)) {
+          const now = Date.now()
           const localInv = useCitizenStore.getState().inventory || []
           const serverIds = new Set(citData.inventory.map((i: any) => i.id))
-          const nonServerLocalItems = localInv.filter((i: any) => i && i.id && !serverIds.has(i.id))
-          setInventory([...citData.inventory, ...nonServerLocalItems])
+          // Only retain temporary optimistic catches (< 5s ago) that haven't landed on server yet
+          const inFlightPendingCatches = localInv.filter((i: any) => {
+            if (!i || !i.id || serverIds.has(i.id)) return false
+            const acquiredTime = new Date(i.acquiredAt || 0).getTime()
+            return now - acquiredTime < 5000 && String(i.id).startsWith('fish-')
+          })
+          setInventory([...citData.inventory, ...inFlightPendingCatches])
         }
       }
 

@@ -1197,11 +1197,12 @@ export default function GameCanvas() {
 
       {/* ============================================================ */}
       {/* TACTILE ON-SCREEN CAMERA ROTATE & ZOOM BUTTONS               */}
-      {/* Positioned right edge above/around zoom, thumb-friendly      */}
+      {/* Compact on mobile, thumb-friendly, hidden in stadium mode    */}
       {/* ============================================================ */}
-      <div className="absolute right-2 sm:right-3.5 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center select-none pointer-events-auto gap-1.5">
+      {viewMode !== 'stadium' && (
+        <div className="absolute right-1 sm:right-3.5 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center select-none pointer-events-auto gap-1 sm:gap-1.5 scale-[0.65] sm:scale-85 md:scale-100 origin-right">
         {/* 1. CAMERA ROTATE D-PAD (Atas, Bawah, Kiri, Kanan, Reset) */}
-        <div className="bg-[#F7F4E9]/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-[#D8CEBE] shadow-md flex flex-col items-center">
+        <div className="bg-[#F7F4E9]/85 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-[#D8CEBE]/80 shadow-sm sm:shadow-md flex flex-col items-center">
           {/* Top: Tilt Up / Sudut Atas (Aerial View) */}
           <button
             type="button"
@@ -1214,13 +1215,13 @@ export default function GameCanvas() {
             onPointerCancel={stopCameraAction}
             title="Sudut Atas (Tunduk / Pandangan Aerial)"
             aria-label="Sudut Atas"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+            className="w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-lg sm:rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
           >
-            <ChevronUp className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+            <ChevronUp className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
           </button>
 
           {/* Middle Row: Rotate Left, Reset Compass, Rotate Right */}
-          <div className="flex items-center gap-1 my-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 my-0.5 sm:my-1">
             {/* Left: Rotate Left / Putar Kiri */}
             <button
               type="button"
@@ -1233,9 +1234,9 @@ export default function GameCanvas() {
               onPointerCancel={stopCameraAction}
               title="Putar Kiri"
               aria-label="Putar Kiri"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+              className="w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-lg sm:rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
             >
-              <ChevronLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
             </button>
 
             {/* Center: Reset Default Angle */}
@@ -1244,9 +1245,9 @@ export default function GameCanvas() {
               onClick={handleResetCamera}
               title="Reset Sudut Kamera Default"
               aria-label="Reset Sudut Kamera Default"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#EFE9D8]/90 hover:bg-[#E4D5BE] active:bg-[#D8CEBE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#78634B] cursor-pointer transition-all touch-manipulation"
+              className="w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-lg sm:rounded-xl bg-[#EFE9D8]/90 hover:bg-[#E4D5BE] active:bg-[#D8CEBE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#78634B] cursor-pointer transition-all touch-manipulation"
             >
-              <Compass className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-[#8C7A6B]" />
+              <Compass className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 text-[#8C7A6B]" />
             </button>
 
             {/* Right: Rotate Right / Putar Kanan */}
@@ -1261,9 +1262,9 @@ export default function GameCanvas() {
               onPointerCancel={stopCameraAction}
               title="Putar Kanan"
               aria-label="Putar Kanan"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+              className="w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-lg sm:rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
             >
-              <ChevronRight className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
             </button>
           </div>
 
@@ -1279,14 +1280,14 @@ export default function GameCanvas() {
             onPointerCancel={stopCameraAction}
             title="Sudut Bawah (Tegak / Pandangan Tanah)"
             aria-label="Sudut Bawah"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+            className="w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-lg sm:rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
           >
-            <ChevronDown className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+            <ChevronDown className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
           </button>
         </div>
 
         {/* 2. ZOOM IN / OUT BUTTONS */}
-        <div className="bg-[#F7F4E9]/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-[#D8CEBE] shadow-md flex flex-col items-center gap-1">
+        <div className="bg-[#F7F4E9]/85 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-[#D8CEBE]/80 shadow-sm sm:shadow-md flex flex-col items-center gap-0.5 sm:gap-1">
           <button
             type="button"
             onPointerDown={(e) => {
@@ -1298,9 +1299,9 @@ export default function GameCanvas() {
             onPointerCancel={stopCameraAction}
             title="Zoom In (Perbesar Tampilan)"
             aria-label="Zoom In"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+            className="w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-lg sm:rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
           >
-            <Plus className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+            <Plus className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
           </button>
           <button
             type="button"
@@ -1313,12 +1314,13 @@ export default function GameCanvas() {
             onPointerCancel={stopCameraAction}
             title="Zoom Out (Perkecil Tampilan)"
             aria-label="Zoom Out"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
+            className="w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-lg sm:rounded-xl bg-white/90 hover:bg-[#EFE9D8] active:bg-[#E4D5BE] active:translate-y-0.5 border border-[#D8CEBE] shadow-xs flex items-center justify-center text-[#343B35] cursor-pointer transition-all touch-manipulation"
           >
-            <Minus className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+            <Minus className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
           </button>
         </div>
       </div>
+      )}
 
       {/* ============================================================ */}
       {/* VIRTUAL ANALOG JOYSTICK (Tugu, River, Stadium & Beach on Touch) */}
