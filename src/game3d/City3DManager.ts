@@ -803,7 +803,7 @@ export class City3DManager {
 
   // 3D Beach Map State
   public beachLamps: Array<{
-    root: THREE.Mesh;
+    root: THREE.Object3D;
     headMat: THREE.MeshStandardMaterial;
     light: THREE.PointLight;
   }> = [];
@@ -3210,16 +3210,20 @@ export class City3DManager {
     seabed.position.set(-35, -2.5, 6);
     this.beachWorldGroup.add(seabed);
 
-    // Underwater Colorful Coral Clusters & Sea Stones
+    // Underwater Colorful Coral Clusters & Sea Stones (Optimized with shared geometry)
     const coralColors = ['#F97316', '#EF4444', '#10B981', '#EC4899', '#8B5CF6'];
-    const coralMat = (c: string) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75 });
-    for (let i = 0; i < 28; i++) {
-      const cx = -6.0 - Math.random() * 45.0;
-      const cz = -28.0 + Math.random() * 70.0;
-      const coral = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(0.35 + Math.random() * 0.45, 1),
-        coralMat(coralColors[i % coralColors.length])
-      );
+    const sharedCoralGeo = new THREE.DodecahedronGeometry(0.42, 0);
+    const coralMatMap = new Map<string, THREE.MeshStandardMaterial>();
+    for (let i = 0; i < 12; i++) {
+      const cx = -6.0 - (i * 3.5) % 36.0;
+      const cz = -20.0 + (i * 7.5) % 65.0;
+      const color = coralColors[i % coralColors.length];
+      let cMat = coralMatMap.get(color);
+      if (!cMat) {
+        cMat = new THREE.MeshStandardMaterial({ color, roughness: 0.75 });
+        coralMatMap.set(color, cMat);
+      }
+      const coral = new THREE.Mesh(sharedCoralGeo, cMat);
       coral.position.set(cx, -1.9, cz);
       coral.scale.set(1.2, 0.8, 1.2);
       this.beachWorldGroup.add(coral);
@@ -3268,17 +3272,15 @@ export class City3DManager {
     sandBeach.position.set(9.5, -0.65, 6);
     this.beachWorldGroup.add(sandBeach);
 
-    // Scattered Seashells on the Sand
+    // Scattered Seashells on the Sand (Optimized with shared geometry)
+    const sharedShellGeo = new THREE.ConeGeometry(0.12, 0.18, 4);
     const shellMat1 = new THREE.MeshStandardMaterial({ color: '#FFF5EB', roughness: 0.6 });
     const shellMat2 = new THREE.MeshStandardMaterial({ color: '#FFE4E6', roughness: 0.6 });
-    for (let i = 0; i < 40; i++) {
-      const sx = 2.8 + Math.random() * 11.5;
-      const sz = -22.0 + Math.random() * 55.0;
-      const shell = new THREE.Mesh(
-        new THREE.ConeGeometry(0.12, 0.18, 5),
-        i % 2 === 0 ? shellMat1 : shellMat2
-      );
-      shell.rotation.set(Math.PI / 2, 0, Math.random() * Math.PI);
+    for (let i = 0; i < 14; i++) {
+      const sx = 3.2 + (i * 2.3) % 10.0;
+      const sz = -18.0 + (i * 5.2) % 50.0;
+      const shell = new THREE.Mesh(sharedShellGeo, i % 2 === 0 ? shellMat1 : shellMat2);
+      shell.rotation.set(Math.PI / 2, 0, (i * 0.7) % Math.PI);
       shell.position.set(sx, 0.06, sz);
       this.beachWorldGroup.add(shell);
     }
@@ -3304,32 +3306,26 @@ export class City3DManager {
     this.beachWorldGroup.add(riverBridge);
 
     // 8. Pantai Netizen Beach Zone: Swimming Buoy Boundary (Pelampung Area Berenang)
+    // Optimized: 14 buoys with shared geometries and materials
     const buoyPerimeter: Array<[number, number]> = [];
-    // North edge (Z = -14)
-    for (let bx = -18; bx <= -2; bx += 2.2) buoyPerimeter.push([bx, -14]);
-    // South edge (Z = 8)
-    for (let bx = -18; bx <= -2; bx += 2.2) buoyPerimeter.push([bx, 8]);
-    // West deep edge (X = -18)
-    for (let bz = -12; bz < 8; bz += 2.2) buoyPerimeter.push([-18, bz]);
-    // East shoreline edge (X = -2)
-    for (let bz = -12; bz < 8; bz += 2.2) buoyPerimeter.push([-2, bz]);
+    for (let bx = -18; bx <= -2; bx += 4.5) buoyPerimeter.push([bx, -14]);
+    for (let bx = -18; bx <= -2; bx += 4.5) buoyPerimeter.push([bx, 8]);
+    for (let bz = -9.5; bz <= 3.5; bz += 4.5) buoyPerimeter.push([-18, bz]);
+    for (let bz = -9.5; bz <= 3.5; bz += 4.5) buoyPerimeter.push([-2, bz]);
+
+    const sharedBuoySphereGeo = new THREE.SphereGeometry(0.24, 7, 6);
+    const sharedBuoyRingGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.08, 7);
+    const buoyRedMat = new THREE.MeshStandardMaterial({ color: '#F28C7A', roughness: 0.4 });
+    const buoyWhiteMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.4 });
 
     buoyPerimeter.forEach(([bx, bz], i) => {
       const buoy = new THREE.Group();
       const isRed = i % 2 === 0;
-      const sphereMat = new THREE.MeshStandardMaterial({
-        color: isRed ? '#F28C7A' : '#FFFFFF',
-        roughness: 0.4,
-      });
-      const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), sphereMat);
+      const sphere = new THREE.Mesh(sharedBuoySphereGeo, isRed ? buoyRedMat : buoyWhiteMat);
       sphere.position.set(0, 0.12, 0);
       buoy.add(sphere);
 
-      const ringMat = new THREE.MeshStandardMaterial({
-        color: isRed ? '#FFFFFF' : '#F28C7A',
-        roughness: 0.5,
-      });
-      const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 8), ringMat);
+      const ring = new THREE.Mesh(sharedBuoyRingGeo, isRed ? buoyWhiteMat : buoyRedMat);
       ring.position.set(0, 0.02, 0);
       buoy.add(ring);
 
@@ -3338,12 +3334,12 @@ export class City3DManager {
       this.beachWorldGroup.add(buoy);
     });
 
-    // 9. Two Neat Rows of Striped Beach Umbrellas & Loungers (Deretan Payung & Kursi Pantai)
+    // 9. Neat Rows of Striped Beach Umbrellas & Loungers (Deretan Payung & Kursi Pantai)
     const umbrellaColors = ['#F2A88A', '#A8DCC8', '#F7D772', '#C9B8E8', '#F2B8C6', '#A9C8EC'];
     const loungerColors = ['#F7ECD6', '#A9C8EC', '#F2B8C6', '#F7D772', '#A8DCC8'];
 
-    // Row 1 (Closer to shoreline, X = 5.2)
-    const row1Z = [-13.0, -9.0, -5.0, -1.0, 3.0, 7.0, 11.0];
+    // Row 1 (Closer to shoreline, X = 5.2, 5 umbrellas)
+    const row1Z = [-11.0, -5.0, 1.0, 7.0];
     row1Z.forEach((z, i) => {
       const uGroup = new THREE.Group();
       uGroup.position.set(5.2, 0, z);
@@ -3368,8 +3364,8 @@ export class City3DManager {
       this.beachWorldGroup.add(uGroup);
     });
 
-    // Row 2 (Staggered inland, X = 8.8)
-    const row2Z = [-11.0, -7.0, -3.0, 1.0, 5.0, 9.0];
+    // Row 2 (Staggered inland, X = 8.8, 4 umbrellas)
+    const row2Z = [-8.0, -2.0, 4.0, 10.0];
     row2Z.forEach((z, i) => {
       const uGroup = new THREE.Group();
       uGroup.position.set(8.8, 0, z);
@@ -3474,75 +3470,85 @@ export class City3DManager {
     this.beachWorldGroup.add(crane);
 
     // 16. Wooden Ocean Angling Pier (Dermaga Pancing Samudra Menjorok ke Laut di Z = 28.0)
+    // High-performance consolidated geometry: single solid deck slab + subtle plank accents
     const pierDeckGroup = new THREE.Group();
     const woodPlankMat1 = new THREE.MeshStandardMaterial({ color: '#7A4B26', roughness: 0.85 });
     const woodPlankMat2 = new THREE.MeshStandardMaterial({ color: '#8C562E', roughness: 0.85 });
 
-    // Transition ramp from Sand/Quay (X = 2.2, Y = 0.1) up to Pier deck (X = 1.0, Y = 0.35)
-    for (let step = 0; step < 4; step++) {
-      const stepPlank = new THREE.Mesh(
-        new THREE.BoxGeometry(0.32, 0.12, 3.6),
-        step % 2 === 0 ? woodPlankMat1 : woodPlankMat2
+    // Transition ramp from Sand/Quay
+    const rampPlank = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.14, 3.6),
+      woodPlankMat1
+    );
+    rampPlank.position.set(1.5, 0.22, 28.0);
+    rampPlank.rotation.z = -0.12;
+    pierDeckGroup.add(rampPlank);
+
+    // Main Pier Solid Wooden Deck (covers -16.3 to 0.9, width 3.6m)
+    const pierDeckSlab = new THREE.Mesh(
+      new THREE.BoxGeometry(17.2, 0.14, 3.6),
+      woodPlankMat1
+    );
+    pierDeckSlab.position.set(-7.7, 0.35, 28.0);
+    pierDeckGroup.add(pierDeckSlab);
+
+    // Subtle plank rhythm strips across the deck for rustic wooden aesthetic
+    for (let i = 0; i < 9; i++) {
+      const px = -15.5 + i * 1.9;
+      const strip = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.15, 3.58),
+        woodPlankMat2
       );
-      stepPlank.position.set(2.0 - step * 0.3, 0.12 + step * 0.07, 28.0);
-      pierDeckGroup.add(stepPlank);
+      strip.position.set(px, 0.35, 28.0);
+      pierDeckGroup.add(strip);
     }
 
-    // Pier main wooden planks spanning X from -16.4 to 1.0
-    const plankWidth = 0.36;
-    const pierSpan = 17.4;
-    const plankCount = Math.floor(pierSpan / plankWidth);
-    for (let i = 0; i < plankCount; i++) {
-      const px = -16.3 + i * plankWidth;
-      const plank = new THREE.Mesh(
-        new THREE.BoxGeometry(0.32, 0.14, 3.6),
-        i % 2 === 0 ? woodPlankMat1 : woodPlankMat2
-      );
-      plank.position.set(px, 0.35, 28.0);
-      pierDeckGroup.add(plank);
-    }
-
-    // Heavy timber pilings anchored into sea bottom
+    // Heavy timber pilings anchored into sea bottom (5 pairs along the pier)
     const pilingMat = new THREE.MeshStandardMaterial({ color: '#4E2F17', roughness: 0.9 });
-    for (let px = -16.0; px <= 0.5; px += 2.8) {
+    const sharedPilingGeo = new THREE.CylinderGeometry(0.16, 0.18, 3.4, 7);
+    for (let px = -15.5; px <= 0.5; px += 3.8) {
       [-1.6, 1.6].forEach((pzOffset) => {
-        const piling = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 3.4, 8), pilingMat);
+        const piling = new THREE.Mesh(sharedPilingGeo, pilingMat);
         piling.position.set(px, -1.0, 28.0 + pzOffset);
         pierDeckGroup.add(piling);
       });
     }
 
-    // Pier railing posts & nautical brass lanterns
+    // Pier railing posts & nautical lanterns (4 pairs along the pier)
     const postMat = new THREE.MeshStandardMaterial({ color: '#5A351B', roughness: 0.8 });
     const lampBrassMat = new THREE.MeshStandardMaterial({ color: '#D4AF37', metalness: 0.7, roughness: 0.3 });
     const lampGlowMat = new THREE.MeshStandardMaterial({
       color: '#FFF8E7',
       emissive: '#FFB84D',
-      emissiveIntensity: 0.25,
+      emissiveIntensity: 0.3,
       roughness: 0.3,
     });
+    const sharedPostGeo = new THREE.BoxGeometry(0.16, 1.1, 0.16);
+    const sharedLanternGeo = new THREE.BoxGeometry(0.24, 0.28, 0.24);
+    const sharedBulbGeo = new THREE.SphereGeometry(0.1, 6, 6);
 
-    for (let px = -16.2; px <= 0.8; px += 3.2) {
+    for (let px = -15.5; px <= 0.5; px += 5.2) {
       [-1.75, 1.75].forEach((pzOffset) => {
         const pz = 28.0 + pzOffset;
-        const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.1, 0.16), postMat);
+        const post = new THREE.Mesh(sharedPostGeo, postMat);
         post.position.set(px, 0.85, pz);
         pierDeckGroup.add(post);
 
-        const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.24), lampBrassMat);
+        const lantern = new THREE.Mesh(sharedLanternGeo, lampBrassMat);
         lantern.position.set(px, 1.45, pz);
         pierDeckGroup.add(lantern);
 
-        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), lampGlowMat);
+        const bulb = new THREE.Mesh(sharedBulbGeo, lampGlowMat);
         bulb.position.set(px, 1.45, pz);
         pierDeckGroup.add(bulb);
-
-        const pLight = new THREE.PointLight('#FFD180', 0.0, 7.0, 1.5);
-        pLight.position.set(px, 1.5, pz);
-        pierDeckGroup.add(pLight);
-        this.beachLamps.push({ root: lantern, headMat: lampGlowMat, light: pLight });
       });
     }
+
+    // Single centralized warm PointLight illuminating the pier (ZERO multi-light GPU bottleneck)
+    const centralPierLight = new THREE.PointLight('#FFD180', 0.0, 24.0, 1.6);
+    centralPierLight.position.set(-8.0, 2.5, 28.0);
+    pierDeckGroup.add(centralPierLight);
+    this.beachLamps.push({ root: pierDeckGroup, headMat: lampGlowMat, light: centralPierLight });
 
     // Pier props: bait barrel, tackle box, lifebuoy
     const barrelMat = new THREE.MeshStandardMaterial({ color: '#5B371B', roughness: 0.85 });
@@ -3580,15 +3586,13 @@ export class City3DManager {
     lighthouse.position.set(-5.0, 0, 44.0);
     this.beachWorldGroup.add(lighthouse);
 
-    // 19. Lush Coconut Palms & Coastal Pines along Inland Bank
+    // 19. Lush Coconut Palms & Coastal Pines along Inland Bank (Optimized count)
     const palmPositions = [
-      { x: 18.0, z: -18.0, tilt: 0.16 },
-      { x: 22.0, z: -8.0, tilt: -0.15 },
-      { x: 19.0, z: 4.0, tilt: 0.14 },
-      { x: 23.0, z: 14.0, tilt: -0.16 },
-      { x: 18.0, z: 26.0, tilt: 0.15 },
-      { x: 22.0, z: 38.0, tilt: -0.14 },
-      { x: 20.0, z: 45.0, tilt: 0.12 },
+      { x: 18.0, z: -16.0, tilt: 0.15 },
+      { x: 22.0, z: -4.0, tilt: -0.15 },
+      { x: 19.0, z: 8.0, tilt: 0.14 },
+      { x: 22.0, z: 22.0, tilt: -0.15 },
+      { x: 19.0, z: 36.0, tilt: 0.14 },
     ];
     palmPositions.forEach((pos) => {
       const palm = this.createPalmTree(pos.tilt);
@@ -3604,35 +3608,49 @@ export class City3DManager {
 
     // 21. Swimming Marine Fish Schools (Kawanan Ikan Samudra Renang)
     this.setupBeachFish();
+
+    // 22. High-Performance Optimization: Freeze static environment transforms
+    // Skips 4x4 matrix recalculations for static objects on every render frame
+    [
+      seabed,
+      ocean,
+      wetSand,
+      sandBeach,
+      greenBank,
+      riverChannel,
+      riverBridge,
+      quay,
+      quayCurb,
+      crane,
+      pierDeckGroup,
+      beachRodShop,
+      cargoShip,
+      lighthouse,
+      portalArch,
+      lifeguardTower,
+      safetyBoard,
+      beachGate,
+    ].forEach((obj) => {
+      obj.traverse((child) => {
+        child.matrixAutoUpdate = false;
+        child.updateMatrix();
+      });
+    });
   }
 
   private makeStripedCanopy(colorHex: string, radius = 1.4, height = 0.65): THREE.Group {
     const group = new THREE.Group();
-    const matColor = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.7, side: THREE.DoubleSide });
-    const matWhite = new THREE.MeshStandardMaterial({ color: '#FFFDF9', roughness: 0.7, side: THREE.DoubleSide });
+    const matColor = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.7 });
+    const matWhite = new THREE.MeshStandardMaterial({ color: '#FFFDF9', roughness: 0.7 });
 
-    const segs = 8;
-    for (let k = 0; k < segs; k++) {
-      const a0 = (k * Math.PI * 2) / segs;
-      const a1 = ((k + 1) * Math.PI * 2) / segs;
+    const canopy = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 8), matColor);
+    canopy.position.set(0, height / 2, 0);
+    group.add(canopy);
 
-      const p0 = new THREE.Vector3(0, height, 0);
-      const p1 = new THREE.Vector3(Math.cos(a0) * radius, 0, Math.sin(a0) * radius);
-      const p2 = new THREE.Vector3(Math.cos(a1) * radius, 0, Math.sin(a1) * radius);
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.45, height * 0.48, 8), matWhite);
+    cap.position.set(0, height * 0.75, 0);
+    group.add(cap);
 
-      const geom = new THREE.BufferGeometry();
-      const vertices = new Float32Array([
-        p0.x, p0.y, p0.z,
-        p1.x, p1.y, p1.z,
-        p2.x, p2.y, p2.z,
-      ]);
-      geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-      geom.computeVertexNormals();
-
-      const mesh = new THREE.Mesh(geom, k % 2 === 0 ? matColor : matWhite);
-      mesh.castShadow = true;
-      group.add(mesh);
-    }
     return group;
   }
 
@@ -3644,22 +3662,16 @@ export class City3DManager {
 
     const bed = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 1.4), whiteMat);
     bed.position.set(0, 0.22, 0);
-    bed.castShadow = true;
     group.add(bed);
 
     const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.09, 0.55), whiteMat);
     headrest.position.set(0, 0.36, -0.85);
     headrest.rotation.x = 0.45;
-    headrest.castShadow = true;
     group.add(headrest);
 
-    [-0.3, 0.3].forEach((lx) => {
-      [-0.45, 0.45].forEach((lz) => {
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.08), woodLegMat);
-        leg.position.set(lx, 0.11, lz);
-        group.add(leg);
-      });
-    });
+    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.16, 1.2), woodLegMat);
+    legs.position.set(0, 0.08, 0);
+    group.add(legs);
 
     const towel = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.03, 1.0), towelMat);
     towel.position.set(0, 0.28, 0.05);
@@ -4066,17 +4078,16 @@ export class City3DManager {
     const beamM = new THREE.MeshBasicMaterial({
       color: '#FFF3C4',
       transparent: true,
-      opacity: 0.24,
+      opacity: 0.16,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
     });
     const beamGroup = new THREE.Group();
     beamGroup.position.set(0, 10.4, 0);
 
     [-1, 1].forEach((s) => {
       const b = new THREE.Mesh(
-        new THREE.ConeGeometry(2.4, 32, 16, 1, true).rotateZ(s * Math.PI / 2).translate(s * 16, 0, 0),
+        new THREE.ConeGeometry(1.6, 18, 8, 1, true).rotateZ(s * Math.PI / 2).translate(s * 9, 0, 0),
         beamM
       );
       beamGroup.add(b);
@@ -4127,12 +4138,19 @@ export class City3DManager {
     return bridgeGroup;
   }
 
+  private sharedContainerGeo: THREE.BoxGeometry | null = null;
+  private containerMatCache = new Map<string, THREE.MeshStandardMaterial>();
+
   private makeContainer(colorHex: string): THREE.Mesh {
-    const geom = new THREE.BoxGeometry(1.3, 1.2, 2.7);
-    const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.7 });
-    const mesh = new THREE.Mesh(geom, mat);
-    mesh.castShadow = true;
-    return mesh;
+    if (!this.sharedContainerGeo) {
+      this.sharedContainerGeo = new THREE.BoxGeometry(1.3, 1.2, 2.7);
+    }
+    let mat = this.containerMatCache.get(colorHex);
+    if (!mat) {
+      mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.7 });
+      this.containerMatCache.set(colorHex, mat);
+    }
+    return new THREE.Mesh(this.sharedContainerGeo, mat);
   }
 
   private createPalmTree(tilt = 0.15): THREE.Group {
@@ -4143,24 +4161,27 @@ export class City3DManager {
 
     let curY = 0;
     let curX = 0;
-    for (let s = 0; s < 7; s++) {
-      const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.24 - s * 0.018, 0.28 - s * 0.018, 0.85, 7), trunkMat);
-      curY += 0.75;
-      curX += tilt * 0.5;
-      seg.position.set(curX, curY, 0);
-      seg.rotation.z = tilt * (s + 1) * 0.12;
+    for (let s = 0; s < 3; s++) {
+      const seg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.22 - s * 0.02, 0.28 - s * 0.02, 1.7, 6),
+        trunkMat
+      );
+      curY += 1.5;
+      curX += tilt * 0.7;
+      seg.position.set(curX, curY - 0.85, 0);
+      seg.rotation.z = tilt * (s + 1) * 0.16;
       palmGroup.add(seg);
     }
 
-    for (let c = 0; c < 4; c++) {
+    for (let c = 0; c < 2; c++) {
       const coconut = new THREE.Mesh(new THREE.SphereGeometry(0.18, 6, 6), coconutMat);
-      const ca = (c * Math.PI) / 2;
+      const ca = c * Math.PI;
       coconut.position.set(curX + Math.cos(ca) * 0.28, curY + 0.1, Math.sin(ca) * 0.28);
       palmGroup.add(coconut);
     }
 
-    for (let f = 0; f < 6; f++) {
-      const fa = (f * Math.PI * 2) / 6;
+    for (let f = 0; f < 4; f++) {
+      const fa = (f * Math.PI * 2) / 4;
       const frond = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.06, 2.6), leafMat);
       frond.position.set(curX + Math.sin(fa) * 1.1, curY + 0.35, Math.cos(fa) * 1.1);
       frond.rotation.y = fa;
@@ -4227,12 +4248,11 @@ export class City3DManager {
       new THREE.Vector3(-18.0, -0.9, 28.0),
       new THREE.Vector3(-8.0, -0.7, 4.0),
       new THREE.Vector3(-12.0, -0.85, -6.0),
-      new THREE.Vector3(-6.0, -0.7, -12.0),
-      new THREE.Vector3(-10.0, -0.8, 42.0),
-      new THREE.Vector3(-14.0, -0.75, 14.0),
-      new THREE.Vector3(-22.0, -0.9, 10.0),
       new THREE.Vector3(-6.0, -0.75, 34.0),
     ];
+
+    const sharedFishBodyGeo = new THREE.ConeGeometry(0.15, 0.48, 6).rotateX(Math.PI / 2);
+    const sharedFishTailGeo = new THREE.ConeGeometry(0.13, 0.24, 3).rotateZ(Math.PI / 2);
 
     swimCenters.forEach((center, i) => {
       const color = fishColors[i % fishColors.length];
@@ -4241,25 +4261,14 @@ export class City3DManager {
       const bodyMat = new THREE.MeshStandardMaterial({
         color,
         roughness: 0.4,
-        metalness: 0.3,
+        metalness: 0.2,
       });
-      const bodyGeom = new THREE.ConeGeometry(0.15, 0.48, 8);
-      bodyGeom.rotateX(Math.PI / 2);
-      const body = new THREE.Mesh(bodyGeom, bodyMat);
+      const body = new THREE.Mesh(sharedFishBodyGeo, bodyMat);
       fishGroup.add(body);
 
-      const tailGeom = new THREE.ConeGeometry(0.13, 0.24, 3);
-      tailGeom.rotateZ(Math.PI / 2);
-      const tail = new THREE.Mesh(tailGeom, bodyMat);
+      const tail = new THREE.Mesh(sharedFishTailGeo, bodyMat);
       tail.position.set(0, 0, 0.3);
       fishGroup.add(tail);
-
-      const eyeMat = new THREE.MeshBasicMaterial({ color: '#111827' });
-      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), eyeMat);
-      eyeL.position.set(0.08, 0.04, -0.15);
-      const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), eyeMat);
-      eyeR.position.set(-0.08, 0.04, -0.15);
-      fishGroup.add(eyeL, eyeR);
 
       fishGroup.position.copy(center);
       this.beachWorldGroup.add(fishGroup);
@@ -4268,9 +4277,9 @@ export class City3DManager {
         mesh: fishGroup,
         tail,
         center,
-        radius: 2.2 + Math.random() * 2.0,
-        angle: Math.random() * Math.PI * 2,
-        speed: 0.65 + Math.random() * 0.5,
+        radius: 2.2 + (i % 3) * 0.8,
+        angle: (i / swimCenters.length) * Math.PI * 2,
+        speed: 0.7 + (i % 2) * 0.3,
         depth: center.y,
       });
     });

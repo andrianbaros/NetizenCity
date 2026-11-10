@@ -1407,7 +1407,13 @@ export default function GameCanvas() {
       {/* Positioned comfortably above bottom bars & away from screen edge */}
       {/* ============================================================ */}
       {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium' || viewMode === 'beach') && showJoystick && (
-        <div className="absolute bottom-[calc(env(safe-area-inset-bottom,0px)+9.5rem)] left-[calc(env(safe-area-inset-left,0px)+1.5rem)] z-30 pointer-events-auto">
+        <div
+          style={{
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.5rem)',
+            left: 'calc(env(safe-area-inset-left, 0px) + 1.25rem)',
+          }}
+          className="absolute z-30 pointer-events-auto"
+        >
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}
@@ -1418,11 +1424,16 @@ export default function GameCanvas() {
       {/* Desktop: clean centered bottom bar                           */}
       {/* ============================================================ */}
       {(viewMode === 'river' || viewMode === 'beach') && (
-        <div className={`absolute z-30 pointer-events-auto font-sans flex flex-col gap-1.5 px-2 ${
-          fishingState === 'idle'
-            ? 'bottom-3 sm:bottom-6 right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 items-end sm:items-center'
-            : 'bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 items-center w-auto max-w-[320px] sm:max-w-sm'
-        }`}>
+        <div
+          style={{
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
+          }}
+          className={`absolute z-30 pointer-events-auto font-sans flex flex-col gap-1.5 px-2 ${
+            fishingState === 'idle'
+              ? 'right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 items-end sm:items-center'
+              : 'left-1/2 -translate-x-1/2 items-center w-auto max-w-[320px] sm:max-w-sm'
+          }`}
+        >
           {/* Active Auto-Fishing Notification Badge */}
           {isAutoFishing && fishingState !== 'caught' && (
             <div className="flex items-center space-x-2 px-3 py-1 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-xl border border-white/30 animate-pulse font-sans">
@@ -1444,7 +1455,8 @@ export default function GameCanvas() {
           {fishingState === 'idle' && (
             <div className="flex flex-col items-end sm:items-center gap-1.5">
               <span className="text-[9px] sm:text-[10px] font-semibold text-[#343B35] bg-[#F7F4E9]/95 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-[#D8CEBE] shadow-xs">
-                {viewMode === 'beach' ? '💡 Tap air laut atau tombol lempar kail' : '💡 Tap air sungai atau tombol lempar'}
+                <span className="hidden sm:inline">{viewMode === 'beach' ? '💡 Tap air laut atau tombol lempar kail' : '💡 Tap air sungai atau tombol lempar'}</span>
+                <span className="sm:hidden">{viewMode === 'beach' ? '💡 Tap laut / Lempar' : '💡 Tap sungai / Lempar'}</span>
               </span>
 
               <div className="flex items-center gap-1.5 justify-end sm:justify-center">
