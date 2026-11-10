@@ -35,8 +35,9 @@ export async function GET(request: NextRequest) {
     // ignore
   }
 
+  const rawEquippedRod = request.cookies.get('nc_equipped_rod')?.value
   const wallet = getCitizenWallet(citizen.id, fallbackWallet)
-  const inventory = getCitizenInventoryDetailed(citizen.id)
+  const inventory = getCitizenInventoryDetailed(citizen.id, rawEquippedRod)
 
   const response = NextResponse.json({
     citizen,
@@ -59,6 +60,19 @@ export async function GET(request: NextRequest) {
       ),
       { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
     )
+  }
+
+  // Ensure active equipped rod is synced in cookie
+  const equippedRod = inventory.find(
+    (i: any) => Boolean(i.isEquipped) && ((i.itemId || i.item_id || '').startsWith('rod_') || i.category === 'tools')
+  )
+  if (equippedRod) {
+    const rodId = equippedRod.itemId || (equippedRod as any).item_id
+    response.cookies.set('nc_equipped_rod', rodId, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: 'lax',
+    })
   }
 
   return response

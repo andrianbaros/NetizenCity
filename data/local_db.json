@@ -1506,46 +1506,6 @@
   ],
   "inventory": [
     {
-      "id": "inv-rod-mayor-starter",
-      "citizen_id": "c-mayor-01",
-      "item_id": "rod_wooden",
-      "is_equipped": true,
-      "acquired_at": "2026-11-10T12:38:26.883Z",
-      "metadata": {
-        "name": "Joran Kayu Pemula",
-        "category": "tools",
-        "rarity": "common",
-        "description": "Joran pancing kayu klasik buatan tangan warga pinggir kali",
-        "icon": "🎣",
-        "rodTier": "common",
-        "luck": 0,
-        "fishingSpeed": 1,
-        "maxWeight": 5,
-        "specialAbility": "Joran ramah pemula tanpa syarat",
-        "sellPrice": 0
-      }
-    },
-    {
-      "id": "inv-rod-starter-c-8x5lwnp",
-      "citizen_id": "c-8x5lwnp",
-      "item_id": "rod_wooden",
-      "is_equipped": true,
-      "acquired_at": "2026-11-10T10:07:53.460Z",
-      "metadata": {
-        "name": "Wooden Rod (Joran Kayu)",
-        "category": "tools",
-        "rarity": "common",
-        "description": "Terbuat dari dahan kayu tepi kali yang diraut halus. Mudah digunakan dan tidak membebani pemula.",
-        "icon": "🎣",
-        "rodTier": "common",
-        "luck": 0,
-        "fishingSpeed": 1,
-        "maxWeight": 5,
-        "specialAbility": "Joran pemula standar warisan warga ramah Kali Netizen.",
-        "sellPrice": 0
-      }
-    },
-    {
       "id": "fish-1794214032564-1t76",
       "citizen_id": "c-8x5lwnp",
       "item_id": "fish_ikan_lele_sultan",
@@ -1719,6 +1679,286 @@
         "color": "#EAB308",
         "icon": "🐟",
         "description": "Tangkapan segar dari Sungai Kali Netizen dengan bobot 3.20 kg."
+      }
+    },
+    {
+      "id": "inv-rod_wooden-c-8x5lwnp",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "rod_wooden",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.303Z",
+      "metadata": {
+        "name": "Wooden Rod (Joran Kayu)",
+        "category": "tools",
+        "rarity": "common",
+        "description": "Terbuat dari dahan kayu tepi kali yang diraut halus. Mudah digunakan dan tidak membebani pemula.",
+        "icon": "🎣",
+        "rodTier": "common",
+        "luck": 0,
+        "fishingSpeed": 1,
+        "maxWeight": 5,
+        "specialAbility": "Joran pemula standar warisan warga ramah Kali Netizen.",
+        "sellPrice": 0
+      }
+    },
+    {
+      "id": "inv-rod_bamboo-c-8x5lwnp",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "rod_bamboo",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Bamboo Rod (Joran Bambu)",
+        "category": "tools",
+        "rarity": "uncommon",
+        "description": "Dianyam dari bambu kuning pilihan tepi sungai. Memiliki lentur alami dan daya tahan prima.",
+        "icon": "🎋",
+        "rodTier": "uncommon",
+        "luck": 0.15,
+        "fishingSpeed": 1.15,
+        "maxWeight": 9,
+        "specialAbility": "+15% Peluang Ikan Langka & sambaran lebih cepat 1.15x.",
+        "sellPrice": 175
+      }
+    },
+    {
+      "id": "inv-rod_carbon-c-8x5lwnp",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "rod_carbon",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Carbon Rod (Joran Karbon)",
+        "category": "tools",
+        "rarity": "rare",
+        "description": "Material serat karbon komposit modern dengan bobot sangat ringan namun mampu menahan tarikan kuat.",
+        "icon": "⚡",
+        "rodTier": "rare",
+        "luck": 0.35,
+        "fishingSpeed": 1.35,
+        "maxWeight": 18,
+        "specialAbility": "+35% Peluang Ikan Langka, kecepatan 1.35x, max 18 kg.",
+        "sellPrice": 600
+      }
+    },
+    {
+      "id": "inv-rod_professional-c-8x5lwnp",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "rod_professional",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Professional Rod (Joran Turnamen Pro)",
+        "category": "tools",
+        "rarity": "epic",
+        "description": "Joran turnamen dengan ceramic line guides dan titanium reel berputar super halus.",
+        "icon": "🔮",
+        "rodTier": "epic",
+        "luck": 0.65,
+        "fishingSpeed": 1.6,
+        "maxWeight": 35,
+        "specialAbility": "+65% Peluang Ikan Langka & Epik, kecepatan 1.6x, max 35 kg.",
+        "sellPrice": 1750
+      }
+    },
+    {
+      "id": "inv-rod_golden-c-8x5lwnp",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "rod_golden",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Golden Rod (Joran Emas Midas)",
+        "category": "tools",
+        "rarity": "legendary",
+        "description": "Berlapis emas murni 24 karat berhiaskan ukiran kuno penguasa sungai kota NetizenCity.",
+        "icon": "👑",
+        "rodTier": "legendary",
+        "luck": 1.1,
+        "fishingSpeed": 1.95,
+        "maxWeight": 60,
+        "specialAbility": "+110% Peluang Ikan Legendaris, sambaran kilat 1.95x, max 60 kg.",
+        "sellPrice": 4750
+      }
+    },
+    {
+      "id": "inv-rod_mythic-c-8x5lwnp",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "rod_mythic",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Mythic Rod (Joran Naga Api Merah)",
+        "category": "tools",
+        "rarity": "mythic",
+        "description": "Ditempa dari sisik naga purba sungai vulkanik. Memancarkan aura api abadi yang memikat monster legendaris.",
+        "icon": "🔥",
+        "rodTier": "mythic",
+        "luck": 1.85,
+        "fishingSpeed": 2.35,
+        "maxWeight": 120,
+        "specialAbility": "+185% Peluang Ikan Mitos & monster air purba, kecepatan tarikan kilat 2.35x.",
+        "sellPrice": 12500
+      }
+    },
+    {
+      "id": "inv-rod_immortal-c-8x5lwnp",
+      "citizen_id": "c-8x5lwnp",
+      "item_id": "rod_immortal",
+      "is_equipped": true,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Immortal Rod (Trisula Pancing Abadi 🔱)",
+        "category": "tools",
+        "rarity": "immortal",
+        "description": "Pusaka abadi penguasa samudera NetizenCity. Tak ada ikan atau monster samudra yang mampu meloloskan diri!",
+        "icon": "🔱",
+        "rodTier": "immortal",
+        "luck": 3.5,
+        "fishingSpeed": 3,
+        "maxWeight": 999,
+        "specialAbility": "Auto-Hook instan, +350% Peluang Ikan Mitos & Immortal, bobot tak terbatas (999 kg)!",
+        "sellPrice": 37500
+      }
+    },
+    {
+      "id": "inv-rod_wooden-c-mayor-01",
+      "citizen_id": "c-mayor-01",
+      "item_id": "rod_wooden",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Wooden Rod (Joran Kayu)",
+        "category": "tools",
+        "rarity": "common",
+        "description": "Terbuat dari dahan kayu tepi kali yang diraut halus. Mudah digunakan dan tidak membebani pemula.",
+        "icon": "🎣",
+        "rodTier": "common",
+        "luck": 0,
+        "fishingSpeed": 1,
+        "maxWeight": 5,
+        "specialAbility": "Joran pemula standar warisan warga ramah Kali Netizen.",
+        "sellPrice": 0
+      }
+    },
+    {
+      "id": "inv-rod_bamboo-c-mayor-01",
+      "citizen_id": "c-mayor-01",
+      "item_id": "rod_bamboo",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Bamboo Rod (Joran Bambu)",
+        "category": "tools",
+        "rarity": "uncommon",
+        "description": "Dianyam dari bambu kuning pilihan tepi sungai. Memiliki lentur alami dan daya tahan prima.",
+        "icon": "🎋",
+        "rodTier": "uncommon",
+        "luck": 0.15,
+        "fishingSpeed": 1.15,
+        "maxWeight": 9,
+        "specialAbility": "+15% Peluang Ikan Langka & sambaran lebih cepat 1.15x.",
+        "sellPrice": 175
+      }
+    },
+    {
+      "id": "inv-rod_carbon-c-mayor-01",
+      "citizen_id": "c-mayor-01",
+      "item_id": "rod_carbon",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Carbon Rod (Joran Karbon)",
+        "category": "tools",
+        "rarity": "rare",
+        "description": "Material serat karbon komposit modern dengan bobot sangat ringan namun mampu menahan tarikan kuat.",
+        "icon": "⚡",
+        "rodTier": "rare",
+        "luck": 0.35,
+        "fishingSpeed": 1.35,
+        "maxWeight": 18,
+        "specialAbility": "+35% Peluang Ikan Langka, kecepatan 1.35x, max 18 kg.",
+        "sellPrice": 600
+      }
+    },
+    {
+      "id": "inv-rod_professional-c-mayor-01",
+      "citizen_id": "c-mayor-01",
+      "item_id": "rod_professional",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Professional Rod (Joran Turnamen Pro)",
+        "category": "tools",
+        "rarity": "epic",
+        "description": "Joran turnamen dengan ceramic line guides dan titanium reel berputar super halus.",
+        "icon": "🔮",
+        "rodTier": "epic",
+        "luck": 0.65,
+        "fishingSpeed": 1.6,
+        "maxWeight": 35,
+        "specialAbility": "+65% Peluang Ikan Langka & Epik, kecepatan 1.6x, max 35 kg.",
+        "sellPrice": 1750
+      }
+    },
+    {
+      "id": "inv-rod_golden-c-mayor-01",
+      "citizen_id": "c-mayor-01",
+      "item_id": "rod_golden",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Golden Rod (Joran Emas Midas)",
+        "category": "tools",
+        "rarity": "legendary",
+        "description": "Berlapis emas murni 24 karat berhiaskan ukiran kuno penguasa sungai kota NetizenCity.",
+        "icon": "👑",
+        "rodTier": "legendary",
+        "luck": 1.1,
+        "fishingSpeed": 1.95,
+        "maxWeight": 60,
+        "specialAbility": "+110% Peluang Ikan Legendaris, sambaran kilat 1.95x, max 60 kg.",
+        "sellPrice": 4750
+      }
+    },
+    {
+      "id": "inv-rod_mythic-c-mayor-01",
+      "citizen_id": "c-mayor-01",
+      "item_id": "rod_mythic",
+      "is_equipped": false,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Mythic Rod (Joran Naga Api Merah)",
+        "category": "tools",
+        "rarity": "mythic",
+        "description": "Ditempa dari sisik naga purba sungai vulkanik. Memancarkan aura api abadi yang memikat monster legendaris.",
+        "icon": "🔥",
+        "rodTier": "mythic",
+        "luck": 1.85,
+        "fishingSpeed": 2.35,
+        "maxWeight": 120,
+        "specialAbility": "+185% Peluang Ikan Mitos & monster air purba, kecepatan tarikan kilat 2.35x.",
+        "sellPrice": 12500
+      }
+    },
+    {
+      "id": "inv-rod_immortal-c-mayor-01",
+      "citizen_id": "c-mayor-01",
+      "item_id": "rod_immortal",
+      "is_equipped": true,
+      "acquired_at": "2026-11-10T13:44:00.304Z",
+      "metadata": {
+        "name": "Immortal Rod (Trisula Pancing Abadi 🔱)",
+        "category": "tools",
+        "rarity": "immortal",
+        "description": "Pusaka abadi penguasa samudera NetizenCity. Tak ada ikan atau monster samudra yang mampu meloloskan diri!",
+        "icon": "🔱",
+        "rodTier": "immortal",
+        "luck": 3.5,
+        "fishingSpeed": 3,
+        "maxWeight": 999,
+        "specialAbility": "Auto-Hook instan, +350% Peluang Ikan Mitos & Immortal, bobot tak terbatas (999 kg)!",
+        "sellPrice": 37500
       }
     }
   ],

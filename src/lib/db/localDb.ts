@@ -1176,7 +1176,7 @@ export function buyShopItem(citizenId: string, itemId: string, clientBalance?: n
   return { success: true, item, newBalance: wallet.balance, wallet, inventoryItem: newInv }
 }
 
-export function getCitizenInventoryDetailed(citizenId: string) {
+export function getCitizenInventoryDetailed(citizenId: string, preferredEquippedRodId?: string) {
   const db = readLocalDB()
   let list = db.inventory.filter((inv) => inv.citizen_id === citizenId)
 
@@ -1209,6 +1209,46 @@ export function getCitizenInventoryDetailed(citizenId: string) {
     db.inventory.unshift(starterEntry)
     writeLocalDB(db)
     list = [starterEntry, ...list]
+  }
+
+  // If a preferred equipped rod is specified (e.g. from cookie nc_equipped_rod), synchronize equipped state
+  if (preferredEquippedRodId && preferredEquippedRodId.startsWith('rod_')) {
+    let matched = false
+    list.forEach((inv) => {
+      if ((inv.item_id || '').startsWith('rod_') || inv.metadata?.category === 'tools') {
+        const isTarget = inv.item_id === preferredEquippedRodId
+        inv.is_equipped = isTarget
+        if (isTarget) matched = true
+      }
+    })
+    if (!matched) {
+      const rodDef = getFishingRodById(preferredEquippedRodId)
+      if (rodDef) {
+        const newRodEntry = {
+          id: 'inv-' + preferredEquippedRodId + '-' + citizenId,
+          citizen_id: citizenId,
+          item_id: rodDef.id,
+          is_equipped: true,
+          acquired_at: new Date().toISOString(),
+          metadata: {
+            name: rodDef.name,
+            category: 'tools',
+            rarity: rodDef.rarity,
+            description: rodDef.description,
+            icon: rodDef.icon,
+            rodTier: rodDef.rarity,
+            luck: rodDef.luck,
+            fishingSpeed: rodDef.fishingSpeed,
+            maxWeight: rodDef.maxWeight,
+            specialAbility: rodDef.specialAbility,
+            sellPrice: Math.round(rodDef.price * 0.5),
+          },
+        }
+        db.inventory.unshift(newRodEntry)
+        list = [newRodEntry, ...list]
+      }
+    }
+    writeLocalDB(db)
   }
 
   return list.map((inv) => {
@@ -1513,14 +1553,50 @@ export function batchSellInventoryItems(
   }
 }
 
-export function equipInventoryItem(citizenId: string, inventoryId: string) {
+export function equipInventoryItem(citizenId: string, inventoryId: string, rodId?: string) {
   const db = readLocalDB()
-  const target = db.inventory.find(
-    (inv) => inv.id === inventoryId && inv.citizen_id === citizenId
+  let target = db.inventory.find(
+    (inv) =>
+      inv.citizen_id === citizenId &&
+      (inv.id === inventoryId || (rodId && inv.item_id === rodId) || (inventoryId && inv.item_id === inventoryId))
   )
+
+  const targetRodId = rodId || (inventoryId && inventoryId.startsWith('rod_') ? inventoryId : target?.item_id)
+  const isRod = Boolean(
+    (target && ((target.item_id || '').startsWith('rod_') || target.metadata?.category === 'tools')) ||
+    (targetRodId && targetRodId.startsWith('rod_'))
+  )
+
+  // Auto-heal: If citizen wants to equip a rod that is valid, auto-create entry if missing on server
+  if (!target && isRod && targetRodId) {
+    const rodDef = getFishingRodById(targetRodId)
+    if (rodDef) {
+      target = {
+        id: 'inv-' + targetRodId + '-' + citizenId,
+        citizen_id: citizenId,
+        item_id: rodDef.id,
+        is_equipped: true,
+        acquired_at: new Date().toISOString(),
+        metadata: {
+          name: rodDef.name,
+          category: 'tools',
+          rarity: rodDef.rarity,
+          description: rodDef.description,
+          icon: rodDef.icon,
+          rodTier: rodDef.rarity,
+          luck: rodDef.luck,
+          fishingSpeed: rodDef.fishingSpeed,
+          maxWeight: rodDef.maxWeight,
+          specialAbility: rodDef.specialAbility,
+          sellPrice: Math.round(rodDef.price * 0.5),
+        },
+      }
+      db.inventory.unshift(target)
+    }
+  }
+
   if (!target) return { success: false, error: 'Item tidak ditemukan di tas.' }
 
-  const isRod = (target.item_id || '').startsWith('rod_') || target.metadata?.category === 'tools'
   if (isRod) {
     // Unequip all other rods for this citizen
     db.inventory.forEach((inv) => {

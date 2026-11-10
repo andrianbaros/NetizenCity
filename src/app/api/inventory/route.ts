@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const citizenId = request.cookies.get('nc_citizen_id')?.value
+    const body = await request.json()
+    const citizenId = request.cookies.get('nc_citizen_id')?.value || body?.citizenId
     const citizen = getActiveCitizen(citizenId)
 
     if (!citizen) {
@@ -36,7 +37,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
     const { action, currentBalance } = body
 
     // Parse fallback balance from cookie or client body
@@ -140,18 +140,32 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'equip') {
-      const { inventoryId } = body
-      if (!inventoryId) {
+      const inventoryId = body.inventoryId || body.itemId || body.rodId
+      const rodId = body.rodId || (typeof inventoryId === 'string' && inventoryId.startsWith('rod_') ? inventoryId : undefined)
+      if (!inventoryId && !rodId) {
         return NextResponse.json({ error: 'ID barang tidak valid' }, { status: 400 })
       }
 
-      const result = equipInventoryItem(citizen.id, inventoryId)
+      const result = equipInventoryItem(citizen.id, inventoryId, rodId)
       if (!result.success) {
         return NextResponse.json(result, { status: 400 })
       }
 
-      const updatedInventory = getCitizenInventoryDetailed(citizen.id)
-      return NextResponse.json({ success: true, inventory: updatedInventory })
+      const updatedInventory = getCitizenInventoryDetailed(citizen.id, rodId)
+      const response = NextResponse.json({ success: true, inventory: updatedInventory })
+
+      const equippedRod = updatedInventory.find(
+        (i: any) => Boolean(i.isEquipped) && ((i.itemId || i.item_id || '').startsWith('rod_') || i.category === 'tools')
+      )
+      if (equippedRod) {
+        const equippedId = equippedRod.itemId || (equippedRod as any).item_id
+        response.cookies.set('nc_equipped_rod', equippedId, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30,
+          sameSite: 'lax',
+        })
+      }
+      return response
     }
 
     if (action === 'unequip') {
@@ -195,9 +209,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(result, { status: 400 })
       }
 
-      const updatedInventory = getCitizenInventoryDetailed(citizen.id)
+      const updatedInventory = getCitizenInventoryDetailed(citizen.id, rodId)
       const wallet = getCitizenWallet(citizen.id)
-      const response = NextResponse.json({ ...result, inventory: updatedInventory, wallet })
+      const response = NextResponse.json({ ...result, inventory: updatedInventory, wallet, equippedRodId: rodId })
+      
+      // Persist equipped rod in cookie
+      response.cookies.set('nc_equipped_rod', rodId, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      })
+
       if (wallet) {
         response.cookies.set(
           'nc_wallet',

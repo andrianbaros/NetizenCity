@@ -237,13 +237,46 @@ export default function GameHUD() {
           const now = Date.now()
           const localInv = useCitizenStore.getState().inventory || []
           const serverIds = new Set(citData.inventory.map((i: any) => i.id))
-          // Only retain temporary optimistic catches (< 5s ago) that haven't landed on server yet
+          
+          // 1. Only retain temporary optimistic catches (< 10s ago) that haven't landed on server yet
           const inFlightPendingCatches = localInv.filter((i: any) => {
             if (!i || !i.id || serverIds.has(i.id)) return false
             const acquiredTime = new Date(i.acquiredAt || 0).getTime()
-            return now - acquiredTime < 5000 && String(i.id).startsWith('fish-')
+            return now - acquiredTime < 10000 && String(i.id).startsWith('fish-')
           })
-          setInventory([...citData.inventory, ...inFlightPendingCatches])
+
+          // 2. Preserve locally owned rods/tools so periodic background polling never drops purchased rods
+          const localRods = localInv.filter((i: any) => {
+            if (!i || !i.id) return false
+            const isRod = (i.itemId || i.item_id || '').startsWith('rod_') || i.category === 'tools'
+            if (!isRod) return false
+            const rodId = i.itemId || i.item_id
+            return !citData.inventory.some((s: any) => (s.itemId || s.item_id) === rodId)
+          })
+
+          // 3. Determine active equipped rod preference (cookie -> localStorage -> local inventory)
+          const cookieRod = typeof document !== 'undefined'
+            ? document.cookie.split('; ').find((r) => r.startsWith('nc_equipped_rod='))?.split('=')[1]
+            : null
+          const storedRod = cookieRod || (typeof localStorage !== 'undefined' ? localStorage.getItem('nc_equipped_rod') : null)
+          const localEquippedRod = localInv.find(
+            (i: any) => Boolean(i.isEquipped) && ((i.itemId || (i as any).item_id || '').startsWith('rod_') || i.category === 'tools')
+          )
+          const preferredRodId = storedRod || localEquippedRod?.itemId || (localEquippedRod as any)?.item_id
+
+          const merged = [...citData.inventory, ...localRods, ...inFlightPendingCatches]
+
+          // Synchronize equipped rod state across all merged tools so it never resets to basic
+          if (preferredRodId) {
+            merged.forEach((item: any) => {
+              const itId = item.itemId || item.item_id || ''
+              if (itId.startsWith('rod_') || item.category === 'tools') {
+                item.isEquipped = itId === preferredRodId
+              }
+            })
+          }
+
+          setInventory(merged)
         }
       }
 

@@ -189,6 +189,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false)
 
   // Citizen store
+  const profile = useCitizenStore((s) => s.profile)
   const wallet = useCitizenStore((s) => s.wallet)
   const rawInventory = useCitizenStore((s) => s.inventory)
   const inventory = Array.isArray(rawInventory) ? rawInventory : []
@@ -391,6 +392,19 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
 
     const nextEquipped = !item.isEquipped
     const action = nextEquipped ? 'equip' : 'unequip'
+    const rodId = item.itemId || (item as any).item_id
+    const isRod = (rodId || '').startsWith('rod_') || item.category === 'tools'
+
+    if (nextEquipped && isRod && rodId) {
+      if (typeof document !== 'undefined') {
+        document.cookie = `nc_equipped_rod=${rodId}; path=/; max-age=2592000; SameSite=Lax`
+      }
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem('nc_equipped_rod', rodId)
+        } catch {}
+      }
+    }
 
     // Optimistic update
     if (nextEquipped) {
@@ -403,7 +417,12 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
       const res = await fetch('/api/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, inventoryId: item.id }),
+        body: JSON.stringify({
+          action,
+          inventoryId: item.id,
+          rodId: isRod ? rodId : undefined,
+          citizenId: profile?.id,
+        }),
       })
 
       if (res.ok) {

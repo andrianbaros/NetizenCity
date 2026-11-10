@@ -125,18 +125,34 @@ export const useCitizenStore = create<CitizenState>()(
         })),
       equipItem: (inventoryId) =>
         set((state) => {
-          const target = state.inventory.find((inv) => inv.id === inventoryId)
+          const target = state.inventory.find(
+            (inv) =>
+              inv.id === inventoryId ||
+              inv.itemId === inventoryId ||
+              (inv as any).item_id === inventoryId
+          )
           if (!target) return state
           const targetItemId = target.itemId || (target as any).item_id || ''
           const isRod = targetItemId.startsWith('rod_') || target.category === 'tools'
+
+          if (isRod) {
+            if (typeof document !== 'undefined') {
+              document.cookie = `nc_equipped_rod=${targetItemId}; path=/; max-age=2592000; SameSite=Lax`
+            }
+            if (typeof localStorage !== 'undefined') {
+              try {
+                localStorage.setItem('nc_equipped_rod', targetItemId)
+              } catch {}
+            }
+          }
 
           return {
             inventory: state.inventory.map((inv) => {
               const invItemId = inv.itemId || (inv as any).item_id || ''
               if (isRod && (invItemId.startsWith('rod_') || inv.category === 'tools')) {
-                return { ...inv, isEquipped: inv.id === inventoryId }
+                return { ...inv, isEquipped: inv.id === target.id || invItemId === targetItemId }
               }
-              if (inv.id === inventoryId) {
+              if (inv.id === target.id) {
                 return { ...inv, isEquipped: true }
               }
               return inv

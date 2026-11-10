@@ -144,12 +144,24 @@ export default function RodShopModal() {
         body: JSON.stringify({
           action: 'equip',
           inventoryId: invItem.id,
+          rodId: rod.id,
+          citizenId: profile?.id,
         }),
       })
 
       const data = await res.json()
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Gagal memasang joran')
+      }
+
+      // Persist equipped rod
+      if (typeof document !== 'undefined') {
+        document.cookie = `nc_equipped_rod=${rod.id}; path=/; max-age=2592000; SameSite=Lax`
+      }
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem('nc_equipped_rod', rod.id)
+        } catch {}
       }
 
       // Update store
@@ -194,6 +206,7 @@ export default function RodShopModal() {
         body: JSON.stringify({
           action: 'buy_rod',
           rodId: rod.id,
+          citizenId: profile.id,
           currentBalance: currentCoins,
         }),
       })
@@ -201,6 +214,16 @@ export default function RodShopModal() {
       const data = await res.json()
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Gagal membeli joran pancing')
+      }
+
+      // Persist equipped rod
+      if (typeof document !== 'undefined') {
+        document.cookie = `nc_equipped_rod=${rod.id}; path=/; max-age=2592000; SameSite=Lax`
+      }
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem('nc_equipped_rod', rod.id)
+        } catch {}
       }
 
       // Update wallet and inventory in store
@@ -217,6 +240,7 @@ export default function RodShopModal() {
       if (Array.isArray(data.inventory)) {
         setInventory(data.inventory)
       }
+      equipItemStore(rod.id)
 
       setSuccessMsg(`🎉 Selamat! Kamu berhasil membeli ${rod.name} dan langsung dipasang ke tangan!`)
       setTimeout(() => setSuccessMsg(null), 4500)

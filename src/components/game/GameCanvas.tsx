@@ -258,12 +258,17 @@ export default function GameCanvas() {
   // Synchronize equipped rod with 3D City3DManager in river area
   useEffect(() => {
     if (!cityManagerRef.current) return
+    const cookieRod = typeof document !== 'undefined'
+      ? document.cookie.split('; ').find((r) => r.startsWith('nc_equipped_rod='))?.split('=')[1]
+      : null
+    const storedRod = cookieRod || (typeof localStorage !== 'undefined' ? localStorage.getItem('nc_equipped_rod') : null)
+
     const equipped = inventory.find(
       (item) =>
         Boolean(item.isEquipped || (item as any).is_equipped) &&
         ((item.itemId || (item as any).item_id || '').startsWith('rod_') || item.category === 'tools')
     )
-    const rodId = equipped?.itemId || (equipped as any)?.item_id || 'rod_wooden'
+    const rodId = equipped?.itemId || (equipped as any)?.item_id || storedRod || 'rod_wooden'
     const rodDef = getFishingRodById(rodId)
     cityManagerRef.current.updateEquippedRod(rodDef)
   }, [inventory, viewMode])
