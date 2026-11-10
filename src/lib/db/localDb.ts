@@ -8,6 +8,12 @@ import path from 'path'
 import { generateKTNNumber } from '@/lib/utils/ktn'
 import type { AvatarConfig } from '@/types/citizen'
 import { FISHING_RODS, getFishingRodById, getStarterRod } from '@/lib/inventory/rodDefinitions'
+import {
+  type GardenSeedDefinition,
+  type GardenState,
+  GARDEN_SEEDS,
+} from '@/types/garden'
+export { GARDEN_SEEDS, type GardenSeedDefinition, type GardenState }
 
 const DB_PATH = path.join(process.cwd(), 'data', 'local_db.json')
 const TMP_DB_PATH = path.join(
@@ -155,6 +161,20 @@ export interface LocalDBSchema {
     category: string
     author: string
     created_at: string
+  }>
+  gardens?: Array<{
+    id: string
+    citizen_id: string
+    seed_id: 'coin_tree' | 'apple_tree' | 'orchid' | 'golden_tree'
+    stage: number // 1: Seed, 2: Sprout, 3: Growing, 4: Blooming, 5: Harvest Ready
+    progress: number // 0 to 100
+    water_level: number // 0 to 100
+    fertilizer_count: number
+    total_harvested: number
+    last_watered_at: string
+    last_refilled_at: string
+    created_at: string
+    updated_at: string
   }>
 }
 
@@ -1683,4 +1703,262 @@ export function loginLocalCitizen(identifier: string, passwordHash: string) {
   citizen.is_online = true
   writeLocalDB(db)
   return { success: true, citizen }
+}
+
+// ============================================================
+// KEBUN NETIZEN (VIRTUAL 3D GARDEN SYSTEM)
+// ============================================================
+
+export function getCitizenGarden(citizenId: string) {
+  const db = readLocalDB()
+  if (!db.gardens) db.gardens = []
+
+  let garden = db.gardens.find((g) => g.citizen_id === citizenId)
+  const now = new Date()
+
+  if (!garden) {
+    garden = {
+      id: 'garden-' + citizenId,
+      citizen_id: citizenId,
+      seed_id: 'coin_tree',
+      stage: 1, // Stage 1 (Benih di Pot Tanah)
+      progress: 0,
+      water_level: 100, // Full can of water
+      fertilizer_count: 3, // Starter organic fertilizer
+      total_harvested: 0,
+      last_watered_at: now.toISOString(),
+      last_refilled_at: now.toISOString(),
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    }
+    db.gardens.push(garden)
+    writeLocalDB(db)
+  } else {
+    // Passive water regeneration: +10 water per 2 minutes elapsed since last watered
+    const elapsedMinutes = (now.getTime() - new Date(garden.last_watered_at).getTime()) / (1000 * 60)
+    if (elapsedMinutes >= 2 && garden.water_level < 100) {
+      const addedWater = Math.min(100 - garden.water_level, Math.floor(elapsedMinutes / 2) * 10)
+      if (addedWater > 0) {
+        garden.water_level = Math.min(100, garden.water_level + addedWater)
+        writeLocalDB(db)
+      }
+    }
+  }
+
+  return garden
+}
+
+export function waterCitizenGarden(citizenId: string) {
+  const db = readLocalDB()
+  if (!db.gardens) db.gardens = []
+
+  const garden = getCitizenGarden(citizenId)
+  const seed = GARDEN_SEEDS[garden.seed_id] || GARDEN_SEEDS.coin_tree
+
+  if (garden.water_level < seed.waterPerStep) {
+    return {
+      success: false,
+      error: 'Air di gembor habis! Ketuk tombol "Ambil Air Sumur" untuk mengisi ulang air tawar.',
+      garden,
+    }
+  }
+
+  if (garden.stage >= 5) {
+    return {
+      success: false,
+      error: 'Pohon sudah matang sempurna dan siap dipetik! Ketuk tombol "Panen Sekarang"!',
+      garden,
+    }
+  }
+
+  // Deduct water
+  garden.water_level = Math.max(0, garden.water_level - seed.waterPerStep)
+  garden.last_watered_at = new Date().toISOString()
+  garden.updated_at = new Date().toISOString()
+
+  let isStageUp = false
+  let isHarvestReady = false
+
+  // Advance progress
+  const addedProgress = seed.growthPerWater
+  garden.progress += addedProgress
+
+  if (garden.progress >= 100) {
+    if (garden.stage < 5) {
+      garden.stage += 1
+      isStageUp = true
+      garden.progress = garden.stage === 5 ? 100 : 0
+      if (garden.stage === 5) {
+        isHarvestReady = true
+      }
+    }
+  }
+
+  writeLocalDB(db)
+
+  return {
+    success: true,
+    garden,
+    isStageUp,
+    isHarvestReady,
+    addedProgress,
+  }
+}
+
+export function fertilizeCitizenGarden(citizenId: string) {
+  const db = readLocalDB()
+  if (!db.gardens) db.gardens = []
+
+  const garden = getCitizenGarden(citizenId)
+  const seed = GARDEN_SEEDS[garden.seed_id] || GARDEN_SEEDS.coin_tree
+
+  if (garden.fertilizer_count <= 0) {
+    return {
+      success: false,
+      error: 'Pupuk organik habis! Hadiah pupuk akan bertambah setiap kali kamu panen tanaman.',
+      garden,
+    }
+  }
+
+  if (garden.stage >= 5) {
+    return {
+      success: false,
+      error: 'Pohon sudah mekar sempurna dan siap dipanen! Ketuk tombol panen.',
+      garden,
+    }
+  }
+
+  garden.fertilizer_count -= 1
+  garden.updated_at = new Date().toISOString()
+
+  let isStageUp = false
+  let isHarvestReady = false
+
+  const addedProgress = seed.growthPerFertilizer
+  garden.progress += addedProgress
+
+  if (garden.progress >= 100) {
+    if (garden.stage < 5) {
+      garden.stage += 1
+      isStageUp = true
+      garden.progress = garden.stage === 5 ? 100 : 0
+      if (garden.stage === 5) {
+        isHarvestReady = true
+      }
+    }
+  }
+
+  writeLocalDB(db)
+
+  return {
+    success: true,
+    garden,
+    isStageUp,
+    isHarvestReady,
+    addedProgress,
+  }
+}
+
+export function refillGardenWater(citizenId: string) {
+  const db = readLocalDB()
+  if (!db.gardens) db.gardens = []
+
+  const garden = getCitizenGarden(citizenId)
+  garden.water_level = 100
+  garden.last_refilled_at = new Date().toISOString()
+  garden.updated_at = new Date().toISOString()
+
+  writeLocalDB(db)
+
+  return {
+    success: true,
+    garden,
+  }
+}
+
+export function harvestCitizenGarden(citizenId: string) {
+  const db = readLocalDB()
+  if (!db.gardens) db.gardens = []
+
+  const garden = getCitizenGarden(citizenId)
+  if (garden.stage < 5) {
+    return {
+      success: false,
+      error: 'Pohon belum mencapai tahap buah matang untuk dipanen. Siram dan beri pupuk lagi!',
+      garden,
+    }
+  }
+
+  const seed = GARDEN_SEEDS[garden.seed_id] || GARDEN_SEEDS.coin_tree
+  const rewardCoins = seed.rewardCoins
+
+  // 1. Credit Netizen Coins to citizen's wallet & log transaction in database
+  const wallet = updateWalletBalance(
+    citizenId,
+    rewardCoins,
+    'reward',
+    `Hasil Panen Kebun Netizen: ${seed.name}`
+  )
+
+  // 2. If seed yields special crop item, insert into backpack inventory
+  let awardedItem: any = null
+  if (seed.rewardItem) {
+    const invId = 'inv-garden-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6)
+    awardedItem = {
+      id: invId,
+      citizen_id: citizenId,
+      item_id: seed.rewardItem.id,
+      is_equipped: false,
+      acquired_at: new Date().toISOString(),
+      metadata: {
+        name: seed.rewardItem.name,
+        category: seed.rewardItem.category,
+        icon: seed.rewardItem.icon,
+        sellPrice: seed.rewardItem.sellPrice,
+        description: `Hasil panen segar dari Kebun Netizen City: ${seed.name}.`,
+      },
+    }
+    db.inventory.push(awardedItem)
+  }
+
+  // 3. Reset garden plot for next planting, grant +1 bonus fertilizer reward
+  garden.total_harvested += 1
+  garden.fertilizer_count += 1
+  garden.stage = 1 // Reset to stage 1
+  garden.progress = 0
+  garden.water_level = 100
+  garden.updated_at = new Date().toISOString()
+
+  writeLocalDB(db)
+
+  return {
+    success: true,
+    rewardCoins,
+    rewardItem: seed.rewardItem,
+    newBalance: wallet ? wallet.balance : undefined,
+    garden,
+  }
+}
+
+export function plantCitizenGarden(citizenId: string, seedId: string) {
+  const db = readLocalDB()
+  if (!db.gardens) db.gardens = []
+
+  if (!GARDEN_SEEDS[seedId]) {
+    return { success: false, error: 'Jenis bibit tidak valid' }
+  }
+
+  const garden = getCitizenGarden(citizenId)
+  garden.seed_id = seedId as any
+  garden.stage = 1
+  garden.progress = 0
+  garden.water_level = 100
+  garden.updated_at = new Date().toISOString()
+
+  writeLocalDB(db)
+
+  return {
+    success: true,
+    garden,
+  }
 }

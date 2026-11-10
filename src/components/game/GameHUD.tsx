@@ -608,7 +608,7 @@ export default function GameHUD() {
             <button
               type="button"
               onClick={() => openModal('garden')}
-              title="Kebun Netizen (Shopee Tanam)"
+              title="Kebun Netizen 3D (Tanam & Panen Koin)"
               className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-[#343B35] border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer"
             >
               <Sprout className="w-3.5 h-3.5 text-emerald-600" />
