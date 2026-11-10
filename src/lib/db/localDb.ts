@@ -654,6 +654,78 @@ function getInitialSeedData(): LocalDBSchema {
             "sprite_key": "back_cat",
             "is_available": true,
             "pattern": "astronaut"
+      },
+      {
+            "id": "acc_caping_bambu",
+            "name": "Caping Bambu Tradisional",
+            "description": "Topi caping kerucut anyaman bambu khas nusantara penahan terik matahari",
+            "category": "accessories",
+            "price": 150,
+            "rarity": "uncommon",
+            "color": "#facc15",
+            "sprite_key": "acc_caping",
+            "is_available": true,
+            "pattern": "caping"
+      },
+      {
+            "id": "top_rompi_mancing",
+            "name": "Rompi Mancing Adventure Pro",
+            "description": "Rompi outdoor khaki berpadu saku multifungsi untuk memancing di kali dan danau",
+            "category": "tops",
+            "price": 220,
+            "rarity": "rare",
+            "color": "#78716c",
+            "sprite_key": "top_rompi",
+            "is_available": true,
+            "pattern": "vest"
+      },
+      {
+            "id": "acc_topi_rimba",
+            "name": "Topi Rimba Safari Ranger",
+            "description": "Topi rimba bundar strap dagu pelindung penjelajah hutan tropis",
+            "category": "accessories",
+            "price": 180,
+            "rarity": "uncommon",
+            "color": "#65a30d",
+            "sprite_key": "acc_safari",
+            "is_available": true,
+            "pattern": "safari_hat"
+      },
+      {
+            "id": "top_parka_rimba",
+            "name": "Jaket Parka Hutan Tropis",
+            "description": "Jaket outdoor waterproof hijau rimba tahan angin dan gerimis",
+            "category": "tops",
+            "price": 320,
+            "rarity": "rare",
+            "color": "#15803d",
+            "sprite_key": "top_parka",
+            "is_available": true,
+            "pattern": "parka"
+      },
+      {
+            "id": "back_tackle_box",
+            "name": "Tas Ransel Kotak Pancing",
+            "description": "Tas ransel kompartemen kotak umpan dan perkakas pancing tahan air",
+            "category": "back",
+            "price": 350,
+            "rarity": "rare",
+            "color": "#0284c7",
+            "sprite_key": "back_tackle",
+            "is_available": true,
+            "pattern": "tackle_box"
+      },
+      {
+            "id": "acc_snorkel_mask",
+            "name": "Kacamata Selam Snorkel Laut",
+            "description": "Masker kaca selam cyan dengan corong snorkel untuk petualang pantai",
+            "category": "accessories",
+            "price": 260,
+            "rarity": "rare",
+            "color": "#06b6d4",
+            "sprite_key": "acc_snorkel",
+            "is_available": true,
+            "pattern": "snorkel"
       }
 ],
     inventory: [
@@ -823,29 +895,9 @@ export function getActiveCitizen(citizenId?: string) {
   return found || null
 }
 
-export function getCitizenWallet(citizenId: string) {
-  const db = readLocalDB()
-  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
-  if (!wallet) {
-    wallet = {
-      id: 'w-' + citizenId,
-      citizen_id: citizenId,
-      balance: 500,
-      total_earned: 500,
-      total_spent: 0,
-      updated_at: new Date().toISOString(),
-    }
-    db.wallets.push(wallet)
-    writeLocalDB(db)
-  }
-  return wallet
-}
-
-export function updateWalletBalance(
+export function getCitizenWallet(
   citizenId: string,
-  amount: number,
-  type: 'earn' | 'spend' | 'reward' | 'reconcile',
-  description: string
+  fallbackWallet?: { balance: number; totalEarned?: number; totalSpent?: number; updatedAt?: string }
 ) {
   const db = readLocalDB()
   let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
@@ -853,10 +905,53 @@ export function updateWalletBalance(
     wallet = {
       id: 'w-' + citizenId,
       citizen_id: citizenId,
-      balance: 500,
-      total_earned: 500,
-      total_spent: 0,
-      updated_at: new Date().toISOString(),
+      balance: fallbackWallet?.balance ?? 500,
+      total_earned: fallbackWallet?.totalEarned ?? (fallbackWallet?.balance ?? 500),
+      total_spent: fallbackWallet?.totalSpent ?? 0,
+      updated_at: fallbackWallet?.updatedAt || new Date().toISOString(),
+    }
+    db.wallets.push(wallet)
+    writeLocalDB(db)
+    return wallet
+  }
+
+  // If a cookie/fallback wallet exists with a newer timestamp than DB, heal the server DB
+  if (fallbackWallet?.updatedAt) {
+    const dbTime = new Date(wallet.updated_at || 0).getTime()
+    const fallbackTime = new Date(fallbackWallet.updatedAt).getTime()
+    if (fallbackTime > dbTime) {
+      wallet.balance = fallbackWallet.balance
+      if (typeof fallbackWallet.totalEarned === 'number') {
+        wallet.total_earned = Math.max(wallet.total_earned, fallbackWallet.totalEarned)
+      }
+      if (typeof fallbackWallet.totalSpent === 'number') {
+        wallet.total_spent = Math.max(wallet.total_spent, fallbackWallet.totalSpent)
+      }
+      wallet.updated_at = fallbackWallet.updatedAt
+      writeLocalDB(db)
+    }
+  }
+
+  return wallet
+}
+
+export function updateWalletBalance(
+  citizenId: string,
+  amount: number,
+  type: 'earn' | 'spend' | 'reward' | 'reconcile',
+  description: string,
+  extra?: { totalEarned?: number; totalSpent?: number; updatedAt?: string; force?: boolean }
+) {
+  const db = readLocalDB()
+  let wallet = db.wallets.find((w) => w.citizen_id === citizenId)
+  if (!wallet) {
+    wallet = {
+      id: 'w-' + citizenId,
+      citizen_id: citizenId,
+      balance: type === 'reconcile' ? amount : 500,
+      total_earned: extra?.totalEarned ?? (type === 'reconcile' ? amount : 500),
+      total_spent: extra?.totalSpent ?? 0,
+      updated_at: extra?.updatedAt || new Date().toISOString(),
     }
     db.wallets.push(wallet)
   }
@@ -864,25 +959,32 @@ export function updateWalletBalance(
   const prev = wallet.balance
   let next = prev
   if (type === 'reconcile') {
-    if (amount > wallet.balance) {
-      const diff = amount - wallet.balance
-      wallet.balance = amount
-      wallet.total_earned += diff
-      wallet.updated_at = new Date().toISOString()
+    wallet.balance = amount
+    if (typeof extra?.totalEarned === 'number') {
+      wallet.total_earned = Math.max(wallet.total_earned, extra.totalEarned, amount)
+    } else if (amount > prev) {
+      wallet.total_earned += (amount - prev)
+    }
+    if (typeof extra?.totalSpent === 'number') {
+      wallet.total_spent = Math.max(wallet.total_spent, extra.totalSpent)
+    }
+    wallet.updated_at = extra?.updatedAt || new Date().toISOString()
+
+    if (amount !== prev) {
       db.transactions.unshift({
         id: 'tx-' + Math.random().toString(36).substring(2, 9),
         citizen_id: citizenId,
-        type: 'reward',
-        amount: diff,
+        type: amount >= prev ? 'reward' : 'spend',
+        amount: Math.abs(amount - prev),
         previous_balance: prev,
         new_balance: amount,
-        description: description || 'Sinkronisasi saldo terverifikasi',
+        description: description || 'Sinkronisasi rekonsiliasi saldo',
         reference_type: 'reconcile',
         reference_id: null,
         created_at: new Date().toISOString(),
       })
-      writeLocalDB(db)
     }
+    writeLocalDB(db)
     return wallet
   } else if (type === 'earn' || type === 'reward') {
     next = prev + amount

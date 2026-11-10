@@ -16,12 +16,50 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ citizen: null, wallet: null, inventory: [] })
   }
 
-  const wallet = getCitizenWallet(citizen.id)
+  // Parse cookie wallet if available to prevent cold-start resets on Vercel
+  let fallbackWallet: any = undefined
+  try {
+    const rawWalletCookie = request.cookies.get('nc_wallet')?.value
+    if (rawWalletCookie) {
+      const parsed = JSON.parse(decodeURIComponent(rawWalletCookie))
+      if (parsed && parsed.cid === citizen.id && typeof parsed.b === 'number') {
+        fallbackWallet = {
+          balance: parsed.b,
+          totalEarned: parsed.te,
+          totalSpent: parsed.ts,
+          updatedAt: parsed.u,
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const wallet = getCitizenWallet(citizen.id, fallbackWallet)
   const inventory = getCitizenInventoryDetailed(citizen.id)
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     citizen,
     wallet,
     inventory,
   })
+
+  // Set fresh cookie with active wallet snapshot
+  if (wallet) {
+    response.cookies.set(
+      'nc_wallet',
+      encodeURIComponent(
+        JSON.stringify({
+          cid: citizen.id,
+          b: wallet.balance,
+          te: wallet.total_earned,
+          ts: wallet.total_spent,
+          u: wallet.updated_at,
+        })
+      ),
+      { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+    )
+  }
+
+  return response
 }

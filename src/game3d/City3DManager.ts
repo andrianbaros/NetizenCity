@@ -783,6 +783,7 @@ export class City3DManager {
 
   // Interactive buildings map for raycasting
   private interactiveMeshes: { mesh: THREE.Object3D; landmark: LandmarkLocation }[] = [];
+  private interactiveRodShopMeshes: THREE.Object3D[] = [];
   private raycaster = new THREE.Raycaster();
   private mouse = new THREE.Vector2();
   private hoveredLandmark: LandmarkLocation | null = null;
@@ -1220,6 +1221,16 @@ export class City3DManager {
       cameraPos: new THREE.Vector3(-150, 14, 45),
       radius: 28,
     },
+    {
+      id: 'forest_rod_shop',
+      name: 'Pondok Pancing Rimba (Toko Joran)',
+      district: 'Kawasan Alam',
+      type: 'commercial',
+      position: new THREE.Vector3(-195, 0, -48),
+      cameraTarget: new THREE.Vector3(-195, 2, -48),
+      cameraPos: new THREE.Vector3(-180, 10, -32),
+      radius: 14,
+    },
   ];
 
   constructor(container: HTMLElement, options?: City3DOptions) {
@@ -1479,6 +1490,12 @@ export class City3DManager {
     this.forest = makeForest();
     this.cityWorldGroup.add(this.forest.root);
     this.forest.grow(1, 0);
+
+    // Forest Rod Shop Outpost (at x = -195, y = 0.1, z = -48)
+    const forestRodShop = this.createRodShopKiosk('forest');
+    forestRodShop.position.set(-195, 0.1, -48);
+    forestRodShop.rotation.y = -Math.PI / 6;
+    this.cityWorldGroup.add(forestRodShop);
 
     this.fireflies = makeFireflies(this.forest);
     this.cityWorldGroup.add(this.fireflies.root);
@@ -2165,6 +2182,12 @@ export class City3DManager {
     const exitArch = this.createRiverExitPortal();
     exitArch.position.set(0, 0, 13.5);
     this.riverWorldGroup.add(exitArch);
+
+    // 8b. Toko Pancing Mang Ujang (Shore kiosk at x = -4.8, z = 4.8)
+    const riverRodShop = this.createRodShopKiosk('river');
+    riverRodShop.position.set(-4.8, 0.0, 4.8);
+    riverRodShop.rotation.y = Math.PI / 4;
+    this.riverWorldGroup.add(riverRodShop);
 
     // 9. Swimming 3D Fish Instances
     this.setupRiverFish();
@@ -4464,6 +4487,145 @@ export class City3DManager {
     group.add(signSprite);
 
     return group;
+  }
+
+  private createRodShopKiosk(type: 'river' | 'forest'): THREE.Group {
+    const kiosk = new THREE.Group();
+    kiosk.name = type === 'river' ? 'RiverRodShopKiosk' : 'ForestRodShopKiosk';
+
+    const isRiver = type === 'river';
+
+    // 1. Deck Floor (Wood Planks)
+    const deckMat = new THREE.MeshStandardMaterial({
+      color: isRiver ? '#8B5A2B' : '#5C3818',
+      roughness: 0.85,
+    });
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.22, 3.8), deckMat);
+    deck.position.set(0, 0.11, 0);
+    kiosk.add(deck);
+
+    // 2. Corner Posts (4 rustic timber pillars)
+    const postMat = new THREE.MeshStandardMaterial({
+      color: isRiver ? '#6E4522' : '#452A12',
+      roughness: 0.9,
+    });
+    [
+      [-1.9, 0, -1.6],
+      [1.9, 0, -1.6],
+      [-1.9, 0, 1.6],
+      [1.9, 0, 1.6],
+    ].forEach(([px, py, pz]) => {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 2.6, 8), postMat);
+      post.position.set(px, 1.4, pz);
+      kiosk.add(post);
+    });
+
+    // 3. Canopy Roof
+    const roofMat = new THREE.MeshStandardMaterial({
+      color: isRiver ? '#0284C7' : '#15803D',
+      roughness: 0.7,
+    });
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(3.2, 1.1, 4).rotateY(Math.PI / 4), roofMat);
+    roof.position.set(0, 3.1, 0);
+    roof.scale.set(1.1, 1, 0.95);
+    kiosk.add(roof);
+
+    // 4. Wooden Counter
+    const counterMat = new THREE.MeshStandardMaterial({ color: '#A06E3D', roughness: 0.7 });
+    const counter = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.85, 0.65), counterMat);
+    counter.position.set(0, 0.55, 0.9);
+    kiosk.add(counter);
+
+    // Counter Top Trim
+    const counterTop = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 0.08, 0.8),
+      new THREE.MeshStandardMaterial({ color: '#5C3818', roughness: 0.6 })
+    );
+    counterTop.position.set(0, 0.99, 0.9);
+    kiosk.add(counterTop);
+
+    // 5. Display Tackle Box & Lantern on Counter
+    const tackleMat = new THREE.MeshStandardMaterial({ color: '#EA580C', roughness: 0.5 });
+    const tackle = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.25, 0.3), tackleMat);
+    tackle.position.set(-0.9, 1.15, 0.9);
+    kiosk.add(tackle);
+
+    // Brass Lantern with Warm Glow
+    const lanternMat = new THREE.MeshStandardMaterial({
+      color: '#FEF08A',
+      emissive: '#F59E0B',
+      emissiveIntensity: 0.8,
+    });
+    const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.26, 8), lanternMat);
+    lantern.position.set(1.1, 1.15, 0.9);
+    const lanternLight = new THREE.PointLight('#F59E0B', 1.2, 6);
+    lanternLight.position.set(1.1, 1.25, 0.9);
+    kiosk.add(lantern, lanternLight);
+
+    // 6. Side Rod Display Rack with 4 Sample Rods
+    const rackMat = new THREE.MeshStandardMaterial({ color: '#78350F', roughness: 0.8 });
+    const rack = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 0.8), rackMat);
+    rack.position.set(-1.8, 0.8, 0);
+    kiosk.add(rack);
+
+    const rodColors = ['#8B5A2B', '#84CC16', '#2563EB', '#EAB308'];
+    rodColors.forEach((rc, idx) => {
+      const rodShaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.025, 1.9, 6),
+        new THREE.MeshStandardMaterial({ color: rc, roughness: 0.4 })
+      );
+      rodShaft.position.set(-1.8, 1.2, -0.3 + idx * 0.2);
+      rodShaft.rotation.z = -0.15;
+      kiosk.add(rodShaft);
+    });
+
+    // 7. NPC Keeper behind the Counter
+    const npcColors: CitizenAvatarColors = isRiver
+      ? {
+          skin: '#F5D0B0',
+          hair: '#1E293B',
+          hairStyle: 'short',
+          shirt: '#0284C7',
+          pants: '#334155',
+          shoes: '#10B981',
+          accessory: 'caping',
+        }
+      : {
+          skin: '#E5B895',
+          hair: '#78350F',
+          hairStyle: 'short',
+          shirt: '#15803D',
+          pants: '#85754E',
+          shoes: '#0F172A',
+          accessory: 'safari_hat',
+        };
+    const npc = makeCitizen3D(npcColors);
+    npc.root.position.set(0, 0.11, 0.15);
+    npc.root.rotation.y = 0; // Facing front
+    npc.leftArm.rotation.set(-0.4, 0.2, 0);
+    npc.rightArm.rotation.set(-0.4, -0.2, 0);
+    kiosk.add(npc.root);
+
+    // 8. Overhead Floating Signboard & Prompt
+    const signTitle = isRiver
+      ? '🎣 Toko Joran Mang Ujang (Buka)'
+      : '🏕️ Pondok Pancing Rimba (Toko Joran)';
+    const tag = makeNameTagSprite(signTitle, false, true);
+    tag.position.set(0, 3.8, 0);
+    tag.scale.set(3.8, 0.85, 1);
+    kiosk.add(tag);
+
+    // 9. Interactive Hitbox for Click / Raycast
+    const hitGeo = new THREE.BoxGeometry(4.8, 3.6, 4.2);
+    const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+    const hitBox = new THREE.Mesh(hitGeo, hitMat);
+    hitBox.position.set(0, 1.8, 0);
+    (hitBox as any).isRodShop = true;
+    (hitBox as any).shopType = type;
+    kiosk.add(hitBox);
+    this.interactiveRodShopMeshes.push(hitBox);
+
+    return kiosk;
   }
 
   private setupCharacters() {
@@ -7441,6 +7603,19 @@ private setupAirplanes() {
         this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
 
+        // Check if player tapped the 3D Rod Shop Kiosk!
+        if (this.interactiveRodShopMeshes.length > 0) {
+          const rodHits = this.raycaster.intersectObjects(this.interactiveRodShopMeshes);
+          if (rodHits.length > 0) {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('open-rod-shop'));
+            }
+            this.isPointerDown = false;
+            this.isPanning = false;
+            return;
+          }
+        }
+
         const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         const target = new THREE.Vector3();
         if (this.raycaster.ray.intersectPlane(plane, target)) {
@@ -7492,6 +7667,19 @@ private setupAirplanes() {
         this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        // Check if player tapped the 3D Rod Shop Kiosk!
+        if (this.interactiveRodShopMeshes.length > 0) {
+          const rodHits = this.raycaster.intersectObjects(this.interactiveRodShopMeshes);
+          if (rodHits.length > 0) {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('open-rod-shop'));
+            }
+            this.isPointerDown = false;
+            this.isPanning = false;
+            return;
+          }
+        }
 
         const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         const target = new THREE.Vector3();
@@ -7580,6 +7768,17 @@ private setupAirplanes() {
         }
       }
 
+      // 0b. Raycast against Rod Shop kiosks (Forest & River)
+      if (this.interactiveRodShopMeshes.length > 0) {
+        const rodHits = this.raycaster.intersectObjects(this.interactiveRodShopMeshes);
+        if (rodHits.length > 0) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('open-rod-shop'));
+          }
+          return;
+        }
+      }
+
       // 1. Raycast directly against interactive landmark hitboxes
       const intersects = this.raycaster.intersectObjects(
         this.interactiveMeshes.map((m) => m.mesh)
@@ -7623,6 +7822,13 @@ private setupAirplanes() {
           useGameStore.getState().setCurrentDistrict('Pusat Kota');
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('open-tugu-confirm'));
+          }
+          return;
+        }
+
+        if (targetLandmark.id === 'forest_rod_shop') {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('open-rod-shop'));
           }
           return;
         }

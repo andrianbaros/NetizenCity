@@ -264,6 +264,18 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
         wing.rotation.set(-0.3, 0, -s * 0.8);
         accGroup.add(wing);
       }
+    } else if (bp === 'tackle_box' || acc === 'tackle_box') {
+      // Angler Tackle Box Backpack
+      const pack = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.28, 0.14).translate(0, 0.52, -0.16),
+        mat('#0284C7', { roughness: 0.5, metalness: 0.2 })
+      );
+      // Latch detail
+      const latch = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.05, 0.02).translate(0, 0.55, -0.235),
+        mat('#F59E0B', { metalness: 0.8 })
+      );
+      accGroup.add(pack, latch);
     } else if (bp || acc === 'backpack') {
       // Cute backpack
       const pack = new THREE.Mesh(
@@ -274,7 +286,74 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       accGroup.add(pack);
     }
 
-    if (acc === 'glasses') {
+    if (acc === 'caping' || acc === 'straw_hat' || acc === 'acc_straw' || acc === 'acc_caping') {
+      // Traditional Cone Caping / Straw Hat
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.35, 0.15, 16),
+        mat('#EAB308', { roughness: 0.85 })
+      );
+      cone.position.set(0, 1.18, 0);
+      const brim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.36, 0.36, 0.02, 16),
+        mat('#CA8A04', { roughness: 0.9 })
+      );
+      brim.position.set(0, 1.12, 0);
+      accGroup.add(cone, brim);
+    } else if (acc === 'safari_hat' || acc === 'topi_rimba' || acc === 'acc_safari') {
+      // Safari Ranger Explorer Hat
+      const crown = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.25, 0.27, 0.12, 16),
+        mat('#85754E', { roughness: 0.8 })
+      );
+      crown.position.set(0, 1.18, 0);
+      const brim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.02, 16),
+        mat('#6B5E3C', { roughness: 0.85 })
+      );
+      brim.position.set(0, 1.12, 0);
+      accGroup.add(crown, brim);
+    } else if (acc === 'crown' || acc === 'acc_crown') {
+      // Golden King Crown
+      const crownMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.24, 0.22, 0.12, 6, 1, true),
+        mat('#F59E0B', { metalness: 0.85, roughness: 0.2 })
+      );
+      crownMesh.position.set(0, 1.2, 0);
+      accGroup.add(crownMesh);
+    } else if (acc === 'halo' || acc === 'acc_halo') {
+      // Floating Angel Halo
+      const haloMesh = new THREE.Mesh(
+        new THREE.TorusGeometry(0.18, 0.022, 8, 24),
+        mat('#FEF08A', { emissive: '#FACC15', emissiveIntensity: 0.6 })
+      );
+      haloMesh.position.set(0, 1.34, 0);
+      haloMesh.rotation.x = Math.PI / 2;
+      accGroup.add(haloMesh);
+    } else if (acc === 'cat_ears' || acc === 'acc_cat') {
+      // RGB Cat Ear Headset
+      for (const s of [-1, 1]) {
+        const ear = new THREE.Mesh(
+          new THREE.ConeGeometry(0.06, 0.12, 4),
+          mat('#EC4899', { emissive: '#EC4899', emissiveIntensity: 0.5 })
+        );
+        ear.position.set(s * 0.14, 1.22, 0);
+        ear.rotation.set(0, 0, -s * 0.3);
+        accGroup.add(ear);
+      }
+    } else if (acc === 'snorkel' || acc === 'acc_snorkel') {
+      // Diving Snorkel Mask
+      const mask = new THREE.Mesh(
+        new THREE.BoxGeometry(0.24, 0.09, 0.04),
+        mat('#06B6D4', { metalness: 0.5, roughness: 0.3 })
+      );
+      mask.position.set(0, 0.96, 0.24);
+      const tube = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 0.32, 8),
+        mat('#FACC15', { roughness: 0.4 })
+      );
+      tube.position.set(0.16, 1.06, 0.15);
+      accGroup.add(mask, tube);
+    } else if (acc === 'glasses' || acc === 'acc_glasses') {
       // Stylish spectacles
       for (const s of [-1, 1]) {
         const rim = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.012, 6, 16), accessoryMat);

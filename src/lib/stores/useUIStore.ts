@@ -18,6 +18,7 @@ export type ActiveModal =
   | 'photo_studio'
   | 'cat_hunt'
   | 'fishing'
+  | 'rod_shop'
   | 'freekick'
   | 'garden'
   | 'investor'

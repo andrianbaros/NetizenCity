@@ -104,6 +104,14 @@ export function drawSingleCharacterFrame(
           ctx.fillStyle = '#f97316'
           ctx.fillRect(ox + 14, oy + 19, 4, 4) // orange cat
         }
+      } else if (colors.backpack === 'tackle_box' || colors.accessory === 'tackle_box' || colors.backpack === 'back_tackle_box') {
+        if (row === 3) {
+          // Angler tackle box backpack
+          ctx.fillStyle = '#0284c7'
+          ctx.fillRect(ox + 10, oy + 16, 12, 10)
+          ctx.fillStyle = '#f59e0b'
+          ctx.fillRect(ox + 15, oy + 20, 2, 2)
+        }
       }
 
       // ------------------------------------------------------------
@@ -425,6 +433,34 @@ export function drawSingleCharacterFrame(
         ctx.beginPath()
         ctx.ellipse(ox + 16, oy - 2, 6, 2, 0, 0, Math.PI * 2)
         ctx.stroke()
+      } else if (colors.accessory === 'caping' || colors.accessory === 'acc_caping_bambu') {
+        // Caping Bambu Tradisional
+        ctx.fillStyle = '#facc15'
+        ctx.beginPath()
+        ctx.moveTo(ox + 6, oy + 4)
+        ctx.lineTo(ox + 16, oy - 3)
+        ctx.lineTo(ox + 26, oy + 4)
+        ctx.closePath()
+        ctx.fill()
+        ctx.strokeStyle = '#ca8a04'
+        ctx.lineWidth = 1
+        ctx.stroke()
+      } else if (colors.accessory === 'safari_hat' || colors.accessory === 'acc_topi_rimba') {
+        // Topi Rimba Safari Ranger
+        ctx.fillStyle = '#85754e'
+        ctx.fillRect(ox + 6, oy + 2, 20, 2)
+        ctx.fillRect(ox + 10, oy - 2, 12, 4)
+        ctx.fillStyle = '#65a30d'
+        ctx.fillRect(ox + 10, oy + 1, 12, 1)
+      } else if (colors.accessory === 'snorkel' || colors.accessory === 'acc_snorkel_mask') {
+        // Kacamata Selam Snorkel Laut
+        if (row === 0) {
+          ctx.fillStyle = '#06b6d4'
+          ctx.fillRect(ox + 10, oy + 7, 12, 5)
+          ctx.fillStyle = '#facc15'
+          ctx.fillRect(ox + 22, oy + 4, 2, 9)
+          ctx.fillRect(ox + 20, oy + 12, 3, 2)
+        }
       }
 }
 

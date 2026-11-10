@@ -83,6 +83,7 @@ interface FishingModalProps {
 export default function FishingModal({ isOpen, onClose }: FishingModalProps) {
   const updateBalance = useCitizenStore((s) => s.updateBalance)
   const addNotification = useUIStore((s) => s.addNotification)
+  const openModal = useUIStore((s) => s.openModal)
 
   const [gameState, setGameState] = useState<FishingState>('idle')
   const [fishPos, setFishPos] = useState(50) // 0-100%
@@ -319,6 +320,17 @@ export default function FishingModal({ isOpen, onClose }: FishingModalProps) {
               className="w-full max-w-xs font-bold text-sm bg-sky-600 hover:bg-sky-700"
             >
               Lempar Kail ke Air 🌊
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                onClose()
+                openModal('rod_shop')
+              }}
+              className="w-full max-w-xs font-bold text-xs border-amber-400 text-amber-800 bg-amber-50 hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>🎣 Buka Toko Joran Pancing</span>
             </Button>
           </div>
         )}

@@ -49,6 +49,7 @@ import MissionsModal from './MissionsModal'
 import PhotoStudioModal from './PhotoStudioModal'
 import CatHuntModal from './CatHuntModal'
 import FishingModal from './FishingModal'
+import RodShopModal from './RodShopModal'
 import FreekickModal from './FreekickModal'
 import GardenModal from './GardenModal'
 import InvestorModal from './InvestorModal'
@@ -93,9 +94,16 @@ export default function GameHUD() {
     const onMode = (e: any) => {
       setIsTuguMode(e.detail?.mode === 'tugu')
     }
+    const onOpenRodShop = () => {
+      openModal('rod_shop')
+    }
     window.addEventListener('tugu-mode-changed', onMode)
-    return () => window.removeEventListener('tugu-mode-changed', onMode)
-  }, [])
+    window.addEventListener('open-rod-shop', onOpenRodShop)
+    return () => {
+      window.removeEventListener('tugu-mode-changed', onMode)
+      window.removeEventListener('open-rod-shop', onOpenRodShop)
+    }
+  }, [openModal])
 
   // Fetch active citizen profile and city population on mount
   const initGameData = useCallback(async () => {
@@ -152,23 +160,29 @@ export default function GameHUD() {
               updatedAt: citData.wallet.updated_at || new Date().toISOString(),
             })
           } else {
-            // Same authenticated citizen: check if server lost state on ephemeral cold start / redeploy
+            // Same authenticated citizen: check timestamps between client and server
             const localBal = currentLocalWallet?.balance ?? serverBalance
             const localEarned = currentLocalWallet?.totalEarned ?? 0
+            const localSpent = currentLocalWallet?.totalSpent ?? 0
             const serverEarned = citData.wallet.total_earned ?? 0
+            const serverSpent = citData.wallet.total_spent ?? 0
             const serverTime = new Date(citData.wallet.updated_at || 0).getTime()
             const localTime = new Date(currentLocalWallet?.updatedAt || 0).getTime()
 
-            // If local balance is higher and local activity is newer or equal, client has confirmed un-persisted earnings
-            if (localBal > serverBalance && localTime >= serverTime) {
-              // Self-heal serverless container DB with client's confirmed earnings
+            // If local activity has a newer timestamp than server's stale file DB:
+            // Client's verified state (whether spent or earned) is authoritative over serverless cold-start!
+            if (localTime > serverTime && localBal !== serverBalance) {
+              // Self-heal serverless container DB with client's confirmed wallet
               fetch('/api/economy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   action: 'reconcile',
                   amount: localBal,
-                  description: 'Sinkronisasi pemulihan saldo pasca-deploy',
+                  totalEarned: Math.max(localEarned, serverEarned),
+                  totalSpent: Math.max(localSpent, serverSpent),
+                  updatedAt: currentLocalWallet?.updatedAt,
+                  description: 'Sinkronisasi rekonsiliasi saldo warga',
                 }),
               }).catch(() => {})
 
@@ -177,11 +191,11 @@ export default function GameHUD() {
                 citizenId: citData.citizen.id,
                 balance: localBal,
                 totalEarned: Math.max(localEarned, serverEarned, localBal),
-                totalSpent: currentLocalWallet?.totalSpent ?? (citData.wallet.total_spent ?? 0),
-                updatedAt: new Date().toISOString(),
+                totalSpent: Math.max(localSpent, serverSpent),
+                updatedAt: currentLocalWallet?.updatedAt || new Date().toISOString(),
               })
             } else {
-              // Authoritative server wallet (respects spending deductions, item purchases, rod upgrades)
+              // Server wallet is newer or in sync
               setWallet({
                 id: citData.wallet.id || 'w-' + citData.citizen.id,
                 citizenId: citData.citizen.id,
@@ -873,6 +887,17 @@ export default function GameHUD() {
                 : '🏛️ Alun-Alun Tugu Pusat'}
             </span>
           </div>
+
+          {(viewMode === 'river' || viewMode === 'beach') && (
+            <button
+              type="button"
+              onClick={() => openModal('rod_shop')}
+              className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-stone-950 text-[10px] sm:text-xs font-heading font-black shadow-md border border-amber-300 transition-all cursor-pointer animate-pulse"
+              title="Buka Toko Joran Pancing"
+            >
+              <span>🎣 Toko Joran</span>
+            </button>
+          )}
         </div>
       )}
       </div>
@@ -1285,6 +1310,7 @@ export default function GameHUD() {
         isOpen={activeModal === 'fishing'}
         onClose={closeModal}
       />
+      <RodShopModal />
       <FreekickModal
         isOpen={activeModal === 'freekick'}
         onClose={closeModal}

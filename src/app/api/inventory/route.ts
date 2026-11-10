@@ -149,7 +149,23 @@ export async function POST(request: NextRequest) {
 
       const updatedInventory = getCitizenInventoryDetailed(citizen.id)
       const wallet = getCitizenWallet(citizen.id)
-      return NextResponse.json({ ...result, inventory: updatedInventory, wallet })
+      const response = NextResponse.json({ ...result, inventory: updatedInventory, wallet })
+      if (wallet) {
+        response.cookies.set(
+          'nc_wallet',
+          encodeURIComponent(
+            JSON.stringify({
+              cid: citizen.id,
+              b: wallet.balance,
+              te: wallet.total_earned,
+              ts: wallet.total_spent,
+              u: wallet.updated_at,
+            })
+          ),
+          { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+        )
+      }
+      return response
     }
 
     return NextResponse.json({ error: 'Aksi tidak dikenal' }, { status: 400 })

@@ -24,19 +24,54 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  const wallet = getCitizenWallet(citizen.id)
+  // Parse cookie wallet if available
+  let fallbackWallet: any = undefined
+  try {
+    const rawWalletCookie = request.cookies.get('nc_wallet')?.value
+    if (rawWalletCookie) {
+      const parsed = JSON.parse(decodeURIComponent(rawWalletCookie))
+      if (parsed && parsed.cid === citizen.id && typeof parsed.b === 'number') {
+        fallbackWallet = {
+          balance: parsed.b,
+          totalEarned: parsed.te,
+          totalSpent: parsed.ts,
+          updatedAt: parsed.u,
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const wallet = getCitizenWallet(citizen.id, fallbackWallet)
   const db = readLocalDB()
   const transactions = db.transactions
     .filter((tx) => tx.citizen_id === citizen.id)
     .slice(0, 20)
 
-  return NextResponse.json({ wallet, transactions, isGuest: false })
+  const response = NextResponse.json({ wallet, transactions, isGuest: false })
+  if (wallet) {
+    response.cookies.set(
+      'nc_wallet',
+      encodeURIComponent(
+        JSON.stringify({
+          cid: citizen.id,
+          b: wallet.balance,
+          te: wallet.total_earned,
+          ts: wallet.total_spent,
+          u: wallet.updated_at,
+        })
+      ),
+      { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+    )
+  }
+  return response
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, amount, description } = body
+    const { action, amount, description, totalEarned, totalSpent, updatedAt } = body
     const citizenId = request.cookies.get('nc_citizen_id')?.value
     const citizen = getActiveCitizen(citizenId)
     if (!citizen) {
@@ -46,28 +81,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let wallet: any = null
+
     if (action === 'earn' || action === 'reward') {
-      const wallet = updateWalletBalance(
+      wallet = updateWalletBalance(
         citizen.id,
         Number(amount),
         action,
         description || 'Hadiah aktivitas kota'
       )
-      return NextResponse.json({ success: true, wallet })
-    }
-
-    if (action === 'reconcile') {
-      const wallet = updateWalletBalance(
+    } else if (action === 'reconcile') {
+      wallet = updateWalletBalance(
         citizen.id,
         Number(amount),
         'reconcile',
-        description || 'Sinkronisasi pemulihan saldo'
+        description || 'Sinkronisasi pemulihan saldo',
+        { totalEarned, totalSpent, updatedAt }
       )
-      return NextResponse.json({ success: true, wallet })
-    }
-
-    if (action === 'spend') {
-      const wallet = updateWalletBalance(
+    } else if (action === 'spend') {
+      wallet = updateWalletBalance(
         citizen.id,
         Number(amount),
         'spend',
@@ -79,10 +111,27 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-      return NextResponse.json({ success: true, wallet })
+    } else {
+      return NextResponse.json({ error: 'Aksi tidak valid' }, { status: 400 })
     }
 
-    return NextResponse.json({ error: 'Aksi tidak valid' }, { status: 400 })
+    const response = NextResponse.json({ success: true, wallet })
+    if (wallet) {
+      response.cookies.set(
+        'nc_wallet',
+        encodeURIComponent(
+          JSON.stringify({
+            cid: citizen.id,
+            b: wallet.balance,
+            te: wallet.total_earned,
+            ts: wallet.total_spent,
+            u: wallet.updated_at,
+          })
+        ),
+        { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+      )
+    }
+    return response
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Kesalahan server'
     return NextResponse.json({ error: msg }, { status: 500 })
