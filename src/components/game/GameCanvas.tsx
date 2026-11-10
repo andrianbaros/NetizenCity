@@ -1341,10 +1341,11 @@ export default function GameCanvas() {
 
       {/* ============================================================ */}
       {/* VIRTUAL ANALOG JOYSTICK (Tugu, River, Stadium & Beach on Touch) */}
-      {/* Positioned at bottom-6 left-4 (spacious, thumb-friendly)     */}
+      {/* Elevated thumb-friendly ergonomic sweet spot (Roblox mobile style) */}
+      {/* Positioned comfortably above bottom bars & away from screen edge */}
       {/* ============================================================ */}
       {(viewMode === 'tugu' || viewMode === 'river' || viewMode === 'stadium' || viewMode === 'beach') && (
-        <div className="md:hidden absolute bottom-[calc(env(safe-area-inset-bottom,20px)+2.25rem)] left-[calc(env(safe-area-inset-left,12px)+1.25rem)] z-30 pointer-events-auto">
+        <div className="md:hidden absolute bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] left-[calc(env(safe-area-inset-left,0px)+1.25rem)] z-30 pointer-events-auto">
           <AnalogJoystick onMove={handleAnalogMove} />
         </div>
       )}
@@ -1357,8 +1358,8 @@ export default function GameCanvas() {
       {(viewMode === 'river' || viewMode === 'beach') && (
         <div className={`absolute z-30 pointer-events-auto font-sans flex flex-col gap-1.5 px-2 ${
           fishingState === 'idle'
-            ? 'bottom-6 sm:bottom-8 right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 items-end sm:items-center'
-            : 'bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 items-center w-auto max-w-[320px] sm:max-w-sm'
+            ? 'bottom-3 sm:bottom-6 right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 items-end sm:items-center'
+            : 'bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 items-center w-auto max-w-[320px] sm:max-w-sm'
         }`}>
           {/* Active Auto-Fishing Notification Badge */}
           {isAutoFishing && fishingState !== 'caught' && (
