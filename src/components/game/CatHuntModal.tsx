@@ -134,7 +134,7 @@ export default function CatHuntModal({ isOpen, onClose }: CatHuntModalProps) {
 
         // Give individual reward (+50 coins) & persist to database
         const curWallet = useCitizenStore.getState().wallet
-        const curBal = curWallet?.balance ?? 500
+        const curBal = curWallet?.balance ?? 0
         updateBalance(curBal + 50)
 
         fetch('/api/economy', {
@@ -182,7 +182,7 @@ export default function CatHuntModal({ isOpen, onClose }: CatHuntModalProps) {
       setGrandRewardClaimed(true)
 
       const curWallet = useCitizenStore.getState().wallet
-      const curBal = curWallet?.balance ?? 500
+      const curBal = curWallet?.balance ?? 0
       updateBalance(curBal + 250)
 
       fetch('/api/economy', {

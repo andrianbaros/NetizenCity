@@ -263,7 +263,7 @@ export default function FishingModal({ isOpen, onClose }: FishingModalProps) {
 
     // Add Coins to wallet & persist to database
     const curWallet = useCitizenStore.getState().wallet
-    const curBalance = curWallet?.balance ?? 500
+    const curBalance = curWallet?.balance ?? 0
     updateBalance(curBalance + chosen.price)
 
     fetch('/api/economy', {

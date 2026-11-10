@@ -89,7 +89,7 @@ export default function DailyRewardModal() {
         if (typeof data.newBalance === 'number') {
           updateBalance(data.newBalance)
         } else {
-          const cur = wallet?.balance ?? 500
+          const cur = wallet?.balance ?? 0
           updateBalance(cur + earnedCoins)
         }
 
@@ -107,7 +107,7 @@ export default function DailyRewardModal() {
         setIsClaimedToday(true)
         const reward = rewards.find((r) => r.day === currentStreak)
         const earnedCoins = reward ? reward.coins : 75
-        const cur = wallet?.balance ?? 500
+        const cur = wallet?.balance ?? 0
         updateBalance(cur + earnedCoins)
 
         addNotification({
@@ -118,7 +118,7 @@ export default function DailyRewardModal() {
       }
     } catch {
       setIsClaimedToday(true)
-      const cur = wallet?.balance ?? 500
+      const cur = wallet?.balance ?? 0
       updateBalance(cur + 75)
       addNotification({
         title: 'Hadiah Harian Diklaim!',

@@ -307,13 +307,25 @@
     {
       "id": "w-c-8x5lwnp",
       "citizen_id": "c-8x5lwnp",
-      "balance": 350,
-      "total_earned": 600,
+      "balance": 370,
+      "total_earned": 620,
       "total_spent": 250,
-      "updated_at": "2026-11-09T05:55:00.443Z"
+      "updated_at": "2026-11-10T05:00:00.000Z"
     }
   ],
   "transactions": [
+    {
+      "id": "tx-stadium-goal-01",
+      "citizen_id": "c-8x5lwnp",
+      "type": "reward",
+      "amount": 20,
+      "previous_balance": 350,
+      "new_balance": 370,
+      "description": "Hadiah cetak gol penalti di Stadion Netizen City",
+      "reference_type": "stadium",
+      "reference_id": null,
+      "created_at": "2026-11-10T05:00:00.000Z"
+    },
     {
       "id": "tx-haziep7",
       "citizen_id": "c-8x5lwnp",

@@ -204,7 +204,7 @@ export default function InventoryModal({ isOpen, onClose }: InventoryModalProps)
   const openModal = useUIStore((s) => s.openModal)
   const closeModal = useUIStore((s) => s.closeModal)
 
-  const currentCoins = wallet?.balance ?? 500
+  const currentCoins = wallet?.balance ?? 0
   const maxSlots = 50
 
   const handleClose = () => {

@@ -590,7 +590,7 @@ export default function GameCanvas() {
 
         // Optimistically update wallet balance (+20 Netizen Coins per goal)
         const curWallet = useCitizenStore.getState().wallet
-        const currentBalance = curWallet?.balance ?? 500
+        const currentBalance = curWallet?.balance ?? 0
         useCitizenStore.getState().updateBalance(currentBalance + 20)
 
         // Persist reward to database via /api/economy

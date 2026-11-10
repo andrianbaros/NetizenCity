@@ -335,7 +335,7 @@ export default function BuildingModal() {
         if (typeof data.newBalance === 'number') {
           updateBalance(data.newBalance)
         } else {
-          const cur = wallet?.balance ?? 500
+          const cur = wallet?.balance ?? 0
           updateBalance(cur + 25)
         }
 
@@ -357,7 +357,7 @@ export default function BuildingModal() {
           }
         })
         setHasVoted(true)
-        const cur = wallet?.balance ?? 500
+        const cur = wallet?.balance ?? 0
         updateBalance(cur + 25)
 
         fetch('/api/economy', {
@@ -386,7 +386,7 @@ export default function BuildingModal() {
     } catch {
       // Offline fallback
       setHasVoted(true)
-      const cur = wallet?.balance ?? 500
+      const cur = wallet?.balance ?? 0
       updateBalance(cur + 25)
 
       fetch('/api/economy', {

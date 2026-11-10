@@ -150,7 +150,7 @@ export default function MissionsModal() {
         if (typeof data.newBalance === 'number') {
           updateBalance(data.newBalance)
         } else {
-          const cur = wallet?.balance ?? 500
+          const cur = wallet?.balance ?? 0
           updateBalance(cur + mission.reward_coins)
         }
 
@@ -169,7 +169,7 @@ export default function MissionsModal() {
         if (typeof data.newBalance === 'number') {
           updateBalance(data.newBalance)
         } else {
-          const cur = wallet?.balance ?? 500
+          const cur = wallet?.balance ?? 0
           updateBalance(cur + mission.reward_coins)
         }
         addNotification({
@@ -184,7 +184,7 @@ export default function MissionsModal() {
           m.id === mission.id ? { ...m, isClaimed: true, isCompleted: true } : m
         )
       )
-      const cur = wallet?.balance ?? 500
+      const cur = wallet?.balance ?? 0
       updateBalance(cur + mission.reward_coins)
       addNotification({
         title: 'Hadiah Misi Diklaim!',

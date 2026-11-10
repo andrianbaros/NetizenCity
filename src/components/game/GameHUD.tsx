@@ -139,7 +139,7 @@ export default function GameHUD() {
             currentStoreProfile?.id === citData.citizen.id &&
             currentLocalWallet?.citizenId === citData.citizen.id
           const serverBalance =
-            typeof citData.wallet.balance === 'number' ? citData.wallet.balance : 500
+            typeof citData.wallet.balance === 'number' ? citData.wallet.balance : 0
 
           if (!isSameCitizen) {
             // Fresh login or switched citizen: strictly adopt official server wallet
@@ -156,9 +156,12 @@ export default function GameHUD() {
             const localBal = currentLocalWallet?.balance ?? serverBalance
             const localEarned = currentLocalWallet?.totalEarned ?? 0
             const serverEarned = citData.wallet.total_earned ?? 0
+            const serverTime = new Date(citData.wallet.updated_at || 0).getTime()
+            const localTime = new Date(currentLocalWallet?.updatedAt || 0).getTime()
 
-            if (localBal > serverBalance && localEarned > serverEarned) {
-              // Serverless container cold restart detected: self-heal server DB with confirmed client earnings
+            // If local balance is higher and local activity is newer or equal, client has confirmed un-persisted earnings
+            if (localBal > serverBalance && localTime >= serverTime) {
+              // Self-heal serverless container DB with client's confirmed earnings
               fetch('/api/economy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -173,7 +176,7 @@ export default function GameHUD() {
                 id: citData.wallet.id || currentLocalWallet?.id || 'w-' + citData.citizen.id,
                 citizenId: citData.citizen.id,
                 balance: localBal,
-                totalEarned: localEarned,
+                totalEarned: Math.max(localEarned, serverEarned, localBal),
                 totalSpent: currentLocalWallet?.totalSpent ?? (citData.wallet.total_spent ?? 0),
                 updatedAt: new Date().toISOString(),
               })
@@ -243,7 +246,7 @@ export default function GameHUD() {
     'Kawasan Alam & Wisata': 'Pantai Netizen Beach',
   }
 
-  const currentCoins = wallet?.balance ?? (profile ? 500 : 0)
+  const currentCoins = wallet?.balance ?? 0
 
   const handleOpenCityHall = () => {
     setSelectedBuilding('city_hall')

@@ -590,7 +590,7 @@ export class CityScene extends Phaser.Scene {
       if (dist < 28) {
         // Collect & clean!
         const curWallet = useCitizenStore.getState().wallet
-        const balance = curWallet?.balance ?? 500
+        const balance = curWallet?.balance ?? 0
         useCitizenStore.getState().updateBalance(balance + 15)
 
         // Persist to local database
@@ -706,7 +706,7 @@ export class CityScene extends Phaser.Scene {
 
     if (dist < 45) {
       const reward = this.activeDelivery.reward
-      const cur = useCitizenStore.getState().wallet?.balance ?? 500
+      const cur = useCitizenStore.getState().wallet?.balance ?? 0
       useCitizenStore.getState().updateBalance(cur + reward)
 
       // Persist to local database

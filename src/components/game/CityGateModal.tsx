@@ -65,7 +65,7 @@ export default function CityGateModal({ isOpen, onSuccess }: CityGateModalProps)
       setClaimedBonus(true)
 
       const curWallet = useCitizenStore.getState().wallet
-      const curBal = curWallet?.balance ?? 500
+      const curBal = curWallet?.balance ?? 0
       updateBalance(curBal + 100)
 
       fetch('/api/economy', {

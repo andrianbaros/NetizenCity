@@ -205,7 +205,7 @@ export default function FreekickModal({ isOpen, onClose }: FreekickModalProps) {
 
         // Add 20 coins per goal and persist to database
         const curWallet = useCitizenStore.getState().wallet
-        const curBal = curWallet?.balance ?? 500
+        const curBal = curWallet?.balance ?? 0
         updateBalance(curBal + 20)
 
         fetch('/api/economy', {
@@ -243,7 +243,7 @@ export default function FreekickModal({ isOpen, onClose }: FreekickModalProps) {
           playWhistleSound()
           // Grand bonus if scored 3+ goals
           if (goalsScored + (isGoal ? 1 : 0) >= 3) {
-            const currentB = useCitizenStore.getState().wallet?.balance ?? 500
+            const currentB = useCitizenStore.getState().wallet?.balance ?? 0
             updateBalance(currentB + 50)
 
             fetch('/api/economy', {

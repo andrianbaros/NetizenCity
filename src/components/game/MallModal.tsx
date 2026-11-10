@@ -105,7 +105,7 @@ export default function MallModal() {
       ? displayItems
       : displayItems.filter((i) => i.category === activeCategory)
 
-  const currentCoins = wallet?.balance ?? 500
+  const currentCoins = wallet?.balance ?? 0
 
   // Resolve current avatar colors
   const currentShirt =
