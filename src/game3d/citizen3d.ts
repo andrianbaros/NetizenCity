@@ -64,68 +64,155 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   const shirtMat = mat(initialColors.shirt);
   const pantsMat = mat(initialColors.pants);
   const shoesMat = mat(initialColors.shoes);
-  const eyesMat = mat('#1E293B', { roughness: 0.2 });
-  const glintMat = mat('#FFFFFF', { roughness: 0.1 });
-  const blushMat = mat('#F472B6', { transparent: true, opacity: 0.6 });
-  const accessoryMat = mat('#F59E0B', { metalness: 0.6, roughness: 0.3 });
+  const eyesMat = mat('#1E293B', { roughness: 0.25, flatShading: false });
+  const glintMat = mat('#FFFFFF', { roughness: 0.1, flatShading: false });
+  const blushMat = mat('#F472B6', { transparent: true, opacity: 0.6, roughness: 0.4, flatShading: false });
+  const accessoryMat = mat('#F59E0B', { metalness: 0.7, roughness: 0.25, flatShading: false });
 
   // ------------------------------------------------------------
-  // 1. TORSO (Iconic Chibi Capsule Body)
+  // 1. ICONIC CAPSULE BODY (Identical Geometry to Pak Mayor)
+  // Single smooth CapsuleGeometry(0.27, 0.48) at y = 0.52
   // ------------------------------------------------------------
   const torsoGroup = new THREE.Group();
-  torsoGroup.position.y = 0.52;
   body.add(torsoGroup);
 
-  const torsoGeo = new THREE.CapsuleGeometry(0.22, 0.28, 8, 16);
-  const torsoMesh = new THREE.Mesh(torsoGeo, shirtMat);
-  torsoMesh.castShadow = false;
-  torsoMesh.receiveShadow = false;
-  torsoGroup.add(torsoMesh);
+  // Pure single capsule mesh - the core signature artstyle of NetizenCity
+  const capsuleGeo = new THREE.CapsuleGeometry(0.27, 0.48, 8, 20);
+  const capsuleMesh = new THREE.Mesh(capsuleGeo, shirtMat);
+  capsuleMesh.position.y = 0.52;
+  capsuleMesh.castShadow = false;
+  capsuleMesh.receiveShadow = false;
+  torsoGroup.add(capsuleMesh);
 
-  // Shirt collar / neck trim
-  const collarGeo = new THREE.CylinderGeometry(0.12, 0.14, 0.08, 12);
-  const collarMesh = new THREE.Mesh(collarGeo, skinMat);
-  collarMesh.position.y = 0.2;
-  torsoGroup.add(collarMesh);
+  // Tailored clothing trims on the capsule body
+  // Inner white collar fold & neckline
+  const innerShirt = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, 0.16, 0.04).translate(0, 0.68, 0.256),
+    mat('#FFFFFF', { roughness: 0.7 })
+  );
+  torsoGroup.add(innerShirt);
+
+  const collarRing = new THREE.Mesh(new THREE.TorusGeometry(0.274, 0.015, 6, 26), shirtMat);
+  collarRing.position.y = 0.74;
+  collarRing.rotation.x = Math.PI / 2;
+  torsoGroup.add(collarRing);
+
+  // V-neck lapel folds
+  for (const s of [-1, 1]) {
+    const lapel = new THREE.Mesh(
+      new THREE.BoxGeometry(0.045, 0.08, 0.012).translate(s * 0.05, 0.71, 0.266),
+      shirtMat
+    );
+    lapel.rotation.z = -s * 0.32;
+    torsoGroup.add(lapel);
+  }
+
+  // Shirt Pearl Buttons
+  const buttonWhiteMat = mat('#F8FAFC', { roughness: 0.3 });
+  for (const by of [0.59, 0.48]) {
+    const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.01, 8), buttonWhiteMat);
+    btn.rotation.x = Math.PI / 2;
+    btn.position.set(0, by, 0.274);
+    torsoGroup.add(btn);
+  }
+
+  // Belt Ring & Buckle dividing torso and hips
+  const beltRing = new THREE.Mesh(new THREE.TorusGeometry(0.274, 0.015, 6, 26), pantsMat);
+  beltRing.position.y = 0.38;
+  beltRing.rotation.x = Math.PI / 2;
+  torsoGroup.add(beltRing);
+
+  const buckleMat = mat('#E2E8F0', { metalness: 0.85, roughness: 0.2 });
+  const beltBuckle = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.034, 0.015), buckleMat);
+  beltBuckle.position.set(0, 0.38, 0.276);
+  torsoGroup.add(beltBuckle);
+
+  // Dynamic Outfit Pattern Group (Tuxedo, Overalls, Stripes)
+  const patternGroup = new THREE.Group();
+  torsoGroup.add(patternGroup);
+
+  const buildOutfit = (pattern?: string | null) => {
+    while (patternGroup.children.length > 0) {
+      patternGroup.remove(patternGroup.children[0]);
+    }
+
+    const p = (pattern || '').toLowerCase();
+    if (p.includes('tuxedo') || p.includes('suit')) {
+      // Red / Dark bow tie
+      const bowMat = mat('#E11D48', { roughness: 0.4 });
+      for (const s of [-1, 1]) {
+        const wing = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.05, 4).translate(0, 0.025, 0), bowMat);
+        wing.position.set(s * 0.025, 0.725, 0.282);
+        wing.rotation.z = (s * Math.PI) / 2;
+        patternGroup.add(wing);
+      }
+      const knot = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 6), bowMat);
+      knot.position.set(0, 0.725, 0.284);
+      patternGroup.add(knot);
+
+      // Golden lapel medal / badge like Pak Mayor
+      const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.01, 8), accessoryMat);
+      pin.rotation.x = Math.PI / 2;
+      pin.position.set(0.1, 0.65, 0.266);
+      patternGroup.add(pin);
+    } else if (p.includes('stripes')) {
+      const stripeMat = mat('#F8FAFC', { roughness: 0.5 });
+      for (const sy of [0.62, 0.50]) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.274, 0.01, 6, 26), stripeMat);
+        ring.position.y = sy;
+        ring.rotation.x = Math.PI / 2;
+        patternGroup.add(ring);
+      }
+    } else if (p.includes('overalls')) {
+      for (const s of [-1, 1]) {
+        const strap = new THREE.Mesh(
+          new THREE.BoxGeometry(0.038, 0.36, 0.01).translate(s * 0.11, 0.57, 0.272),
+          pantsMat
+        );
+        const rivet = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.008, 6), buckleMat);
+        rivet.rotation.x = Math.PI / 2;
+        rivet.position.set(s * 0.11, 0.72, 0.276);
+        patternGroup.add(strap, rivet);
+      }
+    }
+  };
+
+  buildOutfit(initialColors.outfitPattern);
 
   // ------------------------------------------------------------
-  // 2. HEAD & CUTE CHIBI FACE
+  // 2. HEAD & CHIBI FACE (Positioned on the Capsule Dome at y=0.82)
+  // Identical to Pak Mayor's Head Anchor
   // ------------------------------------------------------------
   const head = new THREE.Group();
-  head.position.y = 0.94;
+  head.position.y = 0.82;
   body.add(head);
-
-  const headGeo = new THREE.SphereGeometry(0.24, 16, 14);
-  const headMesh = new THREE.Mesh(headGeo, skinMat);
-  headMesh.castShadow = false;
-  headMesh.receiveShadow = false;
-  head.add(headMesh);
 
   // Chibi Anime Eyes with expressive sparkle
   for (const s of [-1, 1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.032, 10, 8), eyesMat);
-    eye.position.set(s * 0.085, 0.02, 0.22);
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.034, 10, 8), eyesMat);
+    eye.position.set(s * 0.09, 0.02, 0.255);
     eye.scale.set(1, 1.25, 0.4);
     head.add(eye);
 
     const glint = new THREE.Mesh(new THREE.SphereGeometry(0.011, 6, 6), glintMat);
-    glint.position.set(s * 0.085 + 0.01, 0.035, 0.23);
+    glint.position.set(s * 0.09 + 0.01, 0.035, 0.266);
     head.add(glint);
 
-    // Blushing cheeks
-    const blush = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), blushMat);
-    blush.position.set(s * 0.15, -0.06, 0.185);
-    blush.scale.set(1, 0.5, 0.3);
+    // Cute blush cheeks
+    const blush = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 6), blushMat);
+    blush.position.set(s * 0.165, -0.065, 0.225);
+    blush.scale.set(1, 0.55, 0.35);
     head.add(blush);
   }
 
-  // Cute nose button
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 6), skinMat);
-  nose.position.set(0, -0.01, 0.24);
+  // Cute button nose
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.016, 6, 6), skinMat);
+  nose.position.set(0, -0.01, 0.268);
   head.add(nose);
 
   // ------------------------------------------------------------
-  // 3. HAIRSTYLES (Rebuildable)
+  // 3. HAIRSTYLES (Form-Fitting on the Capsule Top Dome)
+  // Dome apex at y=0.21 relative to head; center at (0, -0.06, 0)
   // ------------------------------------------------------------
   const hairGroup = new THREE.Group();
   head.add(hairGroup);
@@ -135,30 +222,34 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       hairGroup.remove(hairGroup.children[0]);
     }
 
+    if (style === 'none' || style === 'bald') return;
+
+    // Base hair cap covering only the top-back crown, keeping the capsule face completely clear
     const baseCap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.252, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56),
+      new THREE.SphereGeometry(0.276, 20, 12, -Math.PI * 0.5, Math.PI, 0, Math.PI * 0.42),
       hairMat
     );
+    baseCap.position.y = -0.06;
     hairGroup.add(baseCap);
 
     if (style === 'spiky') {
       for (let i = 0; i < 7; i++) {
         const a = (i / 7) * Math.PI * 1.8 - 0.9;
         const spike = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 5), hairMat);
-        spike.position.set(Math.sin(a) * 0.18, 0.22 + Math.cos(a) * 0.04, Math.cos(a) * 0.16);
+        spike.position.set(Math.sin(a) * 0.20, 0.18 + Math.cos(a) * 0.04, Math.cos(a) * 0.16);
         spike.rotation.set(0.3, a * 0.5, -a * 0.4);
         hairGroup.add(spike);
       }
     } else if (style === 'long' || style === 'ponytail') {
       const backHair = new THREE.Mesh(
-        new THREE.BoxGeometry(0.34, 0.42, 0.1).translate(0, -0.16, -0.16),
+        new THREE.BoxGeometry(0.36, 0.46, 0.08).translate(0, -0.22, -0.22),
         hairMat
       );
       hairGroup.add(backHair);
 
       for (const s of [-1, 1]) {
         const sideLock = new THREE.Mesh(
-          new THREE.BoxGeometry(0.08, 0.32, 0.1).translate(s * 0.2, -0.12, 0.06),
+          new THREE.BoxGeometry(0.07, 0.32, 0.08).translate(s * 0.23, -0.16, 0.08),
           hairMat
         );
         hairGroup.add(sideLock);
@@ -166,12 +257,12 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 
       if (style === 'ponytail') {
         const knot = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.02, 6, 12), mat('#F43F5E'));
-        knot.position.set(0, 0.06, -0.25);
+        knot.position.set(0, 0.04, -0.28);
         const tail = new THREE.Mesh(
           new THREE.ConeGeometry(0.09, 0.32, 8).translate(0, -0.14, 0),
           hairMat
         );
-        tail.position.set(0, 0.06, -0.27);
+        tail.position.set(0, 0.04, -0.30);
         tail.rotation.x = -0.3;
         hairGroup.add(knot, tail);
       }
@@ -179,27 +270,27 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       for (let i = 0; i < 14; i++) {
         const a = (i / 14) * Math.PI * 2;
         const puff = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), hairMat);
-        puff.position.set(Math.cos(a) * 0.2, 0.15 + (i % 2) * 0.06, Math.sin(a) * 0.18);
+        puff.position.set(Math.cos(a) * 0.22, 0.12 + (i % 2) * 0.06, Math.sin(a) * 0.20);
         hairGroup.add(puff);
       }
     } else if (style === 'bob') {
       const bob = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.27, 0.29, 0.24, 16, 1, true, -Math.PI * 0.75, Math.PI * 1.5),
+        new THREE.CylinderGeometry(0.282, 0.305, 0.26, 16, 1, true, -Math.PI * 0.75, Math.PI * 1.5),
         hairMat
       );
-      bob.position.y = -0.04;
+      bob.position.y = -0.08;
       hairGroup.add(bob);
     } else {
       // Default: Neat layered fringe
       const fringe = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, 0.08, 0.12).translate(0, 0.15, 0.18),
+        new THREE.BoxGeometry(0.32, 0.08, 0.12).translate(0, 0.12, 0.22),
         hairMat
       );
       hairGroup.add(fringe);
 
       for (const s of [-1, 1]) {
         const sideBurn = new THREE.Mesh(
-          new THREE.BoxGeometry(0.05, 0.14, 0.09).translate(s * 0.22, 0.02, 0.04),
+          new THREE.BoxGeometry(0.05, 0.14, 0.09).translate(s * 0.24, -0.02, 0.06),
           hairMat
         );
         hairGroup.add(sideBurn);
@@ -210,7 +301,7 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   buildHair(initialColors.hairStyle || 'short');
 
   // ------------------------------------------------------------
-  // 4. ARMS & CHIBI SPHERICAL HANDS
+  // 4. ARMS & SLEEVES (Matching Pak Mayor's Shoulder Anchor y=0.64)
   // ------------------------------------------------------------
   const leftArm = new THREE.Group();
   leftArm.position.set(-0.25, 0.64, 0);
@@ -225,21 +316,22 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       new THREE.CylinderGeometry(0.065, 0.06, 0.18, 8).translate(0, -0.09, 0),
       shirtMat
     );
+    sleeve.castShadow = false;
     arm.add(sleeve);
 
     const armSkin = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.05, 0.045, 0.16, 8).translate(0, -0.22, 0),
+      new THREE.CylinderGeometry(0.048, 0.045, 0.08, 8).translate(0, -0.19, 0),
       skinMat
     );
     arm.add(armSkin);
 
     const hand = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), skinMat);
-    hand.position.y = -0.32;
+    hand.position.y = -0.25;
     arm.add(hand);
   });
 
   // ------------------------------------------------------------
-  // 5. LEGS & SHOES
+  // 5. LEGS & POLISHED SHOES (Matching Pak Mayor's Hip Anchor y=0.36)
   // ------------------------------------------------------------
   const leftLeg = new THREE.Group();
   leftLeg.position.set(-0.11, 0.36, 0);
@@ -254,20 +346,34 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       new THREE.CylinderGeometry(0.075, 0.07, 0.28, 8).translate(0, -0.14, 0),
       pantsMat
     );
+    pantMesh.castShadow = false;
     leg.add(pantMesh);
 
     const shoe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, 0.09, 0.2).translate(0, -0.32, 0.03),
+      new THREE.BoxGeometry(0.12, 0.09, 0.20).translate(0, -0.32, 0.03),
       shoesMat
     );
+    shoe.castShadow = false;
     leg.add(shoe);
+
+    const sole = new THREE.Mesh(
+      new THREE.BoxGeometry(0.124, 0.025, 0.204).translate(0, -0.36, 0.03),
+      mat('#FFFFFF', { roughness: 0.85 })
+    );
+    sole.castShadow = false;
+    leg.add(sole);
   });
 
   // ------------------------------------------------------------
-  // 6. MASTER-CRAFTED 3D ACCESSORY ENGINE (UPGRADED)
+  // 6. MASTER-CRAFTED 3D ACCESSORY ENGINE (Capsule Proportions)
+  // Head accessories attached to `head` (rotate smoothly with face)
+  // Back accessories attached to `body` (wings, tackle box, pack)
   // ------------------------------------------------------------
-  const accGroup = new THREE.Group();
-  body.add(accGroup);
+  const accBodyGroup = new THREE.Group();
+  body.add(accBodyGroup);
+
+  const accHeadGroup = new THREE.Group();
+  head.add(accHeadGroup);
 
   // References for dynamic animated accessories
   const animatedWings: Array<{ wing: THREE.Group; side: number }> = [];
@@ -275,8 +381,11 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   let propellerSpinRef: THREE.Mesh | null = null;
 
   const buildAccessory = (acc?: string | null, bp?: string | null) => {
-    while (accGroup.children.length > 0) {
-      accGroup.remove(accGroup.children[0]);
+    while (accBodyGroup.children.length > 0) {
+      accBodyGroup.remove(accBodyGroup.children[0]);
+    }
+    while (accHeadGroup.children.length > 0) {
+      accHeadGroup.remove(accHeadGroup.children[0]);
     }
     animatedWings.length = 0;
     haloMeshRef = null;
@@ -294,7 +403,7 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 
       for (const s of [-1, 1]) {
         const wingPivot = new THREE.Group();
-        wingPivot.position.set(s * 0.15, 0.56, -0.14);
+        wingPivot.position.set(s * 0.15, 0.58, -0.16);
 
         // Wing bone armature joint
         const joint = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), wingSheenMat);
@@ -324,7 +433,7 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
           wingPivot.add(covert);
         }
 
-        accGroup.add(wingPivot);
+        accBodyGroup.add(wingPivot);
         animatedWings.push({ wing: wingPivot, side: s });
       }
     }
@@ -334,7 +443,7 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
     // ----------------------------------------------------------
     if (accessoryKey === 'halo' || accessoryKey === 'acc_halo') {
       const haloGroup = new THREE.Group();
-      haloGroup.position.set(0, 1.34, 0);
+      haloGroup.position.set(0, 0.38, 0);
 
       const haloMat = mat('#FACC15', {
         metalness: 0.85,
@@ -357,7 +466,7 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
         haloGroup.add(star);
       }
 
-      accGroup.add(haloGroup);
+      accHeadGroup.add(haloGroup);
     }
 
     // ----------------------------------------------------------
@@ -369,19 +478,19 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       const brassMat = mat('#F59E0B', { metalness: 0.9, roughness: 0.2 });
 
       // Main box body
-      const box = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.26, 0.14).translate(0, 0.52, -0.16), boxMat);
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.26, 0.14).translate(0, 0.52, -0.18), boxMat);
       // Molded bottom tray reinforcement
-      const rim = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.04, 0.15).translate(0, 0.4, -0.16), darkRimMat);
+      const rim = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.04, 0.15).translate(0, 0.40, -0.18), darkRimMat);
       // Top lid edge
-      const lid = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.03, 0.15).translate(0, 0.64, -0.16), darkRimMat);
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.03, 0.15).translate(0, 0.64, -0.18), darkRimMat);
 
       // Dual front flip brass latches
       for (const s of [-1, 1]) {
         const latch = new THREE.Mesh(
-          new THREE.BoxGeometry(0.04, 0.05, 0.02).translate(s * 0.08, 0.58, -0.235),
+          new THREE.BoxGeometry(0.04, 0.05, 0.02).translate(s * 0.08, 0.58, -0.255),
           brassMat
         );
-        accGroup.add(latch);
+        accBodyGroup.add(latch);
       }
 
       // Sturdy carrying handle
@@ -389,19 +498,19 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
         new THREE.TorusGeometry(0.05, 0.012, 6, 12, Math.PI),
         mat('#0F172A', { roughness: 0.5 })
       );
-      handle.position.set(0, 0.66, -0.16);
+      handle.position.set(0, 0.66, -0.18);
       handle.rotation.x = -Math.PI / 2;
 
       // Padded back harness straps
       for (const s of [-1, 1]) {
         const strap = new THREE.Mesh(
-          new THREE.BoxGeometry(0.04, 0.28, 0.03).translate(s * 0.11, 0.54, -0.08),
+          new THREE.BoxGeometry(0.04, 0.28, 0.03).translate(s * 0.11, 0.54, -0.10),
           mat('#1E293B', { roughness: 0.8 })
         );
-        accGroup.add(strap);
+        accBodyGroup.add(strap);
       }
 
-      accGroup.add(box, rim, lid, handle);
+      accBodyGroup.add(box, rim, lid, handle);
     }
 
     // ----------------------------------------------------------
@@ -412,23 +521,23 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       const pocketMat = mat('#1D4ED8', { roughness: 0.7 });
       const trimMat = mat('#F59E0B', { roughness: 0.5 });
 
-      const pack = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.13).translate(0, 0.52, -0.16), packMat);
+      const pack = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.13).translate(0, 0.52, -0.18), packMat);
       // Front zipper pocket
       const pocket = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 0.14, 0.05).translate(0, 0.46, -0.24),
+        new THREE.BoxGeometry(0.18, 0.14, 0.05).translate(0, 0.46, -0.26),
         pocketMat
       );
       // Leather patch diamond
-      const patch = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.01).translate(0, 0.58, -0.226), trimMat);
+      const patch = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.01).translate(0, 0.58, -0.246), trimMat);
       patch.rotation.z = Math.PI / 4;
 
       // Side water bottle flask
       const bottle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.03, 0.03, 0.12, 8).translate(0.135, 0.48, -0.16),
+        new THREE.CylinderGeometry(0.03, 0.03, 0.12, 8).translate(0.135, 0.48, -0.18),
         mat('#10B981', { metalness: 0.5, roughness: 0.3 })
       );
 
-      accGroup.add(pack, pocket, patch, bottle);
+      accBodyGroup.add(pack, pocket, patch, bottle);
     }
 
     // ----------------------------------------------------------
@@ -445,25 +554,17 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 
       // Wide elegant conical cone
       const cone = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.16, 20), bambooConeMat);
-      cone.position.set(0, 1.18, 0);
+      cone.position.set(0, 0.28, 0);
 
       // Woven outer rim edge
       const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.385, 0.385, 0.022, 20), trimDarkMat);
-      brim.position.set(0, 1.1, 0);
+      brim.position.set(0, 0.20, 0);
 
       // Apex crown knot
       const apexKnot = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), trimDarkMat);
-      apexKnot.position.set(0, 1.27, 0);
+      apexKnot.position.set(0, 0.37, 0);
 
-      // Chin strap
-      const strap = new THREE.Mesh(
-        new THREE.TorusGeometry(0.16, 0.008, 4, 16, Math.PI),
-        mat('#78350F', { roughness: 0.8 })
-      );
-      strap.position.set(0, 0.94, 0.02);
-      strap.rotation.x = Math.PI;
-
-      accGroup.add(cone, brim, apexKnot, strap);
+      accHeadGroup.add(cone, brim, apexKnot);
     }
 
     // ----------------------------------------------------------
@@ -480,22 +581,22 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 
       // Indented crown
       const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.13, 16), safariMat);
-      crown.position.set(0, 1.19, 0);
+      crown.position.set(0, 0.28, 0);
 
       // Stitched leather band
       const band = new THREE.Mesh(new THREE.CylinderGeometry(0.264, 0.264, 0.04, 16), leatherBandMat);
-      band.position.set(0, 1.14, 0);
+      band.position.set(0, 0.23, 0);
 
       // Wide safari sun-shield brim
-      const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.024, 20), safariMat);
-      brim.position.set(0, 1.12, 0);
+      const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.40, 0.40, 0.024, 20), safariMat);
+      brim.position.set(0, 0.21, 0);
 
       // Ranger expedition badge
       const badge = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.01, 8), badgeMat);
       badge.rotation.x = Math.PI / 2;
-      badge.position.set(0, 1.15, 0.268);
+      badge.position.set(0, 0.24, 0.268);
 
-      accGroup.add(crown, band, brim, badge);
+      accHeadGroup.add(crown, band, brim, badge);
     }
 
     // ----------------------------------------------------------
@@ -508,27 +609,27 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 
       // Crown base circlet
       const circlet = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.22, 0.07, 16, 1, true), goldMat);
-      circlet.position.set(0, 1.18, 0);
+      circlet.position.set(0, 0.24, 0);
 
       // 5 Sculpted imperial crown tines
       for (let i = 0; i < 5; i++) {
         const a = (i / 5) * Math.PI * 2;
         const tine = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.12, 4), goldMat);
-        tine.position.set(Math.cos(a) * 0.22, 1.25, Math.sin(a) * 0.22);
+        tine.position.set(Math.cos(a) * 0.22, 0.31, Math.sin(a) * 0.22);
         const jewelSphere = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), goldMat);
-        jewelSphere.position.set(Math.cos(a) * 0.22, 1.31, Math.sin(a) * 0.22);
-        accGroup.add(tine, jewelSphere);
+        jewelSphere.position.set(Math.cos(a) * 0.22, 0.37, Math.sin(a) * 0.22);
+        accHeadGroup.add(tine, jewelSphere);
       }
 
       // Center ruby and flanking sapphires
       const centerRuby = new THREE.Mesh(new THREE.OctahedronGeometry(0.035), rubyMat);
-      centerRuby.position.set(0, 1.18, 0.23);
+      centerRuby.position.set(0, 0.24, 0.23);
       const leftSapphire = new THREE.Mesh(new THREE.OctahedronGeometry(0.026), sapphireMat);
-      leftSapphire.position.set(-0.13, 1.18, 0.19);
+      leftSapphire.position.set(-0.13, 0.24, 0.19);
       const rightSapphire = new THREE.Mesh(new THREE.OctahedronGeometry(0.026), sapphireMat);
-      rightSapphire.position.set(0.13, 1.18, 0.19);
+      rightSapphire.position.set(0.13, 0.24, 0.19);
 
-      accGroup.add(circlet, centerRuby, leftSapphire, rightSapphire);
+      accHeadGroup.add(circlet, centerRuby, leftSapphire, rightSapphire);
     }
 
     // ----------------------------------------------------------
@@ -544,26 +645,26 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 
       // Cushioned headband arch
       const band = new THREE.Mesh(
-        new THREE.TorusGeometry(0.24, 0.02, 8, 20, Math.PI),
+        new THREE.TorusGeometry(0.26, 0.02, 8, 20, Math.PI),
         chassisMat
       );
-      band.position.set(0, 1.02, 0);
+      band.position.set(0, 0.08, 0);
 
       // Padded side ear cups
       for (const s of [-1, 1]) {
         const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.04, 12), chassisMat);
         cup.rotation.z = Math.PI / 2;
-        cup.position.set(s * 0.25, 0.94, 0);
+        cup.position.set(s * 0.27, 0.0, 0);
         const cushion = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.015, 6, 12), mat('#0F172A', { roughness: 0.8 }));
         cushion.rotation.y = Math.PI / 2;
-        cushion.position.set(s * 0.24, 0.94, 0);
+        cushion.position.set(s * 0.26, 0.0, 0);
 
         // Glowing RGB cat ear peak
         const ear = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.14, 4), rgbPinkMat);
-        ear.position.set(s * 0.14, 1.25, 0);
+        ear.position.set(s * 0.15, 0.32, 0);
         ear.rotation.set(0, 0, -s * 0.35);
 
-        accGroup.add(cup, cushion, ear);
+        accHeadGroup.add(cup, cushion, ear);
       }
 
       // Curved boom microphone with LED indicator
@@ -571,15 +672,15 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
         new THREE.CylinderGeometry(0.008, 0.008, 0.16, 6).translate(0, 0.08, 0),
         chassisMat
       );
-      micArm.position.set(-0.24, 0.92, 0.05);
+      micArm.position.set(-0.25, -0.02, 0.05);
       micArm.rotation.set(0.6, 0, 0.3);
       const micTip = new THREE.Mesh(
         new THREE.SphereGeometry(0.016, 6, 6),
         mat('#06B6D4', { emissive: '#06B6D4', emissiveIntensity: 0.9 })
       );
-      micTip.position.set(-0.16, 0.82, 0.18);
+      micTip.position.set(-0.17, -0.12, 0.18);
 
-      accGroup.add(band, micArm, micTip);
+      accHeadGroup.add(band, micArm, micTip);
     }
 
     // ----------------------------------------------------------
@@ -596,30 +697,30 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 
       // Contoured dual-lens frame
       const mask = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.09, 0.04), frameMat);
-      mask.position.set(0, 0.96, 0.24);
+      mask.position.set(0, 0.02, 0.255);
 
       // Tempered glass lens plate
       const glass = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.07, 0.01), glassMat);
-      glass.position.set(0, 0.96, 0.262);
+      glass.position.set(0, 0.02, 0.276);
 
       // Curved breathing tube
       const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.34, 8), mat('#FACC15', { roughness: 0.4 }));
-      tube.position.set(0.16, 1.06, 0.15);
+      tube.position.set(0.16, 0.12, 0.15);
       tube.rotation.z = -0.15;
 
       // Orange splash guard cap
       const guard = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.05, 8), mat('#EA580C'));
-      guard.position.set(0.18, 1.23, 0.15);
+      guard.position.set(0.18, 0.29, 0.15);
 
       // Silicone head strap
       const strap = new THREE.Mesh(
-        new THREE.TorusGeometry(0.24, 0.01, 4, 16, Math.PI),
+        new THREE.TorusGeometry(0.26, 0.01, 4, 16, Math.PI),
         mat('#0891B2', { roughness: 0.6 })
       );
-      strap.position.set(0, 0.96, 0);
+      strap.position.set(0, 0.02, 0);
       strap.rotation.x = Math.PI / 2;
 
-      accGroup.add(mask, glass, tube, guard, strap);
+      accHeadGroup.add(mask, glass, tube, guard, strap);
     }
 
     // ----------------------------------------------------------
@@ -627,18 +728,18 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
     // ----------------------------------------------------------
     else if (accessoryKey === 'glasses' || accessoryKey === 'acc_glasses') {
       for (const s of [-1, 1]) {
-        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.011, 8, 20), accessoryMat);
-        rim.position.set(s * 0.088, 0.96, 0.23);
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.012, 8, 20), accessoryMat);
+        rim.position.set(s * 0.09, 0.02, 0.265);
         const lens = new THREE.Mesh(
-          new THREE.CircleGeometry(0.048, 16),
+          new THREE.CircleGeometry(0.06, 16),
           mat('#E0F2FE', { transparent: true, opacity: 0.35, roughness: 0.1 })
         );
-        lens.position.set(s * 0.088, 0.96, 0.23);
-        accGroup.add(rim, lens);
+        lens.position.set(s * 0.09, 0.02, 0.265);
+        accHeadGroup.add(rim, lens);
       }
       const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.05, 4).rotateZ(Math.PI / 2), accessoryMat);
-      bridge.position.set(0, 0.96, 0.235);
-      accGroup.add(bridge);
+      bridge.position.set(0, 0.02, 0.27);
+      accHeadGroup.add(bridge);
     }
 
     // ----------------------------------------------------------
@@ -646,20 +747,20 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
     // ----------------------------------------------------------
     else if (accessoryKey === 'propeller' || accessoryKey === 'propeller_hat') {
       const capMat = mat('#3B82F6', { roughness: 0.6 });
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.255, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.45), capMat);
-      cap.position.set(0, 1.06, 0);
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.276, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.42), capMat);
+      cap.position.set(0, -0.05, 0);
 
       const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.08, 6), mat('#94A3B8', { metalness: 0.8 }));
-      shaft.position.set(0, 1.25, 0);
+      shaft.position.set(0, 0.26, 0);
 
       const blade = new THREE.Mesh(
         new THREE.BoxGeometry(0.22, 0.012, 0.035),
         mat('#EF4444', { roughness: 0.4 })
       );
-      blade.position.set(0, 1.29, 0);
+      blade.position.set(0, 0.30, 0);
       propellerSpinRef = blade;
 
-      accGroup.add(cap, shaft, blade);
+      accHeadGroup.add(cap, shaft, blade);
     }
   };
 
@@ -677,6 +778,9 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 
     if (newColors.hairStyle) {
       buildHair(newColors.hairStyle);
+    }
+    if (newColors.outfitPattern !== undefined) {
+      buildOutfit(newColors.outfitPattern);
     }
     buildAccessory(newColors.accessory, newColors.backpack);
   };
