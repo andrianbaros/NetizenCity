@@ -147,8 +147,12 @@ export default function MissionsModal() {
           )
         )
 
-        const cur = wallet?.balance ?? 500
-        updateBalance(cur + mission.reward_coins)
+        if (typeof data.newBalance === 'number') {
+          updateBalance(data.newBalance)
+        } else {
+          const cur = wallet?.balance ?? 500
+          updateBalance(cur + mission.reward_coins)
+        }
 
         addNotification({
           title: 'Hadiah Misi Diklaim!',
@@ -162,8 +166,12 @@ export default function MissionsModal() {
             m.id === mission.id ? { ...m, isClaimed: true, isCompleted: true } : m
           )
         )
-        const cur = wallet?.balance ?? 500
-        updateBalance(cur + mission.reward_coins)
+        if (typeof data.newBalance === 'number') {
+          updateBalance(data.newBalance)
+        } else {
+          const cur = wallet?.balance ?? 500
+          updateBalance(cur + mission.reward_coins)
+        }
         addNotification({
           title: 'Hadiah Misi Diklaim!',
           message: `+${mission.reward_coins} Koin & +${mission.reward_xp} XP diperoleh!`,

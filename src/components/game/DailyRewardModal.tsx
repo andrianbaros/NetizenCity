@@ -86,8 +86,12 @@ export default function DailyRewardModal() {
       if (res.ok && data.success) {
         setIsClaimedToday(true)
         const earnedCoins = data.rewardCoins || 75
-        const cur = wallet?.balance ?? 500
-        updateBalance(cur + earnedCoins)
+        if (typeof data.newBalance === 'number') {
+          updateBalance(data.newBalance)
+        } else {
+          const cur = wallet?.balance ?? 500
+          updateBalance(cur + earnedCoins)
+        }
 
         if (data.streak) {
           setCurrentStreak(data.streak)

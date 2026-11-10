@@ -40,13 +40,20 @@ export const useCitizenStore = create<CitizenState>()(
       wallet: null,
       inventory: [],
       isLoading: true,
-      setProfile: (profile) => set({ profile }),
+      setProfile: (profile) =>
+        set((state) => {
+          if (profile && state.profile && profile.id !== state.profile.id) {
+            // Citizen account switched - clear prior citizen's wallet and inventory
+            return { profile, wallet: null, inventory: [] }
+          }
+          return { profile }
+        }),
       setWallet: (wallet) => set({ wallet }),
       updateBalance: (balance) =>
-        set((state) => ({
-          wallet: state.wallet
-            ? { ...state.wallet, balance }
-            : {
+        set((state) => {
+          if (!state.wallet) {
+            return {
+              wallet: {
                 id: 'w-' + (state.profile?.id || 'saved'),
                 citizenId: state.profile?.id || 'citizen',
                 balance,
@@ -54,7 +61,26 @@ export const useCitizenStore = create<CitizenState>()(
                 totalSpent: 0,
                 updatedAt: new Date().toISOString(),
               },
-        })),
+            }
+          }
+          const prev = state.wallet.balance
+          const diff = balance - prev
+          return {
+            wallet: {
+              ...state.wallet,
+              balance,
+              totalEarned:
+                diff > 0
+                  ? (state.wallet.totalEarned ?? prev) + diff
+                  : state.wallet.totalEarned,
+              totalSpent:
+                diff < 0
+                  ? (state.wallet.totalSpent ?? 0) + Math.abs(diff)
+                  : state.wallet.totalSpent,
+              updatedAt: new Date().toISOString(),
+            },
+          }
+        }),
       setInventory: (inventory) => set({ inventory: Array.isArray(inventory) ? inventory : [] }),
       addToInventory: (item) =>
         set((state) => ({

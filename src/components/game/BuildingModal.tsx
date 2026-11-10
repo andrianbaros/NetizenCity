@@ -331,9 +331,13 @@ export default function BuildingModal() {
 
         setHasVoted(true)
 
-        // Award 25 coins to wallet
-        const cur = wallet?.balance ?? 500
-        updateBalance(cur + 25)
+        // Award 25 coins to wallet (persisted from server response)
+        if (typeof data.newBalance === 'number') {
+          updateBalance(data.newBalance)
+        } else {
+          const cur = wallet?.balance ?? 500
+          updateBalance(cur + 25)
+        }
 
         addNotification({
           title: 'Suara Berhasil Diberikan! 🗳️',
@@ -355,6 +359,24 @@ export default function BuildingModal() {
         setHasVoted(true)
         const cur = wallet?.balance ?? 500
         updateBalance(cur + 25)
+
+        fetch('/api/economy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'earn',
+            amount: 25,
+            description: 'Bonus partisipasi polling Balai Kota',
+          }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            if (d?.wallet?.balance !== undefined) {
+              updateBalance(d.wallet.balance)
+            }
+          })
+          .catch(() => {})
+
         addNotification({
           title: 'Suara Berhasil Diberikan! 🗳️',
           message: '+25 Netizen Coins masuk ke dompetmu!',
@@ -366,6 +388,24 @@ export default function BuildingModal() {
       setHasVoted(true)
       const cur = wallet?.balance ?? 500
       updateBalance(cur + 25)
+
+      fetch('/api/economy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'earn',
+          amount: 25,
+          description: 'Bonus partisipasi polling Balai Kota',
+        }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (d?.wallet?.balance !== undefined) {
+            updateBalance(d.wallet.balance)
+          }
+        })
+        .catch(() => {})
+
       addNotification({
         title: 'Suara Tersimpan! 🗳️',
         message: '+25 Netizen Coins masuk ke dompetmu!',

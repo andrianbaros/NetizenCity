@@ -63,7 +63,28 @@ export default function CityGateModal({ isOpen, onSuccess }: CityGateModalProps)
   const handleClaimFollowBonus = () => {
     if (!claimedBonus) {
       setClaimedBonus(true)
-      updateBalance(100)
+
+      const curWallet = useCitizenStore.getState().wallet
+      const curBal = curWallet?.balance ?? 500
+      updateBalance(curBal + 100)
+
+      fetch('/api/economy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'earn',
+          amount: 100,
+          description: 'Bonus follow akun Instagram resmi @netizencity.id',
+        }),
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.wallet?.balance !== undefined) {
+            updateBalance(data.wallet.balance)
+          }
+        })
+        .catch(() => {})
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('nc_ig_bonus_claimed', 'true')
       }

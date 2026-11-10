@@ -132,18 +132,63 @@ export default function GameHUD() {
         } else {
           setProfile(null)
         }
-        if (citData.wallet) {
-          const currentLocalBalance = useCitizenStore.getState().wallet?.balance ?? 500
-          const serverBalance = typeof citData.wallet.balance === 'number' ? citData.wallet.balance : 500
-          const bestBalance = Math.max(currentLocalBalance, serverBalance)
-          setWallet({
-            id: citData.wallet.id || 'w-saved',
-            citizenId: citData.wallet.citizen_id || 'citizen',
-            balance: bestBalance,
-            totalEarned: Math.max(useCitizenStore.getState().wallet?.totalEarned ?? 0, citData.wallet.total_earned ?? 0, bestBalance),
-            totalSpent: citData.wallet.total_spent ?? 0,
-            updatedAt: citData.wallet.updated_at || new Date().toISOString(),
-          })
+        if (citData.wallet && citData.citizen) {
+          const currentStoreProfile = useCitizenStore.getState().profile
+          const currentLocalWallet = useCitizenStore.getState().wallet
+          const isSameCitizen =
+            currentStoreProfile?.id === citData.citizen.id &&
+            currentLocalWallet?.citizenId === citData.citizen.id
+          const serverBalance =
+            typeof citData.wallet.balance === 'number' ? citData.wallet.balance : 500
+
+          if (!isSameCitizen) {
+            // Fresh login or switched citizen: strictly adopt official server wallet
+            setWallet({
+              id: citData.wallet.id || 'w-' + citData.citizen.id,
+              citizenId: citData.citizen.id,
+              balance: serverBalance,
+              totalEarned: citData.wallet.total_earned ?? serverBalance,
+              totalSpent: citData.wallet.total_spent ?? 0,
+              updatedAt: citData.wallet.updated_at || new Date().toISOString(),
+            })
+          } else {
+            // Same authenticated citizen: check if server lost state on ephemeral cold start / redeploy
+            const localBal = currentLocalWallet?.balance ?? serverBalance
+            const localEarned = currentLocalWallet?.totalEarned ?? 0
+            const serverEarned = citData.wallet.total_earned ?? 0
+
+            if (localBal > serverBalance && localEarned > serverEarned) {
+              // Serverless container cold restart detected: self-heal server DB with confirmed client earnings
+              fetch('/api/economy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'reconcile',
+                  amount: localBal,
+                  description: 'Sinkronisasi pemulihan saldo pasca-deploy',
+                }),
+              }).catch(() => {})
+
+              setWallet({
+                id: citData.wallet.id || currentLocalWallet?.id || 'w-' + citData.citizen.id,
+                citizenId: citData.citizen.id,
+                balance: localBal,
+                totalEarned: localEarned,
+                totalSpent: currentLocalWallet?.totalSpent ?? (citData.wallet.total_spent ?? 0),
+                updatedAt: new Date().toISOString(),
+              })
+            } else {
+              // Authoritative server wallet (respects spending deductions, item purchases, rod upgrades)
+              setWallet({
+                id: citData.wallet.id || 'w-' + citData.citizen.id,
+                citizenId: citData.citizen.id,
+                balance: serverBalance,
+                totalEarned: citData.wallet.total_earned ?? serverBalance,
+                totalSpent: citData.wallet.total_spent ?? 0,
+                updatedAt: citData.wallet.updated_at || new Date().toISOString(),
+              })
+            }
+          }
         }
         if (Array.isArray(citData.inventory) && citData.inventory.length > 0) {
           const localInv = useCitizenStore.getState().inventory || []

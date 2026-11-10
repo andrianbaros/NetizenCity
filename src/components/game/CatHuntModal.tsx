@@ -132,8 +132,28 @@ export default function CatHuntModal({ isOpen, onClose }: CatHuntModalProps) {
           localStorage.setItem('nc_cats_found', JSON.stringify(next))
         }
 
-        // Give individual reward
-        updateBalance(50)
+        // Give individual reward (+50 coins) & persist to database
+        const curWallet = useCitizenStore.getState().wallet
+        const curBal = curWallet?.balance ?? 500
+        updateBalance(curBal + 50)
+
+        fetch('/api/economy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'earn',
+            amount: 50,
+            description: `Menemukan kucing liar: ${cat.name}`,
+          }),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.wallet?.balance !== undefined) {
+              updateBalance(data.wallet.balance)
+            }
+          })
+          .catch(() => {})
+
         addNotification({
           title: `Kucing Ditemukan! 🐱🎉`,
           message: `Kamu menemukan ${cat.name}! +50 Koin Warga masuk ke dompetmu!`,
@@ -160,7 +180,28 @@ export default function CatHuntModal({ isOpen, onClose }: CatHuntModalProps) {
   const handleClaimGrandPrize = () => {
     if (foundCatIds.length >= CITY_CATS.length && !grandRewardClaimed) {
       setGrandRewardClaimed(true)
-      updateBalance(250)
+
+      const curWallet = useCitizenStore.getState().wallet
+      const curBal = curWallet?.balance ?? 500
+      updateBalance(curBal + 250)
+
+      fetch('/api/economy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'earn',
+          amount: 250,
+          description: 'Hadiah Utama: Menemukan Seluruh Kucing Kota',
+        }),
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.wallet?.balance !== undefined) {
+            updateBalance(data.wallet.balance)
+          }
+        })
+        .catch(() => {})
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('nc_cats_grand_claimed', 'true')
       }

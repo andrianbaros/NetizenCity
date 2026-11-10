@@ -56,6 +56,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, wallet })
     }
 
+    if (action === 'reconcile') {
+      const wallet = updateWalletBalance(
+        citizen.id,
+        Number(amount),
+        'reconcile',
+        description || 'Sinkronisasi pemulihan saldo'
+      )
+      return NextResponse.json({ success: true, wallet })
+    }
+
     if (action === 'spend') {
       const wallet = updateWalletBalance(
         citizen.id,

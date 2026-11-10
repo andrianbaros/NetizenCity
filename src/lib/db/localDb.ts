@@ -835,7 +835,7 @@ export function getCitizenWallet(citizenId: string) {
 export function updateWalletBalance(
   citizenId: string,
   amount: number,
-  type: 'earn' | 'spend' | 'reward',
+  type: 'earn' | 'spend' | 'reward' | 'reconcile',
   description: string
 ) {
   const db = readLocalDB()
@@ -854,7 +854,28 @@ export function updateWalletBalance(
 
   const prev = wallet.balance
   let next = prev
-  if (type === 'earn' || type === 'reward') {
+  if (type === 'reconcile') {
+    if (amount > wallet.balance) {
+      const diff = amount - wallet.balance
+      wallet.balance = amount
+      wallet.total_earned += diff
+      wallet.updated_at = new Date().toISOString()
+      db.transactions.unshift({
+        id: 'tx-' + Math.random().toString(36).substring(2, 9),
+        citizen_id: citizenId,
+        type: 'reward',
+        amount: diff,
+        previous_balance: prev,
+        new_balance: amount,
+        description: description || 'Sinkronisasi saldo terverifikasi',
+        reference_type: 'reconcile',
+        reference_id: null,
+        created_at: new Date().toISOString(),
+      })
+      writeLocalDB(db)
+    }
+    return wallet
+  } else if (type === 'earn' || type === 'reward') {
     next = prev + amount
     wallet.total_earned += amount
   } else {
@@ -1422,7 +1443,7 @@ export function castVote(citizenId: string, voteId: string, optionId: number) {
   }
 
   writeLocalDB(db)
-  return { success: true, options: vote.options }
+  return { success: true, options: vote.options, newBalance: wallet ? wallet.balance : undefined, wallet }
 }
 
 export function claimDailyStreakReward(citizenId: string) {
@@ -1482,7 +1503,7 @@ export function claimDailyStreakReward(citizenId: string) {
 
   writeLocalDB(db)
 
-  return { success: true, dayNumber: streak, rewardCoins, streak }
+  return { success: true, dayNumber: streak, rewardCoins, streak, newBalance: wallet?.balance, wallet }
 }
 
 export const CHAT_RETENTION_MS = 30 * 60 * 1000 // 30 minutes retention per individual message
