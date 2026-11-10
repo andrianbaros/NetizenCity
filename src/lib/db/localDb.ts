@@ -165,6 +165,17 @@ export interface LocalDBSchema {
     created_at: string
   }>
   gardens?: GardenState[]
+  investors?: Array<{
+    id: string
+    name: string
+    handle: string
+    tier: 'sultan' | 'diamond' | 'gold' | 'silver'
+    unitNumber: string
+    message: string
+    trakteer_order_id?: string
+    amount?: number
+    created_at: string
+  }>
 }
 
 function getInitialSeedData(): LocalDBSchema {
@@ -866,6 +877,7 @@ function getInitialSeedData(): LocalDBSchema {
         created_at: new Date().toISOString(),
       },
     ],
+    investors: [...DEFAULT_INVESTORS_LIST],
   }
 }
 
@@ -2366,4 +2378,216 @@ export function plantCitizenGarden(citizenId: string, seedId: string) {
     success: true,
     garden,
   }
+}
+
+export interface InvestorEntry {
+  id: string
+  name: string
+  handle: string
+  tier: 'sultan' | 'diamond' | 'gold' | 'silver'
+  unitNumber: string
+  message: string
+  trakteer_order_id?: string
+  amount?: number
+  created_at: string
+}
+
+export const OFFICIAL_TRAKTEER_CONFIG = {
+  creatorName: 'Mayor Netizen City',
+  handle: '@sahamnetzencity',
+  username: 'sahamnetzencity',
+  url: 'https://trakteer.id/sahamnetzencity/tip',
+  unitName: 'Kopi',
+  unitPrice: 5000,
+  quickTiers: [
+    { qty: 1, price: 5000, label: '1 Kopi', tier: 'silver' as const, bonusCoins: 1000 },
+    { qty: 3, price: 15000, label: '3 Kopi', tier: 'silver' as const, bonusCoins: 3500 },
+    { qty: 5, price: 25000, label: '5 Kopi', tier: 'gold' as const, bonusCoins: 6500 },
+    { qty: 10, price: 50000, label: '10 Kopi', tier: 'diamond' as const, bonusCoins: 15000 },
+    { qty: 20, price: 100000, label: '20 Kopi Sultan', tier: 'sultan' as const, bonusCoins: 35000 },
+  ],
+}
+
+export const DEFAULT_INVESTORS_LIST: InvestorEntry[] = [
+  {
+    id: 'inv_1',
+    name: 'Sultan Alun-Alun',
+    handle: '@sultan_nc',
+    tier: 'sultan',
+    unitNumber: 'Crown Window 01',
+    message: 'Maju terus NetizenCity! Kota virtual kebanggaan kita bersama.',
+    amount: 100000,
+    created_at: '2026-11-01T10:00:00.000Z',
+  },
+  {
+    id: 'inv_2',
+    name: 'Rizki RZNN',
+    handle: '@rznn8619',
+    tier: 'sultan',
+    unitNumber: 'Crown Window 02',
+    message: 'Stadion dan kompleks olahraga keren banget!',
+    amount: 100000,
+    created_at: '2026-11-02T12:00:00.000Z',
+  },
+  {
+    id: 'inv_3',
+    name: 'Siddiq Profesor',
+    handle: '@sidddiq_s',
+    tier: 'sultan',
+    unitNumber: 'Crown Window 03',
+    message: 'Observatorium dan lab sains Day 8 akhirnya terwujud!',
+    amount: 100000,
+    created_at: '2026-11-03T15:00:00.000Z',
+  },
+  {
+    id: 'inv_4',
+    name: 'Aftone Moon',
+    handle: '@aftone_moon',
+    tier: 'diamond',
+    unitNumber: 'Lantai 10 - Unit 102',
+    message: 'Kebun Binatang dan satwa kota favoritku!',
+    amount: 50000,
+    created_at: '2026-11-04T16:00:00.000Z',
+  },
+  {
+    id: 'inv_5',
+    name: 'Ji Hann',
+    handle: '@ji_hann09',
+    tier: 'diamond',
+    unitNumber: 'Lantai 09 - Unit 94',
+    message: 'Perpustakaan kota tempat ternyaman membaca.',
+    amount: 50000,
+    created_at: '2026-11-05T09:00:00.000Z',
+  },
+  {
+    id: 'inv_6',
+    name: 'Kopi Hangat Netizen',
+    handle: '@kopinetizen',
+    tier: 'gold',
+    unitNumber: 'Lantai 07 - Unit 72',
+    message: 'Semoga kotanya makin ramai dan warganya kompak selalu!',
+    amount: 25000,
+    created_at: '2026-11-06T11:00:00.000Z',
+  },
+  {
+    id: 'inv_7',
+    name: 'Budi Warga Baru',
+    handle: '@budi_warga',
+    tier: 'silver',
+    unitNumber: 'Lantai 03 - Unit 31',
+    message: 'Traktir kopi buat developer hebat pembangun kota.',
+    amount: 15000,
+    created_at: '2026-11-07T14:00:00.000Z',
+  },
+  {
+    id: 'inv_8',
+    name: 'Andra Digital',
+    handle: '@andra_dg',
+    tier: 'silver',
+    unitNumber: 'Lantai 02 - Unit 18',
+    message: 'Support penuh karya anak bangsa!',
+    amount: 5000,
+    created_at: '2026-11-08T17:00:00.000Z',
+  },
+]
+
+export function getInvestorsList(): InvestorEntry[] {
+  const db = readLocalDB()
+  if (!db.investors || db.investors.length === 0) {
+    db.investors = [...DEFAULT_INVESTORS_LIST]
+    writeLocalDB(db)
+  }
+  return db.investors
+}
+
+export function addInvestorEntry(data: {
+  name: string
+  handle?: string
+  tier?: 'sultan' | 'diamond' | 'gold' | 'silver'
+  message?: string
+  trakteer_order_id?: string
+  amount?: number
+  citizenId?: string
+}): { success: boolean; investor: InvestorEntry; bonusCoinsAwarded?: number } {
+  const db = readLocalDB()
+  if (!db.investors) {
+    db.investors = [...DEFAULT_INVESTORS_LIST]
+  }
+
+  const amount = typeof data.amount === 'number' && data.amount > 0 ? data.amount : 5000
+  let tier: 'sultan' | 'diamond' | 'gold' | 'silver' = data.tier || 'silver'
+  if (amount >= 100000) tier = 'sultan'
+  else if (amount >= 50000) tier = 'diamond'
+  else if (amount >= 25000) tier = 'gold'
+  else tier = 'silver'
+
+  // Generate unit number based on current count
+  const nextIndex = db.investors.length + 1
+  let unitNumber = `Lantai ${Math.min(10, Math.ceil(nextIndex / 10))} - Unit ${nextIndex}`
+  if (tier === 'sultan') {
+    unitNumber = `Crown Window ${Math.min(3, Math.max(1, nextIndex % 3 || 3))}`
+  }
+
+  const cleanName = (data.name || 'Warga Dermawan').trim().slice(0, 32)
+  const cleanHandle = data.handle
+    ? (data.handle.startsWith('@') ? data.handle : `@${data.handle}`)
+    : `@${cleanName.toLowerCase().replace(/[^a-z0-9_]/g, '')}`
+  const cleanMessage = (data.message || 'Dukungan kopi untuk pembangunan kota!').trim().slice(0, 160)
+
+  const newEntry: InvestorEntry = {
+    id: `inv_trakteer_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    name: cleanName,
+    handle: cleanHandle,
+    tier,
+    unitNumber,
+    message: cleanMessage,
+    trakteer_order_id: data.trakteer_order_id,
+    amount,
+    created_at: new Date().toISOString(),
+  }
+
+  // Prepend so latest investors appear at top of list
+  db.investors.unshift(newEntry)
+
+  // Broadcast announcement in city chat
+  const chatMsg = {
+    id: `ann_trakteer_${Date.now()}`,
+    citizen_id: 'mayor',
+    sender_name: 'Pak Mayor',
+    channel: 'global',
+    content: `☕ TERIMA KASIH! ${cleanName} (${cleanHandle}) baru saja mentraktir Pak Mayor di Trakteer (@sahamnetzencity)! Namanya kini terukir abadi di Menara Investor 3D! 🎉`,
+    created_at: new Date().toISOString(),
+  }
+  if (!db.chat_messages) db.chat_messages = []
+  db.chat_messages.push(chatMsg)
+
+  let bonusCoinsAwarded = 0
+  if (data.citizenId) {
+    const cit = db.citizens.find((c) => c.id === data.citizenId || c.username === data.citizenId)
+    if (cit) {
+      // Award bonus coins: 1000 coins per 5.000 Rp
+      bonusCoinsAwarded = Math.max(1000, Math.round((amount / 5000) * 1000))
+      const wallet = getCitizenWallet(cit.id)
+      if (wallet) {
+        wallet.balance += bonusCoinsAwarded
+        wallet.total_earned += bonusCoinsAwarded
+        wallet.updated_at = new Date().toISOString()
+        db.transactions.push({
+          id: `tx_trakteer_${Date.now()}`,
+          citizen_id: cit.id,
+          type: 'reward',
+          amount: bonusCoinsAwarded,
+          previous_balance: wallet.balance - bonusCoinsAwarded,
+          new_balance: wallet.balance,
+          description: `Bonus Donatur Investor Trakteer (${cleanName})`,
+          reference_type: 'trakteer',
+          reference_id: data.trakteer_order_id || null,
+          created_at: new Date().toISOString(),
+        })
+      }
+    }
+  }
+
+  writeLocalDB(db)
+  return { success: true, investor: newEntry, bonusCoinsAwarded }
 }

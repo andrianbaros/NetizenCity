@@ -30,6 +30,7 @@ import {
   Sun,
   Church,
   Fish,
+  ExternalLink,
 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -570,35 +571,51 @@ export default function BuildingModal() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-[#D8CEBE]">
-          <Button variant="secondary" onClick={closeModal}>
-            Tutup
-          </Button>
-
-          {current.actionType === 'vote' ? (
-            <Button
-              variant="primary"
-              onClick={handleAction}
-              disabled={hasVoted || isSubmitting}
+        <div className="flex items-center justify-between pt-2.5 border-t border-[#D8CEBE]">
+          {selectedBuilding === 'investor_tower' ? (
+            <a
+              href="https://trakteer.id/sahamnetzencity/tip"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-black text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1 cursor-pointer"
             >
-              {isSubmitting ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-              ) : (
-                <Vote className="w-3.5 h-3.5 mr-1" />
-              )}
-              <span>
-                {hasVoted
-                  ? 'Sudah Memilih'
-                  : isSubmitting
-                  ? 'Menyimpan...'
-                  : current.actionName}
-              </span>
-            </Button>
+              <span>☕ Trakteer: @sahamnetzencity</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           ) : (
-            <Button variant="primary" onClick={handleAction}>
-              {current.actionName}
-            </Button>
+            <div />
           )}
+
+          <div className="flex items-center space-x-2">
+            <Button variant="secondary" onClick={closeModal}>
+              Tutup
+            </Button>
+
+            {current.actionType === 'vote' ? (
+              <Button
+                variant="primary"
+                onClick={handleAction}
+                disabled={hasVoted || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                ) : (
+                  <Vote className="w-3.5 h-3.5 mr-1" />
+                )}
+                <span>
+                  {hasVoted
+                    ? 'Sudah Memilih'
+                    : isSubmitting
+                    ? 'Menyimpan...'
+                    : current.actionName}
+                </span>
+              </Button>
+            ) : (
+              <Button variant="primary" onClick={handleAction}>
+                {current.actionName}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </Modal>

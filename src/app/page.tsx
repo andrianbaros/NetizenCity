@@ -45,6 +45,7 @@ const MayorMascot3D = dynamic(() => import('@/components/game/MayorMascot3D'), {
 
 const MAYOR_QUOTES = [
   'Halo Warga! Selamat datang di NETIZENCITY! Tekan tombol "Mulai Main" di bawah untuk langsung menjelajahi kota!',
+  'Dukung pembangunan kota dan dapatkan tempat di Menara Investor 11 Lantai lewat Trakteer resmi @sahamnetzencity!',
   'Sudah punya Kartu Tanda Netizen (KTN)? Daftarkan dirimu secara gratis untuk dapat rumah rusun dan 500 Koin Warga!',
   'Kunjungi Alun-Alun Tugu untuk berkumpul dan mengobrol live bersama sesama warga secara multiplayer!',
   'Ingin bergaya? Belanja kemeja kasual, gaun manis, dan topi keren di Netizen Grand Mall!',
@@ -134,6 +135,17 @@ export default function GameStartScreen() {
             >
               <InstagramIcon className="w-3.5 h-3.5 text-[#E08595]" />
               <span className="hidden sm:inline">@netizencity.id</span>
+            </a>
+
+            <a
+              href="https://trakteer.id/sahamnetzencity/tip"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-1 text-xs font-bold text-rose-600 hover:text-rose-700 px-2.5 py-1.5 rounded-xl hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
+              title="Trakteer Mayor Netizen City (@sahamnetzencity)"
+            >
+              <span>☕</span>
+              <span className="hidden sm:inline">Trakteer</span>
             </a>
 
             <Link

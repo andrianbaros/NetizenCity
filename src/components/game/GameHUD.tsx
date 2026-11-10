@@ -705,7 +705,7 @@ export default function GameHUD() {
             <button
               type="button"
               onClick={() => openModal('investor')}
-              title="Menara Investor (103 Pendukung Kota & Trakteer)"
+              title="Menara Investor & Trakteer Mayor (@sahamnetzencity)"
               className="p-1.5 rounded-lg bg-[#EFE9D8] hover:bg-[#E2DAC7] text-purple-700 border border-[#D8CEBE] transition-all active:translate-y-0.5 cursor-pointer"
             >
               <Building2 className="w-3.5 h-3.5" />
@@ -1229,9 +1229,9 @@ export default function GameHUD() {
                   </div>
                   <div className="min-w-0">
                     <div className="font-heading font-black text-xs text-[#343B35] truncate">
-                      Menara Investor
+                      Menara Investor &amp; Trakteer
                     </div>
-                    <div className="text-[10px] text-[#78634B] truncate">103 Pendukung Kota</div>
+                    <div className="text-[10px] text-rose-600 font-bold truncate">@sahamnetzencity ☕</div>
                   </div>
                 </button>
 
