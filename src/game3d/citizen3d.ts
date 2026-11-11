@@ -17,6 +17,7 @@ export interface CitizenAvatarColors {
   accessory?: string | null;
   backpack?: string | null;
   outfitPattern?: string | null;
+  isMayor?: boolean;
 }
 
 export interface Citizen3DInstance {
@@ -132,6 +133,26 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   const patternGroup = new THREE.Group();
   torsoGroup.add(patternGroup);
 
+  // Mayoral Regalia: Torso Ceremonial Sash & Golden Medal Crest
+  const mayorTorsoGroup = new THREE.Group();
+  torsoGroup.add(mayorTorsoGroup);
+
+  const mayorSash = new THREE.Mesh(
+    new THREE.TorusGeometry(0.276, 0.035, 6, 28),
+    mat('#F5E3B8', { flatShading: false, roughness: 0.6 })
+  );
+  mayorSash.position.y = 0.54;
+  mayorSash.rotation.set(Math.PI / 2 + 0.55, 0, 0);
+
+  const mayorBadge = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.045, 0.045, 0.02, 12),
+    mat(PAL.gold, { metalness: 0.85, roughness: 0.22, flatShading: false })
+  );
+  mayorBadge.rotation.x = Math.PI / 2;
+  mayorBadge.position.set(0.1, 0.59, 0.266);
+
+  mayorTorsoGroup.add(mayorSash, mayorBadge);
+
   const buildOutfit = (pattern?: string | null) => {
     while (patternGroup.children.length > 0) {
       patternGroup.remove(patternGroup.children[0]);
@@ -244,6 +265,41 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   const nose = new THREE.Mesh(new THREE.SphereGeometry(0.016, 6, 6), skinMat);
   nose.position.set(0, -0.01, 0.268);
   head.add(nose);
+
+  // Mayoral Regalia: Silk Top Hat & Gold Wire Spectacles
+  const mayorHeadGroup = new THREE.Group();
+  head.add(mayorHeadGroup);
+
+  const mayorHatGroup = new THREE.Group();
+  mayorHatGroup.position.y = 0.31;
+  const hm = mat(PAL.hat, { roughness: 0.55, flatShading: false });
+  const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.03, 28), hm);
+  mayorHatGroup.add(hatBrim);
+
+  const hatCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.21, 0.34, 28), hm);
+  hatCrown.position.y = 0.18;
+  mayorHatGroup.add(hatCrown);
+
+  const hatBand = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.213, 0.213, 0.06, 28),
+    mat(PAL.hatBand, { flatShading: false })
+  );
+  hatBand.position.y = 0.06;
+  mayorHatGroup.add(hatBand);
+  mayorHeadGroup.add(mayorHatGroup);
+
+  const mayorSpectaclesGroup = new THREE.Group();
+  const goldM = mat(PAL.gold, { metalness: 0.85, roughness: 0.22, flatShading: false });
+  for (const s of [-1, 1]) {
+    const r = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.014, 8, 24), goldM);
+    r.position.set(s * 0.095, 0.02, 0.282);
+    mayorSpectaclesGroup.add(r);
+  }
+  const specBridge = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.05, 6), goldM);
+  specBridge.rotation.z = Math.PI / 2;
+  specBridge.position.set(0, 0.03, 0.285);
+  mayorSpectaclesGroup.add(specBridge);
+  mayorHeadGroup.add(mayorSpectaclesGroup);
 
   // ------------------------------------------------------------
   // 3. HAIRSTYLES (Form-Fitting on the Capsule Top Dome)
@@ -371,6 +427,7 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   rightArm.position.set(0.25, 0.64, 0);
   body.add(rightArm);
 
+  const mayorCuffs: THREE.Mesh[] = [];
   [leftArm, rightArm].forEach((arm) => {
     const sleeve = new THREE.Mesh(
       new THREE.CylinderGeometry(0.065, 0.06, 0.18, 8).translate(0, -0.09, 0),
@@ -378,6 +435,14 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
     );
     sleeve.castShadow = false;
     arm.add(sleeve);
+
+    // Mayor white formal shirt cuffs
+    const cuff = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.055, 0.055, 0.04, 8).translate(0, -0.19, 0),
+      mat('#FFFFFF', { roughness: 0.7 })
+    );
+    arm.add(cuff);
+    mayorCuffs.push(cuff);
 
     const armSkin = new THREE.Mesh(
       new THREE.CylinderGeometry(0.048, 0.045, 0.08, 8).translate(0, -0.19, 0),
@@ -847,7 +912,36 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
     }
   };
 
+  const applyMayorRegalia = (isMayor: boolean, accessory?: string | null) => {
+    mayorTorsoGroup.visible = isMayor;
+    mayorCuffs.forEach((c) => (c.visible = isMayor));
+
+    const acc = (accessory || '').toLowerCase();
+    const hasOtherHeadwear =
+      acc !== '' &&
+      acc !== 'none' &&
+      acc !== 'mayor_hat';
+    const hasOtherGlasses =
+      acc === 'glasses' ||
+      acc === 'acc_glasses' ||
+      acc === 'acc_thug_glasses' ||
+      acc === 'snorkel' ||
+      acc === 'acc_snorkel';
+
+    if (isMayor) {
+      mayorHatGroup.visible = !hasOtherHeadwear;
+      mayorSpectaclesGroup.visible = !hasOtherGlasses;
+    } else {
+      mayorHatGroup.visible = false;
+      mayorSpectaclesGroup.visible = false;
+    }
+  };
+
   buildAccessory(initialColors.accessory, initialColors.backpack);
+  applyMayorRegalia(
+    Boolean(initialColors.isMayor || initialColors.outfitPattern === 'mayor' || initialColors.accessory === 'mayor_hat'),
+    initialColors.accessory
+  );
 
   // ------------------------------------------------------------
   // 7. PUBLIC API & ANIMATION LOOP
@@ -866,6 +960,13 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       buildOutfit(newColors.outfitPattern);
     }
     buildAccessory(newColors.accessory, newColors.backpack);
+
+    const isMayor = Boolean(
+      newColors.isMayor !== undefined
+        ? newColors.isMayor
+        : initialColors.isMayor || newColors.outfitPattern === 'mayor' || newColors.accessory === 'mayor_hat'
+    );
+    applyMayorRegalia(isMayor, newColors.accessory);
   };
 
   const pose = (isMoving: boolean, elapsed: number, speedMultiplier = 5.2) => {

@@ -15,36 +15,43 @@ export interface AvatarColors {
   outfitPattern: string
   accessory: string | null
   backpack: string | null
+  isMayor?: boolean
 }
 
-export function resolveAvatarColors(avatarConfig?: {
-  skinTone?: string
-  hairColor?: string
-  hairStyle?: string
-  shirtColor?: string
-  pantsColor?: string
-  shoesColor?: string
-  outfitPattern?: string
-  accessory?: string | null
-  headwear?: string | null
-  backpack?: string | null
-  outfit?: {
-    top?: string | null
-    bottom?: string | null
-    shoes?: string | null
+export function resolveAvatarColors(
+  avatarConfig?: {
+    skinTone?: string
+    hairColor?: string
+    hairStyle?: string
+    shirtColor?: string
+    pantsColor?: string
+    shoesColor?: string
+    outfitPattern?: string
     accessory?: string | null
-  }
-} | null): AvatarColors {
+    headwear?: string | null
+    backpack?: string | null
+    isMayor?: boolean
+    outfit?: {
+      top?: string | null
+      bottom?: string | null
+      shoes?: string | null
+      accessory?: string | null
+    }
+  } | null,
+  isMayorParam?: boolean
+): AvatarColors {
+  const isMayor = Boolean(isMayorParam || avatarConfig?.isMayor || avatarConfig?.outfitPattern === 'mayor')
   return {
     skin: avatarConfig?.skinTone || '#f5d0b0',
     hair: avatarConfig?.hairColor || '#1e293b',
-    shirt: avatarConfig?.shirtColor || avatarConfig?.outfit?.top || '#2563eb',
-    pants: avatarConfig?.pantsColor || avatarConfig?.outfit?.bottom || '#1e293b',
-    shoes: avatarConfig?.shoesColor || avatarConfig?.outfit?.shoes || '#f1f5f9',
+    shirt: avatarConfig?.shirtColor || avatarConfig?.outfit?.top || (isMayor ? '#1E3A8A' : '#2563eb'),
+    pants: avatarConfig?.pantsColor || avatarConfig?.outfit?.bottom || (isMayor ? '#0F172A' : '#1e293b'),
+    shoes: avatarConfig?.shoesColor || avatarConfig?.outfit?.shoes || (isMayor ? '#0F172A' : '#f1f5f9'),
     hairStyle: avatarConfig?.hairStyle || 'short',
-    outfitPattern: avatarConfig?.outfitPattern || 'plain',
-    accessory: avatarConfig?.accessory || avatarConfig?.headwear || avatarConfig?.outfit?.accessory || null,
+    outfitPattern: avatarConfig?.outfitPattern || (isMayor ? 'mayor' : 'plain'),
+    accessory: avatarConfig?.accessory || avatarConfig?.headwear || avatarConfig?.outfit?.accessory || (isMayor ? 'mayor_hat' : null),
     backpack: avatarConfig?.backpack || null,
+    isMayor,
   }
 }
 
@@ -239,6 +246,26 @@ export function drawSingleCharacterFrame(
         ctx.fill()
         ctx.fillStyle = '#f59e0b'
         ctx.fillRect(ox + 15, oy + 16, 2, 1) // Golden bow tie
+      }
+
+      if (colors.isMayor || colors.outfitPattern === 'mayor') {
+        // Mayoral Ceremonial Sash (Diagonal gold & red sash across chest)
+        ctx.fillStyle = '#dc2626'
+        ctx.beginPath()
+        ctx.moveTo(ox + 10, oy + 15)
+        ctx.lineTo(ox + 13, oy + 15)
+        ctx.lineTo(ox + 22, oy + 24)
+        ctx.lineTo(ox + 19, oy + 24)
+        ctx.closePath()
+        ctx.fill()
+        // Golden sash trim & badge
+        ctx.fillStyle = '#f59e0b'
+        ctx.fillRect(ox + 11, oy + 15, 1, 1)
+        ctx.fillRect(ox + 20, oy + 24, 1, 1)
+        ctx.fillStyle = '#fbbf24'
+        ctx.fillRect(ox + 15, oy + 18, 3, 3)
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(ox + 16, oy + 19, 1, 1)
       }
 
       // Belt
@@ -460,6 +487,31 @@ export function drawSingleCharacterFrame(
           ctx.fillStyle = '#facc15'
           ctx.fillRect(ox + 22, oy + 4, 2, 9)
           ctx.fillRect(ox + 20, oy + 12, 3, 2)
+        }
+      }
+
+      // ------------------------------------------------------------
+      // 9. MAYOR OFFICIAL REGALIA (Silk Top Hat & Gold Spectacles)
+      // ------------------------------------------------------------
+      if (
+        colors.accessory === 'mayor_hat' ||
+        (colors.isMayor && (!colors.accessory || colors.accessory === 'none' || colors.accessory === 'mayor_hat'))
+      ) {
+        // Official Mayor Silk Top Hat
+        ctx.fillStyle = '#0f172a'
+        ctx.fillRect(ox + 7, oy + 2, 18, 2) // Wide brim
+        ctx.fillRect(ox + 10, oy - 6, 12, 8) // Tall cylinder crown
+        // Gold hatband
+        ctx.fillStyle = '#f59e0b'
+        ctx.fillRect(ox + 10, oy, 12, 2)
+
+        // Mayor Golden Spectacles (round wire glasses)
+        if (row === 0) {
+          ctx.strokeStyle = '#f59e0b'
+          ctx.lineWidth = 1
+          ctx.strokeRect(ox + 11.5, oy + 8.5, 3, 3)
+          ctx.strokeRect(ox + 17.5, oy + 8.5, 3, 3)
+          ctx.fillRect(ox + 14.5, oy + 9.5, 3, 1) // bridge
         }
       }
 }

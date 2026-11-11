@@ -262,7 +262,7 @@
       "is_ig_verified": true,
       "password_hash": "unikomceria",
       "username": "mayor",
-      "display_name": "Mayor",
+      "display_name": "Pak Mayor",
       "ktn_number": "KTN-20261110-MAYOR",
       "avatar_config": {
         "skinTone": "#f5d0b0",
@@ -270,10 +270,10 @@
         "hairColor": "#1e293b",
         "shirtColor": "#1e3a8a",
         "pantsColor": "#0f172a",
-        "shoesColor": "#ffffff",
+        "shoesColor": "#0f172a",
         "expression": "happy",
-        "accessory": "none",
-        "outfitPattern": "plain",
+        "accessory": "mayor_hat",
+        "outfitPattern": "mayor",
         "backpack": null
       },
       "level": 1,
@@ -284,7 +284,7 @@
       "district": "Pusat Kota",
       "biography": "Akun Resmi Walikota NETIZENCITY.",
       "is_online": false,
-      "role": "citizen",
+      "role": "mayor",
       "onboarding_completed": true,
       "joined_at": "2026-11-10T12:38:26.883Z",
       "updated_at": "2026-11-10T12:38:26.883Z"

@@ -5066,18 +5066,22 @@ export class City3DManager {
 
   private setupCharacters() {
     const profile = useCitizenStore.getState().profile;
-    this.isPlayerAdmin = profile?.role === 'admin' || profile?.role === 'mayor';
+    const isMayor =
+      profile?.username?.toLowerCase() === 'mayor' ||
+      (profile as any)?.instagram_handle?.toLowerCase() === 'mayor' ||
+      profile?.role === 'mayor' ||
+      profile?.role === 'admin';
 
-    if (this.isPlayerAdmin) {
-      this.mayorPlayer = makeMayor();
-      this.mayorPlayer.root.position.set(0, 0, 13);
-      this.tuguWorldGroup.add(this.mayorPlayer.root);
+    this.isPlayerAdmin = isMayor;
+
+    const avatarColors = resolveAvatarColors(profile?.avatarConfig, isMayor);
+    this.playerCitizen = makeCitizen3D(avatarColors);
+    this.playerCitizen.root.position.set(0, 0, 13);
+    this.tuguWorldGroup.add(this.playerCitizen.root);
+
+    if (isMayor) {
+      this.mayorPlayer = this.playerCitizen;
     } else {
-      const avatarColors = resolveAvatarColors(profile?.avatarConfig);
-      this.playerCitizen = makeCitizen3D(avatarColors);
-      this.playerCitizen.root.position.set(0, 0, 13);
-      this.tuguWorldGroup.add(this.playerCitizen.root);
-
       this.mayorNPC = createPakMayorNPC(this.tuguWorldGroup, new THREE.Vector3(0, 0, 11.2));
       const mayorTag = makeNameTagSprite('✦ Pak Mayor (Walikota) ✦', false, false);
       mayorTag.position.set(0, 1.7, 0);
@@ -5085,14 +5089,10 @@ export class City3DManager {
     }
 
     // Attach local player nametag
-    const localName = profile?.displayName || profile?.username || 'Kamu';
+    const localName = isMayor ? '✦ Pak Mayor ✦' : (profile?.displayName || profile?.username || 'Kamu');
     const localTag = makeNameTagSprite(localName + ' (Kamu)', !profile, true);
     localTag.position.set(0, 1.55, 0);
-    if (this.isPlayerAdmin && this.mayorPlayer) {
-      this.mayorPlayer.root.add(localTag);
-    } else if (this.playerCitizen) {
-      this.playerCitizen.root.add(localTag);
-    }
+    this.playerCitizen.root.add(localTag);
 
     this.cat = makeCat();
     this.cat.root.position.set(1.2, 0, 13.2);
@@ -5102,7 +5102,12 @@ export class City3DManager {
 
     this.unsubscribeCitizen = useCitizenStore.subscribe((state) => {
       if (this.playerCitizen && state.profile?.avatarConfig) {
-        const colors = resolveAvatarColors(state.profile.avatarConfig);
+        const isCurrentMayor =
+          state.profile.username?.toLowerCase() === 'mayor' ||
+          (state.profile as any)?.instagram_handle?.toLowerCase() === 'mayor' ||
+          state.profile.role === 'mayor' ||
+          state.profile.role === 'admin';
+        const colors = resolveAvatarColors(state.profile.avatarConfig, isCurrentMayor);
         this.playerCitizen.updateColors(colors);
       }
     });
@@ -5110,7 +5115,13 @@ export class City3DManager {
     this.handleAvatarUpdated = (e: any) => {
       const cfg = e.detail || useCitizenStore.getState().profile?.avatarConfig;
       if (this.playerCitizen && cfg) {
-        const colors = resolveAvatarColors(cfg);
+        const p = useCitizenStore.getState().profile;
+        const isCurrentMayor =
+          p?.username?.toLowerCase() === 'mayor' ||
+          (p as any)?.instagram_handle?.toLowerCase() === 'mayor' ||
+          p?.role === 'mayor' ||
+          p?.role === 'admin';
+        const colors = resolveAvatarColors(cfg, isCurrentMayor);
         this.playerCitizen.updateColors(colors);
       }
     };
@@ -5734,7 +5745,11 @@ export class City3DManager {
         const avatarConfigHash = JSON.stringify(p.avatarConfig || {});
         if (avatarConfigHash !== existing.lastAvatarConfigHash) {
           existing.lastAvatarConfigHash = avatarConfigHash;
-          const colors = resolveAvatarColors(p.avatarConfig);
+          const isRemoteMayor =
+            (p as any)?.username?.toLowerCase() === 'mayor' ||
+            (p as any)?.role === 'mayor' ||
+            p.name?.toLowerCase().includes('mayor');
+          const colors = resolveAvatarColors(p.avatarConfig, isRemoteMayor);
           existing.citizen.updateColors(colors);
         }
 
@@ -5766,7 +5781,11 @@ export class City3DManager {
         }
       } else {
         // Spawn new remote citizen
-        const colors = resolveAvatarColors(p.avatarConfig);
+        const isRemoteMayor =
+          (p as any)?.username?.toLowerCase() === 'mayor' ||
+          (p as any)?.role === 'mayor' ||
+          p.name?.toLowerCase().includes('mayor');
+        const colors = resolveAvatarColors(p.avatarConfig, isRemoteMayor);
         const citizen = makeCitizen3D(colors);
         // Disable frustum culling so Three.js never clips or hides avatar meshes during rotation
         citizen.root.traverse((obj) => {
