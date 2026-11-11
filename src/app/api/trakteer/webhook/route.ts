@@ -10,6 +10,20 @@ import { addInvestorEntry } from '@/lib/db/localDb'
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Verify Trakteer Security Token from request headers
+    const expectedToken = process.env.TRAKTEER_WEBHOOK_TOKEN || 'trhook-diOArR2n0mXDZ8f7W0iiDwNv'
+    const incomingToken =
+      req.headers.get('x-webhook-token') ||
+      req.headers.get('X-Webhook-Token') ||
+      req.headers.get('webhook-token')
+
+    if (expectedToken && incomingToken && incomingToken !== expectedToken) {
+      return NextResponse.json(
+        { status: 'error', message: 'Token keamanan webhook tidak valid' },
+        { status: 401 }
+      )
+    }
+
     const body = await req.json()
 
     // Trakteer official webhook payload: supporter_name, supporter_message, transaction_id, quantity, price, unit
@@ -45,5 +59,6 @@ export async function GET() {
     status: 'online',
     endpoint: '/api/trakteer/webhook',
     trakteer_page: 'https://trakteer.id/sahamnetzencity/tip',
+    token_protection: 'active',
   })
 }
