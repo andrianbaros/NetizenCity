@@ -11,15 +11,24 @@ import {
   getActiveCitizen,
 } from '@/lib/db/localDb'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const investors = getInvestorsList()
-    return NextResponse.json({
-      success: true,
-      config: OFFICIAL_TRAKTEER_CONFIG,
-      investors,
-      totalInvestors: investors.length,
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        config: OFFICIAL_TRAKTEER_CONFIG,
+        investors,
+        totalInvestors: investors.length,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    )
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
