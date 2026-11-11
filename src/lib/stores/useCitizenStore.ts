@@ -51,6 +51,23 @@ function syncWalletCookie(wallet: Wallet | null) {
   }
 }
 
+function syncInventoryCookie(inventory: InventoryItem[]) {
+  if (typeof document === 'undefined' || !Array.isArray(inventory)) return
+  try {
+    const itemIds = Array.from(
+      new Set(
+        inventory
+          .map((i: any) => i.itemId || i.item_id || i.id)
+          .filter(Boolean)
+      )
+    )
+    const payload = encodeURIComponent(JSON.stringify(itemIds))
+    document.cookie = `nc_inventory=${payload}; path=/; max-age=2592000; SameSite=Lax`
+  } catch {
+    // ignore
+  }
+}
+
 export const useCitizenStore = create<CitizenState>()(
   persist(
     (set) => ({
@@ -102,20 +119,30 @@ export const useCitizenStore = create<CitizenState>()(
           syncWalletCookie(updatedW)
           return { wallet: updatedW }
         }),
-      setInventory: (inventory) => set({ inventory: Array.isArray(inventory) ? inventory : [] }),
+      setInventory: (inventory) => {
+        const invArray = Array.isArray(inventory) ? inventory : []
+        syncInventoryCookie(invArray)
+        set({ inventory: invArray })
+      },
       addToInventory: (item) =>
-        set((state) => ({
-          inventory: [item, ...(Array.isArray(state.inventory) ? state.inventory : [])],
-        })),
+        set((state) => {
+          const updated = [item, ...(Array.isArray(state.inventory) ? state.inventory : [])]
+          syncInventoryCookie(updated)
+          return { inventory: updated }
+        }),
       removeFromInventory: (inventoryId) =>
-        set((state) => ({
-          inventory: (Array.isArray(state.inventory) ? state.inventory : []).filter((inv) => inv.id !== inventoryId),
-        })),
+        set((state) => {
+          const updated = (Array.isArray(state.inventory) ? state.inventory : []).filter((inv) => inv.id !== inventoryId)
+          syncInventoryCookie(updated)
+          return { inventory: updated }
+        }),
       batchRemoveFromInventory: (inventoryIds) => {
         const idSet = new Set(inventoryIds)
-        set((state) => ({
-          inventory: (Array.isArray(state.inventory) ? state.inventory : []).filter((inv) => !idSet.has(inv.id)),
-        }))
+        set((state) => {
+          const updated = (Array.isArray(state.inventory) ? state.inventory : []).filter((inv) => !idSet.has(inv.id))
+          syncInventoryCookie(updated)
+          return { inventory: updated }
+        })
       },
       toggleFavorite: (inventoryId) =>
         set((state) => ({
@@ -192,6 +219,9 @@ export const useCitizenStore = create<CitizenState>()(
       onRehydrateStorage: () => (state) => {
         if (state?.wallet) {
           syncWalletCookie(state.wallet)
+        }
+        if (state?.inventory && Array.isArray(state.inventory)) {
+          syncInventoryCookie(state.inventory)
         }
         if (state?.profile?.avatarConfig && typeof document !== 'undefined') {
           try {

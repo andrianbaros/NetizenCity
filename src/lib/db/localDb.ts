@@ -1004,18 +1004,14 @@ export function getCitizenWallet(
     return wallet
   }
 
-  // If a cookie/fallback wallet exists with a newer timestamp or verified activity than DB, heal the server DB
+  // If a cookie/fallback wallet exists with a newer timestamp or verified activity, reconcile with DB
   if (fallbackWallet?.updatedAt && typeof fallbackWallet.balance === 'number' && Number.isFinite(fallbackWallet.balance)) {
     const dbTime = new Date(wallet.updated_at || 0).getTime()
     const fallbackTime = new Date(fallbackWallet.updatedAt).getTime()
     const isColdStart500 = (wallet.balance === 500 && fallbackWallet.balance !== 500 && ((fallbackWallet.totalSpent ?? 0) > 0 || (fallbackWallet.totalEarned ?? 0) > 500))
-    
-    // Safety rule: DB balance must NEVER be downgraded by a stale lower cookie (e.g. admin grant 9,999,999 coins vs stale 370/390 cookie)
-    if (wallet.balance > fallbackWallet.balance) {
-      // Server DB is ahead of or has an admin/topup grant: keep DB balance and update fallback
-      fallbackWallet.balance = wallet.balance
-      fallbackWallet.updatedAt = wallet.updated_at
-    } else if (fallbackTime > dbTime || isColdStart500 || fallbackWallet.balance > wallet.balance) {
+
+    if (fallbackTime > dbTime || isColdStart500) {
+      // Client cookie is newer: adopt client's confirmed balance & activity
       wallet.balance = fallbackWallet.balance
       if (typeof fallbackWallet.totalEarned === 'number') {
         wallet.total_earned = Math.max(wallet.total_earned, fallbackWallet.totalEarned)
@@ -1025,6 +1021,10 @@ export function getCitizenWallet(
       }
       wallet.updated_at = fallbackWallet.updatedAt
       writeLocalDB(db)
+    } else if (dbTime > fallbackTime) {
+      // Server DB container is ahead: keep DB balance and update fallback
+      fallbackWallet.balance = wallet.balance
+      fallbackWallet.updatedAt = wallet.updated_at
     }
   }
 
@@ -1188,7 +1188,11 @@ export function buyShopItem(citizenId: string, itemId: string, clientBalance?: n
   return { success: true, item, newBalance: wallet.balance, wallet, inventoryItem: newInv }
 }
 
-export function getCitizenInventoryDetailed(citizenId: string, preferredEquippedRodId?: string) {
+export function getCitizenInventoryDetailed(
+  citizenId: string,
+  preferredEquippedRodId?: string,
+  fallbackItemIds?: string[]
+) {
   const db = readLocalDB()
   let list = db.inventory.filter((inv) => inv.citizen_id === citizenId)
 
@@ -1221,6 +1225,66 @@ export function getCitizenInventoryDetailed(citizenId: string, preferredEquipped
     db.inventory.unshift(starterEntry)
     writeLocalDB(db)
     list = [starterEntry, ...list]
+  }
+
+  // If fallbackItemIds provided (e.g. from nc_inventory cookie), self-heal any missing clothing or items
+  if (fallbackItemIds && Array.isArray(fallbackItemIds) && fallbackItemIds.length > 0) {
+    let hasHealed = false
+    for (const fId of fallbackItemIds) {
+      if (!fId || typeof fId !== 'string') continue
+      const alreadyHas = list.some((inv) => inv.item_id === fId || inv.id === fId)
+      if (!alreadyHas) {
+        const itemDef = db.items.find((it) => it.id === fId)
+        if (itemDef) {
+          const healedEntry = {
+            id: 'inv-' + fId + '-' + citizenId,
+            citizen_id: citizenId,
+            item_id: itemDef.id,
+            is_equipped: false,
+            acquired_at: new Date().toISOString(),
+            metadata: {
+              name: itemDef.name,
+              category: itemDef.category,
+              rarity: itemDef.rarity,
+              description: itemDef.description,
+            },
+          }
+          db.inventory.push(healedEntry)
+          list.push(healedEntry)
+          hasHealed = true
+        } else if (fId.startsWith('rod_')) {
+          const rodDef = getFishingRodById(fId)
+          if (rodDef) {
+            const healedRod = {
+              id: 'inv-' + fId + '-' + citizenId,
+              citizen_id: citizenId,
+              item_id: rodDef.id,
+              is_equipped: false,
+              acquired_at: new Date().toISOString(),
+              metadata: {
+                name: rodDef.name,
+                category: 'tools',
+                rarity: rodDef.rarity,
+                description: rodDef.description,
+                icon: rodDef.icon,
+                rodTier: rodDef.rarity,
+                luck: rodDef.luck,
+                fishingSpeed: rodDef.fishingSpeed,
+                maxWeight: rodDef.maxWeight,
+                specialAbility: rodDef.specialAbility,
+                sellPrice: Math.round(rodDef.price * 0.5),
+              },
+            }
+            db.inventory.push(healedRod)
+            list.push(healedRod)
+            hasHealed = true
+          }
+        }
+      }
+    }
+    if (hasHealed) {
+      writeLocalDB(db)
+    }
   }
 
   // If a preferred equipped rod is specified (e.g. from cookie nc_equipped_rod), synchronize equipped state

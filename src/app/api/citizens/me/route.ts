@@ -51,15 +51,45 @@ export async function GET(request: NextRequest) {
     // ignore
   }
 
+  // Parse cookie inventory if available to prevent clothing loss across serverless lambdas
+  let fallbackItemIds: string[] | undefined = undefined
+  try {
+    const rawInvCookie = request.cookies.get('nc_inventory')?.value
+    if (rawInvCookie) {
+      const parsedInv = JSON.parse(decodeURIComponent(rawInvCookie))
+      if (Array.isArray(parsedInv)) {
+        fallbackItemIds = parsedInv
+      }
+    }
+  } catch {
+    // ignore
+  }
+
   const rawEquippedRod = request.cookies.get('nc_equipped_rod')?.value
   const wallet = getCitizenWallet(citizen.id, fallbackWallet)
-  const inventory = getCitizenInventoryDetailed(citizen.id, rawEquippedRod)
+  const inventory = getCitizenInventoryDetailed(citizen.id, rawEquippedRod, fallbackItemIds)
 
   const response = NextResponse.json({
     citizen,
     wallet,
     inventory,
   })
+
+  // Set fresh cookie with active inventory snapshot
+  if (Array.isArray(inventory)) {
+    try {
+      const ownedIds = Array.from(
+        new Set(inventory.map((i: any) => i.itemId || i.item_id || i.id).filter(Boolean))
+      )
+      response.cookies.set(
+        'nc_inventory',
+        encodeURIComponent(JSON.stringify(ownedIds)),
+        { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+      )
+    } catch {
+      // ignore
+    }
+  }
 
   // Set fresh cookie with active wallet snapshot
   if (wallet) {

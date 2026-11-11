@@ -9,11 +9,25 @@ export async function GET(request: NextRequest) {
   const db = readLocalDB()
   const citizenId = request.cookies.get('nc_citizen_id')?.value
   const citizen = getActiveCitizen(citizenId)
-  const ownedItemIds = citizen
+
+  let cookieItemIds: string[] = []
+  try {
+    const rawInvCookie = request.cookies.get('nc_inventory')?.value
+    if (rawInvCookie) {
+      const parsed = JSON.parse(decodeURIComponent(rawInvCookie))
+      if (Array.isArray(parsed)) cookieItemIds = parsed
+    }
+  } catch {
+    // ignore
+  }
+
+  const dbItemIds = citizen
     ? db.inventory
         .filter((inv) => inv.citizen_id === citizen.id)
         .map((inv) => inv.item_id)
     : []
+
+  const ownedItemIds = Array.from(new Set([...dbItemIds, ...cookieItemIds]))
 
   return NextResponse.json({
     items: db.items,
@@ -71,6 +85,25 @@ export async function POST(request: NextRequest) {
         { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
       )
     }
+
+    // Always synchronize nc_inventory cookie with newly purchased item
+    try {
+      let currentItemIds: string[] = []
+      const rawInv = request.cookies.get('nc_inventory')?.value
+      if (rawInv) {
+        const parsed = JSON.parse(decodeURIComponent(rawInv))
+        if (Array.isArray(parsed)) currentItemIds = parsed
+      }
+      const updatedOwned = Array.from(new Set([...currentItemIds, itemId]))
+      response.cookies.set(
+        'nc_inventory',
+        encodeURIComponent(JSON.stringify(updatedOwned)),
+        { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' }
+      )
+    } catch {
+      // ignore
+    }
+
     return response
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Kesalahan server'

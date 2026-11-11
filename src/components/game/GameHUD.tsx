@@ -194,14 +194,11 @@ export default function GameHUD() {
             const serverTime = new Date(citData.wallet.updated_at || 0).getTime()
             const localTime = new Date(currentLocalWallet?.updatedAt || 0).getTime()
 
-            // If local activity has a newer or equal timestamp than server's container DB,
-            // or if server balance reverted to stale 500/old cache while local has verified activity:
-            const isServerBoost = serverBalance > localBal
-            const isLocalMoreAuthoritative =
-              !isServerBoost &&
-              ((localTime >= serverTime && localBal !== serverBalance) ||
-              (serverBalance < localBal) ||
-              (serverBalance === 500 && localBal !== 500 && (localSpent > 0 || localEarned > 500)))
+            // Check timestamps between client and server
+            const isLocalNewer = localTime > serverTime
+            const isServerStaleColdStart =
+              serverBalance === 500 && localBal !== 500 && (localSpent > 0 || localEarned > 500)
+            const isLocalMoreAuthoritative = isLocalNewer || isServerStaleColdStart
 
             if (isLocalMoreAuthoritative) {
               // Self-heal serverless container DB with client's confirmed wallet
@@ -240,27 +237,20 @@ export default function GameHUD() {
           }
         }
         if (Array.isArray(citData.inventory)) {
-          const now = Date.now()
           const localInv = useCitizenStore.getState().inventory || []
           const serverIds = new Set(citData.inventory.map((i: any) => i.id))
-          
-          // 1. Only retain temporary optimistic catches (< 10s ago) that haven't landed on server yet
-          const inFlightPendingCatches = localInv.filter((i: any) => {
-            if (!i || !i.id || serverIds.has(i.id)) return false
-            const acquiredTime = new Date(i.acquiredAt || 0).getTime()
-            return now - acquiredTime < 10000 && String(i.id).startsWith('fish-')
-          })
+          const serverItemIds = new Set(
+            citData.inventory.map((i: any) => i.itemId || i.item_id).filter(Boolean)
+          )
 
-          // 2. Preserve locally owned rods/tools so periodic background polling never drops purchased rods
-          const localRods = localInv.filter((i: any) => {
+          // Preserve all items currently in local storage that server might not have yet (clothes, accessories, tools, fish)
+          const localOnlyItems = localInv.filter((i: any) => {
             if (!i || !i.id) return false
-            const isRod = (i.itemId || i.item_id || '').startsWith('rod_') || i.category === 'tools'
-            if (!isRod) return false
-            const rodId = i.itemId || i.item_id
-            return !citData.inventory.some((s: any) => (s.itemId || s.item_id) === rodId)
+            const itemId = i.itemId || i.item_id
+            return !serverIds.has(i.id) && (!itemId || !serverItemIds.has(itemId))
           })
 
-          // 3. Determine active equipped rod preference (cookie -> localStorage -> local inventory)
+          // Determine active equipped rod preference (cookie -> localStorage -> local inventory)
           const cookieRod = typeof document !== 'undefined'
             ? document.cookie.split('; ').find((r) => r.startsWith('nc_equipped_rod='))?.split('=')[1]
             : null
@@ -270,7 +260,7 @@ export default function GameHUD() {
           )
           const preferredRodId = storedRod || localEquippedRod?.itemId || (localEquippedRod as any)?.item_id
 
-          const merged = [...citData.inventory, ...localRods, ...inFlightPendingCatches]
+          const merged = [...citData.inventory, ...localOnlyItems]
 
           // Synchronize equipped rod state across all merged tools so it never resets to basic
           if (preferredRodId) {
@@ -283,6 +273,16 @@ export default function GameHUD() {
           }
 
           setInventory(merged)
+
+          // Keep client nc_inventory cookie synchronized
+          try {
+            const allOwnedIds = Array.from(
+              new Set(merged.map((i: any) => i.itemId || i.item_id || i.id).filter(Boolean))
+            )
+            document.cookie = `nc_inventory=${encodeURIComponent(JSON.stringify(allOwnedIds))}; path=/; max-age=2592000; SameSite=Lax`
+          } catch {
+            // ignore
+          }
         }
       }
 
