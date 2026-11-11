@@ -89,28 +89,11 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
   shirtTorsoMesh.receiveShadow = false;
   torsoGroup.add(shirtTorsoMesh);
 
-  // Tailored clothing trims on the shirt
-  // Inner white collar fold & neckline
-  const innerShirt = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 0.16, 0.04).translate(0, 0.68, 0.256),
-    mat('#FFFFFF', { roughness: 0.7 })
-  );
-  torsoGroup.add(innerShirt);
-
+  // Clean crewneck collar ring framing the neckline
   const collarRing = new THREE.Mesh(new THREE.TorusGeometry(0.274, 0.015, 6, 26), shirtMat);
   collarRing.position.y = 0.74;
   collarRing.rotation.x = Math.PI / 2;
   torsoGroup.add(collarRing);
-
-  // V-neck lapel folds
-  for (const s of [-1, 1]) {
-    const lapel = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, 0.08, 0.012).translate(s * 0.05, 0.71, 0.266),
-      shirtMat
-    );
-    lapel.rotation.z = -s * 0.32;
-    torsoGroup.add(lapel);
-  }
 
   // Shirt Pearl Buttons
   const buttonWhiteMat = mat('#F8FAFC', { roughness: 0.3 });
@@ -276,32 +259,46 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
 
     if (style === 'none' || style === 'bald') return;
 
-    // Base hair cap covering only the top-back crown, keeping the capsule face completely clear
-    const baseCap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.276, 20, 12, -Math.PI * 0.5, Math.PI, 0, Math.PI * 0.42),
+    // 1. Full 360-degree Top Crown Cap (Seamless dome, concentric with headMesh at y = -0.08)
+    // Radius 0.278 cleanly envelopes the 0.270 headMesh with zero z-fighting or color splitting
+    const crownCap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.278, 24, 12, 0, Math.PI * 2, 0, Math.PI * 0.35),
       hairMat
     );
-    baseCap.position.y = -0.06;
-    hairGroup.add(baseCap);
+    crownCap.position.set(0, -0.08, 0);
+    crownCap.castShadow = false;
+    crownCap.receiveShadow = false;
+    hairGroup.add(crownCap);
+
+    // 2. Back & Sides Hair Wrap (Wraps from temples around the back of the head down to the neck collar)
+    // Leaves the front face (eyes, cheeks, nose) open and visible
+    const backSidesCap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.278, 22, 10, Math.PI * 0.85, Math.PI * 1.30, Math.PI * 0.30, Math.PI * 0.24),
+      hairMat
+    );
+    backSidesCap.position.set(0, -0.08, 0);
+    backSidesCap.castShadow = false;
+    backSidesCap.receiveShadow = false;
+    hairGroup.add(backSidesCap);
 
     if (style === 'spiky') {
       for (let i = 0; i < 7; i++) {
         const a = (i / 7) * Math.PI * 1.8 - 0.9;
-        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 5), hairMat);
-        spike.position.set(Math.sin(a) * 0.20, 0.18 + Math.cos(a) * 0.04, Math.cos(a) * 0.16);
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.16, 5), hairMat);
+        spike.position.set(Math.sin(a) * 0.18, 0.16 + Math.cos(a) * 0.04, Math.cos(a) * 0.14);
         spike.rotation.set(0.3, a * 0.5, -a * 0.4);
         hairGroup.add(spike);
       }
     } else if (style === 'long' || style === 'ponytail') {
       const backHair = new THREE.Mesh(
-        new THREE.BoxGeometry(0.36, 0.46, 0.08).translate(0, -0.22, -0.22),
+        new THREE.BoxGeometry(0.36, 0.44, 0.08).translate(0, -0.22, -0.22),
         hairMat
       );
       hairGroup.add(backHair);
 
       for (const s of [-1, 1]) {
         const sideLock = new THREE.Mesh(
-          new THREE.BoxGeometry(0.07, 0.32, 0.08).translate(s * 0.23, -0.16, 0.08),
+          new THREE.BoxGeometry(0.065, 0.30, 0.08).translate(s * 0.23, -0.15, 0.08),
           hairMat
         );
         hairGroup.add(sideLock);
@@ -327,24 +324,35 @@ export function makeCitizen3D(initialColors: CitizenAvatarColors): Citizen3DInst
       }
     } else if (style === 'bob') {
       const bob = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.282, 0.305, 0.26, 16, 1, true, -Math.PI * 0.75, Math.PI * 1.5),
+        new THREE.CylinderGeometry(0.282, 0.305, 0.26, 16, 1, true, Math.PI * 0.85, Math.PI * 1.30),
         hairMat
       );
       bob.position.y = -0.08;
       hairGroup.add(bob);
     } else {
-      // Default: Neat layered fringe
-      const fringe = new THREE.Mesh(
-        new THREE.BoxGeometry(0.32, 0.08, 0.12).translate(0, 0.12, 0.22),
+      // Default / Short: Clean contoured front bangs & sideburns
+      const centerBangs = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.065, 0.06),
         hairMat
       );
-      hairGroup.add(fringe);
+      centerBangs.position.set(0, 0.09, 0.245);
+      centerBangs.rotation.x = -0.15;
+      hairGroup.add(centerBangs);
 
       for (const s of [-1, 1]) {
-        const sideBurn = new THREE.Mesh(
-          new THREE.BoxGeometry(0.05, 0.14, 0.09).translate(s * 0.24, -0.02, 0.06),
+        const sideBangs = new THREE.Mesh(
+          new THREE.BoxGeometry(0.08, 0.08, 0.05),
           hairMat
         );
+        sideBangs.position.set(s * 0.11, 0.08, 0.235);
+        sideBangs.rotation.set(-0.15, 0, -s * 0.2);
+        hairGroup.add(sideBangs);
+
+        const sideBurn = new THREE.Mesh(
+          new THREE.BoxGeometry(0.045, 0.14, 0.08),
+          hairMat
+        );
+        sideBurn.position.set(s * 0.245, -0.03, 0.06);
         hairGroup.add(sideBurn);
       }
     }
