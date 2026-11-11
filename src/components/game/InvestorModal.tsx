@@ -92,11 +92,6 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
       inv.message.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleOpenTrakteer = (qty?: number) => {
-    const url = qty ? `${TRAKTEER_URL}?quantity=${qty}` : TRAKTEER_URL
-    window.open(url, '_blank', 'noopener,noreferrer')
-  }
-
   const handleCopyLink = () => {
     navigator.clipboard?.writeText(TRAKTEER_URL)
     setCopiedLink(true)
@@ -212,15 +207,16 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
                     Belum ada investor terdaftar. Setiap donatur yang mentraktir kopi di Trakteer (<strong>@sahamnetzencity</strong>) akan <strong>otomatis terukir namanya di Menara 3D secara real-time via Webhook</strong> tanpa perlu klaim manual!
                   </p>
                   <div className="mt-4">
-                    <button
-                      type="button"
-                      onClick={() => setTab('trakteer')}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-white font-extrabold text-xs shadow-md hover:opacity-95 active:scale-95 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                    <a
+                      href={TRAKTEER_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-white font-extrabold text-xs shadow-md hover:opacity-95 active:scale-95 transition-all inline-flex items-center gap-1.5 cursor-pointer no-underline"
                     >
                       <Coffee className="w-3.5 h-3.5 text-amber-200" />
                       <span>Jadi Investor Pertama di Trakteer</span>
                       <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
+                    </a>
                   </div>
                 </div>
               ) : filteredInvestors.length === 0 ? (
@@ -299,15 +295,16 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
                 {TRAKTEER_HANDLE} &bull; Trakteer.id
               </p>
               <div className="mt-2.5 flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleOpenTrakteer()}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-white font-extrabold text-xs shadow-md hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                <a
+                  href={TRAKTEER_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-white font-extrabold text-xs shadow-md hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer no-underline"
                 >
                   <Coffee className="w-3.5 h-3.5 text-amber-200" />
                   <span>Buka Halaman Trakteer</span>
                   <ExternalLink className="w-3.5 h-3.5" />
-                </button>
+                </a>
                 <button
                   type="button"
                   onClick={handleCopyLink}
@@ -326,11 +323,12 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {QUICK_TIERS.map((tier) => (
-                  <button
+                  <a
                     key={tier.qty}
-                    type="button"
-                    onClick={() => handleOpenTrakteer(tier.qty)}
-                    className="p-2.5 rounded-xl border border-[#D8CEBE] bg-[#FFFDF9] hover:border-rose-400 hover:bg-rose-50/40 text-left transition-all active:scale-98 flex items-center justify-between group cursor-pointer"
+                    href={`${TRAKTEER_URL}?quantity=${tier.qty}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2.5 rounded-xl border border-[#D8CEBE] bg-[#FFFDF9] hover:border-rose-400 hover:bg-rose-50/40 text-left transition-all active:scale-98 flex items-center justify-between group cursor-pointer no-underline"
                   >
                     <div>
                       <div className="flex items-center gap-1.5">
@@ -346,7 +344,7 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
                       </span>
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 text-[#78634B] group-hover:text-rose-600 shrink-0" />
-                  </button>
+                  </a>
                 ))}
               </div>
             </div>
