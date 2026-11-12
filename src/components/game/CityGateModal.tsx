@@ -29,9 +29,10 @@ import { useUIStore } from '@/lib/stores/useUIStore'
 interface CityGateModalProps {
   isOpen: boolean
   onSuccess: () => void
+  onClose?: () => void
 }
 
-export default function CityGateModal({ isOpen, onSuccess }: CityGateModalProps) {
+export default function CityGateModal({ isOpen, onSuccess, onClose }: CityGateModalProps) {
   const router = useRouter()
   const profile = useCitizenStore((s) => s.profile)
   const setProfile = useCitizenStore((s) => s.setProfile)
@@ -189,10 +190,18 @@ export default function CityGateModal({ isOpen, onSuccess }: CityGateModalProps)
     }
   }
 
+  const handleClose = () => {
+    if (onClose) {
+      onClose()
+    } else {
+      handleCreateGuestKTN()
+    }
+  }
+
   return (
     <Modal
       isOpen={isOpen}
-      onClose={() => {}}
+      onClose={handleClose}
       title="Gerbang Masuk NETIZENCITY"
       maxWidth="md"
     >
@@ -303,6 +312,25 @@ export default function CityGateModal({ isOpen, onSuccess }: CityGateModalProps)
               <span className="text-[11px] text-[#78634B] mt-1 leading-snug">
                 Bagi warga yang sudah pernah mendaftar dengan akun Instagram terverifikasi.
               </span>
+            </button>
+          </div>
+
+          {/* Opsi 3: Masuk sebagai Tamu / Kembali */}
+          <div className="pt-2 flex items-center justify-between text-xs border-t border-[#D8CEBE]/60">
+            <button
+              type="button"
+              onClick={handleCreateGuestKTN}
+              disabled={isCreatingGuest}
+              className="text-[#668B65] hover:text-[#527251] font-bold flex items-center cursor-pointer"
+            >
+              <span>{isCreatingGuest ? 'Menyiapkan KTN Tamu...' : 'Jelajahi Kota sebagai Tamu →'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="text-[#8C7D91] hover:text-[#3B3340] font-semibold cursor-pointer"
+            >
+              Kembali ke Beranda
             </button>
           </div>
         </div>

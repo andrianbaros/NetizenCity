@@ -60,6 +60,7 @@ export default function CityPage() {
         <CityGateModal
           isOpen={!hasAccess}
           onSuccess={() => setHasAccess(true)}
+          onClose={() => setHasAccess(true)}
         />
       </main>
     )
