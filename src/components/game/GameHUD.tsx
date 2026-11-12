@@ -376,9 +376,13 @@ export default function GameHUD() {
               type="button"
               onClick={() => openModal('ktn_card')}
               title="Lihat Kartu Tanda Netizen (KTN)"
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#668B65] font-heading font-extrabold text-xs hover:bg-[#E2DAC7] transition-colors cursor-pointer shrink-0"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#EFE9D8] border border-[#D8CEBE] p-0.5 flex items-center justify-center hover:bg-[#E2DAC7] hover:scale-105 transition-all cursor-pointer shrink-0"
             >
-              NC
+              <img
+                src="/brand/icon-96.png"
+                alt="NC"
+                className="w-full h-full object-contain"
+              />
             </button>
             <div className="min-w-0">
               <div className="flex items-center space-x-1 sm:space-x-1.5">
@@ -400,8 +404,12 @@ export default function GameHUD() {
           </div>
         ) : (
           <div className="flex items-center space-x-1.5 bg-[#F7F4E9] border border-[#D8CEBE] rounded-xl p-1 sm:p-1.5 pr-2 sm:pr-3 shadow-[0_3px_10px_rgba(52,59,53,0.08)] pointer-events-auto shrink-0">
-            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#EFE9D8] border border-[#D8CEBE] flex items-center justify-center text-[#78634B] shrink-0">
-              <User className="w-3.5 h-3.5" />
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#EFE9D8] border border-[#D8CEBE] p-0.5 flex items-center justify-center shrink-0">
+              <img
+                src="/brand/icon-96.png"
+                alt="NC"
+                className="w-full h-full object-contain opacity-90"
+              />
             </div>
             <div>
               <div className="flex items-center space-x-1 sm:space-x-1.5">

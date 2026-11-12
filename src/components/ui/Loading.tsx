@@ -32,16 +32,24 @@ export const LoadingScreen: React.FC<{ message?: string }> = ({
 }) => {
   return (
     <div className="fixed inset-0 z-50 bg-[#F8F4EE] flex flex-col items-center justify-center p-4">
-      <div className="relative mb-6">
-        <div className="w-16 h-16 border-4 border-[#EADBCC] border-t-[#F4A98C] rounded-full animate-spin" />
-        <div className="absolute inset-0 flex items-center justify-center text-xs font-black tracking-wider text-[#F4A98C]">
-          NC
-        </div>
+      <div className="relative w-32 sm:w-40 h-auto mb-3 animate-pulse drop-shadow-xl">
+        <img
+          src="/brand/logo-badge.webp"
+          alt="Netizen City Logo"
+          className="w-full h-auto object-contain"
+        />
       </div>
-      <h2 className="text-xl font-extrabold text-[#3B3340] tracking-widest uppercase mb-2">
-        NETIZENCITY
-      </h2>
-      <p className="text-sm text-[#6F6675] font-semibold">{message}</p>
+      <div className="w-44 mb-3">
+        <img
+          src="/brand/logo-text.png"
+          alt="NETIZEN CITY"
+          className="w-full h-auto object-contain mx-auto"
+        />
+      </div>
+      <div className="inline-flex items-center space-x-2 text-xs font-bold text-[#78634B] bg-[#EFE9D8] px-3.5 py-1.5 rounded-full border border-[#D8CEBE] shadow-xs">
+        <span className="w-2 h-2 rounded-full bg-[#668B65] animate-ping" />
+        <span>{message}</span>
+      </div>
     </div>
   )
 }

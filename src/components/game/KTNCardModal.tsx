@@ -89,8 +89,12 @@ export default function KTNCardModal() {
           {/* Top Decorative Header */}
           <div className="flex items-center justify-between pb-3 border-b border-[#D8CEBE] mb-4">
             <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#668B65] flex items-center justify-center text-white font-bold text-xs">
-                NC
+              <div className="w-8 h-8 rounded-lg bg-[#EFE9D8] border border-[#D8CEBE] p-0.5 flex items-center justify-center shadow-xs shrink-0">
+                <img
+                  src="/brand/icon-96.png"
+                  alt="NC"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
                 <span className="font-bold text-xs tracking-wide text-[#343B35] uppercase block">

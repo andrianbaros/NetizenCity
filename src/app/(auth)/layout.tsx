@@ -14,20 +14,17 @@ export default function AuthLayout({
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#E6F3FF]/40 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center mb-8">
-        <Link href="/" className="inline-flex items-center space-x-3 group">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#F4A98C] via-[#F2C1D6] to-[#C9B8E8] p-0.5 shadow-md group-hover:scale-105 transition-transform">
-            <div className="w-full h-full bg-[#FFFDF9] rounded-[14px] flex items-center justify-center font-black tracking-wider text-[#F4A98C] text-base">
-              NC
-            </div>
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center mb-6">
+        <Link href="/" className="inline-flex flex-col items-center group">
+          <div className="relative w-36 sm:w-40 h-auto group-hover:scale-105 transition-transform duration-300 drop-shadow-md">
+            <img
+              src="/brand/logo-badge.webp"
+              alt="Netizen City Logo"
+              className="w-full h-auto object-contain"
+            />
           </div>
-          <div className="text-left">
-            <div className="font-extrabold tracking-wider text-xl bg-gradient-to-r from-[#F4A98C] via-[#E2829F] to-[#76A9EA] bg-clip-text text-transparent">
-              NETIZENCITY
-            </div>
-            <div className="text-[11px] text-[#6F6675] font-semibold">
-              Virtual Diorama City &bull; @netizencity.id
-            </div>
+          <div className="text-[11px] text-[#6F6675] font-bold mt-1 tracking-wide">
+            Virtual Diorama City &bull; @netizencity.id
           </div>
         </Link>
       </div>

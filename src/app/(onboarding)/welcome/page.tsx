@@ -135,9 +135,13 @@ export default function OnboardingPage() {
 
       {/* STEP 1: AIRPORT ARRIVAL */}
       {step === 1 && (
-        <div className="text-center py-4 space-y-6">
-          <div className="w-20 h-20 rounded-3xl bg-[#EBF4FD] border-2 border-[#A9C8EC] text-[#2C6ECB] flex items-center justify-center mx-auto shadow-sm">
-            <Plane className="w-10 h-10 animate-pulse" />
+        <div className="text-center py-4 space-y-5">
+          <div className="relative w-32 sm:w-40 mx-auto -mb-2 drop-shadow-md hover:scale-105 transition-transform duration-300">
+            <img
+              src="/brand/logo-badge.webp"
+              alt="Netizen City Logo"
+              className="w-full h-auto object-contain"
+            />
           </div>
 
           <div>

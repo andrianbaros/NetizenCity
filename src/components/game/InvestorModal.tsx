@@ -114,8 +114,12 @@ export default function InvestorModal({ isOpen, onClose }: InvestorModalProps) {
         {/* Banner Monumen Spiral 11 Lantai & Akun Trakteer Resmi */}
         <div className="bg-gradient-to-r from-purple-950 via-indigo-900 to-rose-950 text-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md border border-white/10">
           <div className="flex items-center space-x-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-purple-600 border border-white/30 flex items-center justify-center text-2xl shadow-inner shrink-0">
-              ☕
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-purple-600 border border-white/30 p-1 flex items-center justify-center shadow-inner shrink-0">
+              <img
+                src="/brand/icon-96.png"
+                alt="NC"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">

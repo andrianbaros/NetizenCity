@@ -111,13 +111,19 @@ export default function GameStartScreen() {
         <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between">
           {/* Game Brand Emblem */}
           <Link href="/" className="flex items-center space-x-2 group cursor-pointer">
-            <div className="w-8 h-8 rounded-xl bg-[#668B65] text-white flex items-center justify-center font-heading font-extrabold text-xs shadow-sm group-hover:scale-105 transition-transform">
-              NC
+            <div className="relative w-8 h-8 rounded-xl overflow-hidden group-hover:scale-105 transition-transform shrink-0 drop-shadow-sm">
+              <img
+                src="/brand/icon-96.png"
+                alt="Netizen City Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <div className="flex items-baseline space-x-1.5">
-              <span className="font-heading font-extrabold tracking-wide text-base text-[#343B35]">
-                NETIZENCITY
-              </span>
+            <div className="flex items-center space-x-1.5">
+              <img
+                src="/brand/logo-text.png"
+                alt="NETIZEN CITY"
+                className="h-6 w-auto object-contain"
+              />
               <span className="hidden sm:inline-block text-[10px] font-bold text-[#668B65] bg-[#668B65]/15 px-1.5 py-0.2 rounded border border-[#668B65]/30">
                 v1.0 &bull; Game 3D
               </span>
@@ -180,10 +186,14 @@ export default function GameStartScreen() {
               <span className="text-[#668B65]">SERVER ONLINE</span>
             </div>
 
-            {/* Cozy Tactile Game Logo */}
-            <h1 className="text-4xl sm:text-6xl font-heading font-black tracking-wider text-[#343B35] drop-shadow-sm select-none">
-              NETIZENCITY
-            </h1>
+            {/* Official Netizen City Badge Emblem */}
+            <div className="relative w-64 sm:w-80 md:w-96 mx-auto my-2 drop-shadow-xl hover:scale-105 transition-transform duration-300">
+              <img
+                src="/brand/logo-badge.webp"
+                alt="NETIZEN CITY — How Netizen Build Our City"
+                className="w-full h-auto object-contain"
+              />
+            </div>
             <p className="font-heading font-bold text-xs sm:text-sm text-[#78634B] tracking-wide mt-1">
               ✦ KOTA VIRTUAL 3D DIORAMA WARGA NETIZEN ✦
             </p>
